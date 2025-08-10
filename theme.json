@@ -1,0 +1,37 @@
+{
+    "theme": {
+      "background": {
+        "color": "#a6e5e5",
+        "pattern": "geometric"
+      },
+      "text": {
+        "primary": "#000000",
+        "secondary": "#6c757d"
+      },
+      "buttons": {
+        "primary": {
+          "background": "#007bff",
+          "text": "#ffffff"
+        },
+        "error": {
+          "background": "#f8d7da",
+          "text": "#721c24"
+        }
+      },
+      "header": {
+        "background": "#ffffff",
+        "text": "#000000"
+      },
+      "links": {
+        "color": "#007bff",
+        "hover": "#0056b3"
+      },
+      "alerts": {
+        "error": {
+          "background": "#f8d7da",
+          "text": "#721c24",
+          "border": "#f5c6cb"
+        }
+      }
+    }
+  }
