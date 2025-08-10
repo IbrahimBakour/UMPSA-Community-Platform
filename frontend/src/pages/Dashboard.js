@@ -1,6 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../theme';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+  Avatar,
+  Stack,
+  CircularProgress,
+  Paper,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+} from '@mui/material';
+import GroupsIcon from '@mui/icons-material/Groups';
+import ReportIcon from '@mui/icons-material/Report';
+import FlagIcon from '@mui/icons-material/Flag';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import WorkspacesIcon from '@mui/icons-material/Workspaces';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -8,7 +32,6 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is authenticated
     const storedUserInfo = localStorage.getItem('userInfo');
     if (!storedUserInfo) {
       navigate('/login');
@@ -44,16 +67,16 @@ const Dashboard = () => {
     }
   };
 
-  const getRoleColor = (role) => {
+  const getRoleChipColor = (role) => {
     switch (role) {
       case 'student':
-        return '#28a745';
+        return 'success';
       case 'club_member':
-        return '#007bff';
+        return 'primary';
       case 'admin':
-        return '#dc3545';
+        return 'error';
       default:
-        return colors.textSecondary;
+        return 'default';
     }
   };
 
@@ -106,201 +129,170 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: 18,
-        color: colors.textSecondary
-      }}>
-        Loading...
-      </div>
+      <Box display="flex" alignItems="center" justifyContent="center" height="80vh">
+        <Stack alignItems="center" spacing={2}>
+          <CircularProgress />
+          <Typography variant="body2" color="text.secondary">Loading...</Typography>
+        </Stack>
+      </Box>
     );
   }
 
-  if (!userInfo) {
-    return null;
-  }
+  if (!userInfo) return null;
 
   const dashboardContent = getDashboardContent(userInfo.role);
 
-  return (
-    <div style={{ padding: '2rem', maxWidth: 1200, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '2rem',
-        paddingBottom: '1rem',
-        borderBottom: '1px solid #eee'
-      }}>
-        <div>
-          <h1 style={{ 
-            margin: 0, 
-            color: colors.textPrimary,
-            fontSize: '2rem',
-            fontWeight: 600
-          }}>
-            {dashboardContent.title}
-          </h1>
-          <p style={{ 
-            margin: '0.5rem 0 0 0', 
-            color: colors.textSecondary,
-            fontSize: '1rem'
-          }}>
-            {dashboardContent.description}
-          </p>
-        </div>
-        <button
-          onClick={handleLogout}
-          style={{
-            background: colors.errorText || '#dc3545',
-            color: 'white',
-            border: 'none',
-            borderRadius: 6,
-            padding: '8px 16px',
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 500,
-          }}
-        >
-          Logout
-        </button>
-      </div>
+  const handleQuick = (path) => navigate(path);
 
-      {/* User Info Card */}
-      <div style={{
-        background: 'white',
-        borderRadius: 8,
-        padding: '1.5rem',
-        marginBottom: '2rem',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        border: '1px solid #eee'
-      }}>
-        <h3 style={{ margin: '0 0 1rem 0', color: colors.textPrimary }}>User Information</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div>
-            <strong style={{ color: colors.textSecondary }}>Name:</strong>
-            <div style={{ color: colors.textPrimary }}>{userInfo.name}</div>
-          </div>
-          <div>
-            <strong style={{ color: colors.textSecondary }}>Email:</strong>
-            <div style={{ color: colors.textPrimary }}>{userInfo.email}</div>
-          </div>
-          <div>
-            <strong style={{ color: colors.textSecondary }}>Role:</strong>
-            <div style={{ 
-              color: 'white', 
-              background: getRoleColor(userInfo.role),
-              padding: '4px 8px',
-              borderRadius: 4,
-              display: 'inline-block',
-              fontSize: 12,
-              fontWeight: 500
-            }}>
-              {getRoleDisplayName(userInfo.role)}
-            </div>
-          </div>
-          <div>
-            <strong style={{ color: colors.textSecondary }}>Login Time:</strong>
-            <div style={{ color: colors.textPrimary }}>
-              {new Date(userInfo.loginTime).toLocaleString()}
-            </div>
-          </div>
-        </div>
-      </div>
+  const myClubsCount = (() => {
+    try { return (JSON.parse(localStorage.getItem('userClubs') || '[]') || []).length; } catch { return 0; }
+  })();
+  const requestsCount = (() => {
+    try { return (JSON.parse(localStorage.getItem('publicPostRequests') || '[]') || []).length; } catch { return 0; }
+  })();
+  const reportsCount = (() => {
+    try { return (JSON.parse(localStorage.getItem('reports') || '[]') || []).length; } catch { return 0; }
+  })();
+  const publicPostsCount = (() => {
+    try { return (JSON.parse(localStorage.getItem('publicPosts') || '[]') || []).length; } catch { return 0; }
+  })();
+
+  const statCards = userInfo.role === 'admin'
+    ? [
+        { title: 'Users', value: '—', icon: <GroupsIcon />, color: 'primary.main', to: '/users' },
+        { title: 'Reports', value: reportsCount, icon: <ReportIcon />, color: 'error.main', to: '/reports' },
+        { title: 'Requests', value: requestsCount, icon: <FlagIcon />, color: 'warning.main', to: '/reports' },
+        { title: 'Announcements', value: '—', icon: <CampaignIcon />, color: 'info.main', to: '/announcements' },
+      ]
+    : [
+        { title: 'My Clubs', value: myClubsCount, icon: <WorkspacesIcon />, color: 'primary.main', to: '/my-clubs' },
+        { title: 'News', value: publicPostsCount, icon: <NewspaperIcon />, color: 'success.main', to: '/news' },
+        { title: 'Announcements', value: '—', icon: <CampaignIcon />, color: 'info.main', to: '/announcements' },
+        { title: 'Browse Clubs', value: '→', icon: <GroupsIcon />, color: 'secondary.main', to: '/clubs' },
+      ];
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Welcome Banner */}
+      <Paper elevation={0} sx={{ mb: 3, p: 3, borderRadius: 3, background: 'linear-gradient(135deg, #18458B 0%, #00a389 100%)', color: 'white' }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
+          <Box>
+            <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>Welcome back</Typography>
+            <Typography variant="h5" fontWeight={700}>{userInfo.name}</Typography>
+            <Stack direction="row" spacing={1} mt={1}>
+              <Chip size="small" label={getRoleDisplayName(userInfo.role)} color={getRoleChipColor(userInfo.role)} sx={{ bgcolor: 'rgba(255,255,255,0.15)' }} />
+              <Typography variant="caption" sx={{ opacity: 0.9 }}>Last login: {new Date(userInfo.loginTime).toLocaleString()}</Typography>
+            </Stack>
+          </Box>
+          <Button variant="outlined" color="inherit" onClick={handleLogout} sx={{ borderRadius: 2, borderColor: 'rgba(255,255,255,0.6)' }}>Logout</Button>
+        </Box>
+      </Paper>
+
+      {/* Stat Cards */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {statCards.map((s, i) => (
+          <Grid item xs={12} sm={6} md={3} key={i}>
+            <Card onClick={() => handleQuick(s.to)} sx={{ borderRadius: 2, cursor: 'pointer', '&:hover': { boxShadow: 4 } }}>
+              <CardContent>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Avatar sx={{ bgcolor: s.color }}>{s.icon}</Avatar>
+                  <Box>
+                    <Typography variant="overline" color="text.secondary" display="block">{s.title}</Typography>
+                    <Typography variant="h6" color="text.primary">{String(s.value)}</Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* User Info */}
+      <Card elevation={1} sx={{ mb: 3, borderRadius: 2 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom color="text.primary">User Information</Typography>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item>
+              <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
+                {userInfo.name?.charAt(0)?.toUpperCase() || '?'}
+              </Avatar>
+            </Grid>
+            <Grid item xs={12} sm={5} md={4}>
+              <Typography variant="caption" color="text.secondary">Name</Typography>
+              <Typography variant="body1" color="text.primary">{userInfo.name}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={5} md={4}>
+              <Typography variant="caption" color="text.secondary">Email</Typography>
+              <Typography variant="body1" color="text.primary">{userInfo.email}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={4} md={3}>
+              <Typography variant="caption" color="text.secondary">Role</Typography>
+              <Box mt={0.5}>
+                <Chip size="small" label={getRoleDisplayName(userInfo.role)} color={getRoleChipColor(userInfo.role)} />
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={8} md={5}>
+              <Typography variant="caption" color="text.secondary">Login Time</Typography>
+              <Typography variant="body1" color="text.primary">{new Date(userInfo.loginTime).toLocaleString()}</Typography>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* Features Grid */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h3 style={{ margin: '0 0 1rem 0', color: colors.textPrimary }}>Available Features</h3>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-          gap: '1rem' 
-        }}>
+      <Box mb={3}>
+        <Typography variant="h6" color="text.primary" gutterBottom>Available Features</Typography>
+        <Grid container spacing={2}>
           {dashboardContent.features.map((feature, index) => (
-            <div key={index} style={{
-              background: 'white',
-              borderRadius: 8,
-              padding: '1rem',
-              border: '1px solid #eee',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-              transition: 'transform 0.2s ease',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-            onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-            >
-              <div style={{ 
-                color: colors.primary, 
-                fontSize: '1.2rem', 
-                marginBottom: '0.5rem' 
-              }}>
-                {feature}
-              </div>
-              <div style={{ 
-                color: colors.textSecondary, 
-                fontSize: '0.9rem' 
-              }}>
-                Click to access this feature
-              </div>
-            </div>
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Card variant="outlined" sx={{ borderRadius: 2, cursor: 'pointer', '&:hover': { boxShadow: 3 } }}>
+                <CardContent>
+                  <Typography variant="subtitle1" color="primary" gutterBottom>{feature}</Typography>
+                  <Typography variant="body2" color="text.secondary">Click to access this feature</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
-      </div>
+        </Grid>
+      </Box>
 
       {/* Quick Actions */}
-      <div style={{
-        background: 'white',
-        borderRadius: 8,
-        padding: '1.5rem',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        border: '1px solid #eee'
-      }}>
-        <h3 style={{ margin: '0 0 1rem 0', color: colors.textPrimary }}>Quick Actions</h3>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <button style={{
-            background: colors.primary,
-            color: 'white',
-            border: 'none',
-            borderRadius: 6,
-            padding: '10px 20px',
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 500,
-          }}>
-            View Profile
-          </button>
-          <button style={{
-            background: colors.link || '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: 6,
-            padding: '10px 20px',
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 500,
-          }}>
-            Browse Clubs
-          </button>
-          <button style={{
-            background: colors.successText || '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: 6,
-            padding: '10px 20px',
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 500,
-          }}>
-            View Announcements
-          </button>
-        </div>
-      </div>
-  </div>
-);
+      <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+        <Typography variant="h6" color="text.primary" gutterBottom>Quick Actions</Typography>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap">
+          <Button variant="contained" onClick={() => handleQuick('/profile')}>View Profile</Button>
+          <Button variant="contained" color="info" onClick={() => handleQuick('/clubs')}>Browse Clubs</Button>
+          <Button variant="contained" color="success" onClick={() => handleQuick('/announcements')}>View Announcements</Button>
+          {userInfo.role === 'admin' && (
+            <Button variant="outlined" color="warning" onClick={() => handleQuick('/admin')}>Admin</Button>
+          )}
+        </Stack>
+      </Paper>
+
+      {/* Recent */}
+      <Box mt={3}>
+        <Typography variant="h6" color="text.primary" gutterBottom>Recent</Typography>
+        <Paper variant="outlined" sx={{ borderRadius: 2 }}>
+          <List>
+            {(publicPostsCount > 0 ? JSON.parse(localStorage.getItem('publicPosts') || '[]').slice(0, 3) : [])
+              .map((p, idx) => (
+                <ListItem key={idx} divider={idx < Math.min(publicPostsCount, 3) - 1}>
+                  <ListItemAvatar>
+                    <Avatar src={p.authorAvatar} />
+                  </ListItemAvatar>
+                  <ListItemText primary={p.author} secondary={p.content} />
+                </ListItem>
+              ))}
+            {publicPostsCount === 0 && (
+              <ListItem>
+                <ListItemText primary="No recent items" secondary="Public posts will appear here." />
+              </ListItem>
+            )}
+          </List>
+        </Paper>
+      </Box>
+    </Container>
+  );
 };
 
 export default Dashboard; 

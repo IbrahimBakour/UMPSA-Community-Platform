@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { colors } from '../theme';
 
 const DEMO_REPORTS = [
@@ -34,7 +34,13 @@ const ReportsPage = () => {
     const stored = localStorage.getItem('userInfo');
     if (!stored) { navigate('/login'); return; }
     try {
-      setUserInfo(JSON.parse(stored));
+      const u = JSON.parse(stored);
+      setUserInfo(u);
+      // Load stored reports
+      const storedReports = JSON.parse(localStorage.getItem('reports') || '[]');
+      if (storedReports.length) {
+        setReports([...storedReports, ...DEMO_REPORTS]);
+      }
       const queued = JSON.parse(localStorage.getItem('publicPostRequests') || '[]');
       setPostRequests(queued);
     } finally { setIsLoading(false); }
@@ -42,10 +48,43 @@ const ReportsPage = () => {
 
   if (isLoading) return <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'60vh', color: colors.textSecondary }}>Loading...</div>;
 
+  const isAdmin = userInfo?.role === 'admin';
+
+  const updateReportStatus = (id, status) => {
+    setReports(prev => {
+      const next = prev.map(r => (r.id === id ? { ...r, status } : r));
+      try {
+        const persistedDemoIds = new Set(DEMO_REPORTS.map(r => r.id));
+        const toPersist = next.filter(r => !persistedDemoIds.has(r.id));
+        localStorage.setItem('reports', JSON.stringify(toPersist));
+      } catch (_) {}
+      return next;
+    });
+  };
+
+  const deleteReport = (id) => {
+    setReports(prev => {
+      const next = prev.filter(r => r.id !== id);
+      try {
+        const persistedDemoIds = new Set(DEMO_REPORTS.map(r => r.id));
+        const toPersist = next.filter(r => !persistedDemoIds.has(r.id));
+        localStorage.setItem('reports', JSON.stringify(toPersist));
+      } catch (_) {}
+      return next;
+    });
+  };
+
   return (
     <div style={{ padding: '2rem', maxWidth: 1100, margin: '0 auto' }}>
-      <h1 style={{ margin: 0, color: colors.textPrimary }}>Reports</h1>
-      <p style={{ color: colors.textSecondary, marginTop: 6 }}>Moderation queue for reported content</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ margin: 0, color: colors.textPrimary }}>Reports</h1>
+          <p style={{ color: colors.textSecondary, marginTop: 6 }}>Moderation queue for reported content</p>
+        </div>
+        <Link to="/submit-report" style={{ background: colors.primary, color: 'white', border: 'none', borderRadius: 6, padding: '8px 12px', textDecoration: 'none' }}>
+          Submit Report
+        </Link>
+      </div>
 
       {/* Public Post Requests */}
       {postRequests.length > 0 && (
@@ -88,19 +127,34 @@ const ReportsPage = () => {
       )}
 
       <div style={{ marginTop: '1rem', background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr 60px', padding: '12px 16px', borderBottom: '1px solid #e5e7eb', background: '#f8fafc', fontWeight: 600 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr 160px', padding: '12px 16px', borderBottom: '1px solid #e5e7eb', background: '#f8fafc', fontWeight: 600 }}>
           <div>Report Reason</div>
           <div>Report Description</div>
           <div>Status</div>
-          <div></div>
+          <div>Actions</div>
         </div>
         {reports.map(r => (
-          <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr 60px', padding: '14px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+          <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr 160px', padding: '14px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
             <div style={{ color: colors.textPrimary }}>{r.reason}</div>
             <div style={{ color: colors.textSecondary }}>{r.description}</div>
             <div><StatusChip status={r.status} /></div>
-            <div>
-              <button onClick={() => alert('Delete - backend later')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}>🗑️</button>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              {isAdmin ? (
+                <>
+                  <select
+                    value={r.status}
+                    onChange={(e) => updateReportStatus(r.id, e.target.value)}
+                    style={{ border: '1px solid #cbd5e1', borderRadius: 6, padding: '6px 8px', fontSize: 12 }}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="closed">Closed</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                  <button onClick={() => deleteReport(r.id)} title="Delete report" style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}>🗑️</button>
+                </>
+              ) : (
+                <span style={{ fontSize: 12, color: colors.textSecondary }}>View only</span>
+              )}
             </div>
           </div>
         ))}

@@ -210,7 +210,7 @@ const Header = () => {
                   <button
                     onClick={() => {
                       setShowUserMenu(false);
-                      // TODO: Navigate to profile page
+                      navigate('/profile');
                     }}
                     style={{
                       width: '100%',
@@ -230,7 +230,7 @@ const Header = () => {
                   <button
                     onClick={() => {
                       setShowUserMenu(false);
-                      // TODO: Navigate to settings page
+                      navigate('/settings');
                     }}
                     style={{
                       width: '100%',

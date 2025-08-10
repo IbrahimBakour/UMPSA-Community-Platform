@@ -17,6 +17,7 @@ import SubmitReportPage from './pages/SubmitReportPage';
 import UsersPage from './pages/UsersPage';
 import EventsPage from './pages/EventsPage';
 import SettingsPage from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
 import CreateClubPage from './pages/CreateClubPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import NewsFeedPage from './pages/NewsFeedPage';
@@ -45,6 +46,7 @@ function AppLayout() {
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/submit-report" element={<SubmitReportPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/create-club" element={<CreateClubPage />} />
