@@ -1,544 +1,300 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { colors } from '../theme';
-
-// Demo clubs data
-const DEMO_CLUBS = [
-  {
-    id: 1,
-    name: 'UMPSA Tech Club',
-    description: 'A community of technology enthusiasts focused on innovation and learning.',
-    category: 'Technology',
-    members: 45,
-    leader: 'Ahmad Tech Leader',
-    profilePicture: 'https://via.placeholder.com/150/007bff/ffffff?text=T',
-    banner: 'https://via.placeholder.com/800x200/007bff/ffffff?text=Tech+Club+Banner',
-    isActive: true,
-    createdAt: '2024-01-15'
-  },
-  {
-    id: 2,
-    name: 'UMPSA Sports Club',
-    description: 'Promoting physical fitness and sportsmanship among students.',
-    category: 'Sports',
-    members: 78,
-    leader: 'Sara Sports Leader',
-    profilePicture: 'https://via.placeholder.com/150/28a745/ffffff?text=S',
-    banner: 'https://via.placeholder.com/800x200/28a745/ffffff?text=Sports+Club+Banner',
-    isActive: true,
-    createdAt: '2024-01-10'
-  },
-  {
-    id: 3,
-    name: 'UMPSA Arts Club',
-    description: 'Celebrating creativity and artistic expression in all forms.',
-    category: 'Arts',
-    members: 32,
-    leader: 'Ali Arts Leader',
-    profilePicture: 'https://via.placeholder.com/150/dc3545/ffffff?text=A',
-    banner: 'https://via.placeholder.com/800x200/dc3545/ffffff?text=Arts+Club+Banner',
-    isActive: true,
-    createdAt: '2024-01-20'
-  }
-];
+import { Link } from 'react-router-dom';
+import {
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  CardActions,
+  Chip,
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Stack,
+  Avatar,
+  Divider,
+} from '@mui/material';
+import {
+  Search,
+  Add,
+  Group,
+  Category,
+  LocationOn,
+  People,
+  Visibility,
+} from '@mui/icons-material';
 
 const ClubsPage = () => {
-  const navigate = useNavigate();
-  const [userInfo, setUserInfo] = useState(null);
-  const [clubs, setClubs] = useState(DEMO_CLUBS);
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [userInfo, setUserInfo] = useState(null);
+
+  // Demo clubs data
+  const DEMO_CLUBS = [
+    {
+      id: 1,
+      name: 'Computer Science Club',
+      description: 'A community for computer science enthusiasts to share knowledge and collaborate on projects.',
+      category: 'Technology',
+      memberCount: 45,
+      image: 'https://via.placeholder.com/300x200/1976d2/ffffff?text=CS+Club',
+      location: 'Faculty of Computing',
+      isPublic: true,
+    },
+    {
+      id: 2,
+      name: 'Photography Society',
+      description: 'Capture moments and learn photography techniques from fellow enthusiasts.',
+      category: 'Arts & Culture',
+      memberCount: 32,
+      image: 'https://via.placeholder.com/300x200/e91e63/ffffff?text=Photo+Soc',
+      location: 'Student Center',
+      isPublic: true,
+    },
+    {
+      id: 3,
+      name: 'Environmental Awareness Club',
+      description: 'Promoting environmental consciousness and sustainable practices on campus.',
+      category: 'Environment',
+      memberCount: 28,
+      image: 'https://via.placeholder.com/300x200/4caf50/ffffff?text=Green+Club',
+      location: 'Faculty of Science',
+      isPublic: true,
+    },
+    {
+      id: 4,
+      name: 'Business & Entrepreneurship Club',
+      description: 'Fostering business skills and entrepreneurial mindset among students.',
+      category: 'Business',
+      memberCount: 56,
+      image: 'https://via.placeholder.com/300x200/ff9800/ffffff?text=Business+Club',
+      location: 'Faculty of Business',
+      isPublic: true,
+    },
+    {
+      id: 5,
+      name: 'Sports & Fitness Club',
+      description: 'Promoting healthy lifestyle and sports activities on campus.',
+      category: 'Sports',
+      memberCount: 78,
+      image: 'https://via.placeholder.com/300x200/795548/ffffff?text=Sports+Club',
+      location: 'Sports Complex',
+      isPublic: true,
+    },
+    {
+      id: 6,
+      name: 'Language Exchange Club',
+      description: 'Practice different languages and learn about various cultures.',
+      category: 'Education',
+      memberCount: 23,
+      image: 'https://via.placeholder.com/300x200/9c27b0/ffffff?text=Language+Club',
+      location: 'Faculty of Languages',
+      isPublic: true,
+    },
+  ];
+
+  const categories = ['all', 'Technology', 'Arts & Culture', 'Environment', 'Business', 'Sports', 'Education'];
 
   useEffect(() => {
-    // Check if user is authenticated
     const storedUserInfo = localStorage.getItem('userInfo');
-    if (!storedUserInfo) {
-      navigate('/login');
-      return;
+    if (storedUserInfo) {
+      setUserInfo(JSON.parse(storedUserInfo));
     }
+  }, []);
 
-    try {
-      const user = JSON.parse(storedUserInfo);
-      setUserInfo(user);
-    } catch (error) {
-      console.error('Error parsing user info:', error);
-      navigate('/login');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [navigate]);
-
-  const filteredClubs = clubs.filter(club => {
-    const matchesCategory = selectedCategory === 'all' || club.category === selectedCategory;
+  const filteredClubs = DEMO_CLUBS.filter(club => {
     const matchesSearch = club.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          club.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesCategory = selectedCategory === 'all' || club.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
-  const categories = ['all', ...new Set(clubs.map(club => club.category))];
-
-  const handleCreateClub = (clubData) => {
-    // TODO: Implement club creation API call
-    const newClub = {
-      id: clubs.length + 1,
-      ...clubData,
-      members: 0,
-      isActive: true,
-      createdAt: new Date().toISOString().split('T')[0]
+  const getCategoryColor = (category) => {
+    const colorMap = {
+      'Technology': 'primary',
+      'Arts & Culture': 'secondary',
+      'Environment': 'success',
+      'Business': 'warning',
+      'Sports': 'info',
+      'Education': 'error',
     };
-    setClubs([...clubs, newClub]);
-    setShowCreateModal(false);
+    return colorMap[category] || 'default';
   };
-
-  const handleClubClick = (clubId) => {
-    navigate(`/clubs/${clubId}`);
-  };
-
-  if (isLoading) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: 18,
-        color: colors.textSecondary
-      }}>
-        Loading...
-      </div>
-    );
-  }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 1200, margin: '0 auto' }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '2rem',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }}>
-        <div>
-          <h1 style={{ 
-            margin: 0, 
-            color: colors.textPrimary,
-            fontSize: '2rem',
-            fontWeight: 600
-          }}>
-            Clubs
-          </h1>
-          <p style={{ 
-            margin: '0.5rem 0 0 0', 
-            color: colors.textSecondary,
-            fontSize: '1rem'
-          }}>
-            {userInfo?.role === 'admin' ? 'Manage all clubs and assign leaders' : 
-             userInfo?.role === 'club_member' ? 'Browse and join clubs' : 
-             'Discover and explore student clubs'}
-          </p>
-        </div>
-        
-        {userInfo?.role === 'admin' && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              background: colors.primary,
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              padding: '10px 20px',
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 500,
-            }}
-          >
-            Create New Club
-          </button>
-        )}
-      </div>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h3" component="h1" gutterBottom fontWeight={600}>
+          Discover Clubs
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Join exciting communities and connect with like-minded students
+        </Typography>
+      </Box>
 
-      {/* Filters */}
-      <div style={{
-        background: 'white',
-        borderRadius: 8,
-        padding: '1.5rem',
-        marginBottom: '2rem',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        border: '1px solid #eee'
-      }}>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <input
-              type="text"
-              placeholder="Search clubs..."
+      {/* Search and Filter Section */}
+      <Box sx={{ mb: 4 }}>
+        <Grid container spacing={3} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              placeholder="Search clubs by name or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #ddd',
-                borderRadius: 4,
-                fontSize: 14,
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
               }}
             />
-          </div>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid #ddd',
-              borderRadius: 4,
-              fontSize: 14,
-              minWidth: 120,
-            }}
-          >
-            {categories.map(category => (
-              <option key={category} value={category}>
-                {category === 'all' ? 'All Categories' : category}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={selectedCategory}
+                label="Category"
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category === 'all' ? 'All Categories' : category}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            {userInfo?.role === 'admin' && (
+              <Button
+                component={Link}
+                to="/create-club"
+                variant="contained"
+                startIcon={<Add />}
+                fullWidth
+                size="large"
+              >
+                Create New Club
+              </Button>
+            )}
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Results Count */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="body2" color="text.secondary">
+          Showing {filteredClubs.length} of {DEMO_CLUBS.length} clubs
+        </Typography>
+      </Box>
 
       {/* Clubs Grid */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', 
-        gap: '1.25rem' 
-      }}>
-        {filteredClubs.map(club => (
-          <div
-            key={club.id}
-            onClick={() => handleClubClick(club.id)}
-            style={{
-              background: 'white',
-              borderRadius: 12,
-              overflow: 'hidden',
-              boxShadow: '0 1px 3px rgba(16,24,40,0.06)',
-              border: '1px solid #e9ecef',
-              cursor: 'pointer',
-              transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(16,24,40,0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(16,24,40,0.06)';
-            }}
-          >
-            {/* Club Banner */}
-            <div style={{
-              height: 140,
-              background: `url(${club.banner}) center/cover no-repeat`,
-              position: 'relative'
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: '10px',
-                left: '10px',
-                background: 'rgba(0,0,0,0.6)',
-                color: 'white',
-                padding: '4px 8px',
-                borderRadius: 4,
-                fontSize: 12,
-                fontWeight: 500
-              }}>
-                {club.category}
-              </div>
-            </div>
-
-            {/* Club Info */}
-            <div style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <img
-                  src={club.profilePicture}
-                  alt={club.name}
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: '50%',
-                    marginRight: '12px'
-                  }}
-                />
-                <div>
-                  <h3 style={{ 
-                    margin: 0,
-                    color: colors.textPrimary,
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                  }}>
+      <Grid container spacing={3}>
+        {filteredClubs.map((club) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={club.id}>
+            <Card 
+              sx={{ 
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4,
+                },
+              }}
+            >
+              <CardMedia
+                component="img"
+                height="200"
+                image={club.image}
+                alt={club.name}
+                sx={{ objectFit: 'cover' }}
+              />
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="h6" component="h2" gutterBottom fontWeight={600}>
                     {club.name}
-                  </h3>
-                  <p style={{ 
-                    margin: '4px 0 0 0',
-                    color: colors.textSecondary,
-                    fontSize: '0.85rem'
-                  }}>
-                    {club.members} members
-                  </p>
-                </div>
-              </div>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {club.description}
+                  </Typography>
+                </Box>
 
-              <p style={{ 
-                color: colors.textSecondary,
-                fontSize: '0.9rem',
-                lineHeight: 1.45,
-                marginBottom: '0.75rem'
-              }}>
-                {club.description}
-              </p>
+                <Stack spacing={2}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Category sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    <Chip
+                      label={club.category}
+                      color={getCategoryColor(club.category)}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Box>
 
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                fontSize: '0.8rem',
-                color: colors.textSecondary
-              }}>
-                <span>Leader: {club.leader}</span>
-                <span>Created: {club.createdAt}</span>
-              </div>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LocationOn sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {club.location}
+                    </Typography>
+                  </Box>
 
-              {/* Action Buttons */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '0.5rem',
-                marginTop: '0.85rem'
-              }}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClubClick(club.id);
-                  }}
-                  style={{
-                    background: colors.primary,
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 4,
-                    padding: '8px 12px',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    flex: 1
-                  }}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <People sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {club.memberCount} members
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Visibility sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {club.isPublic ? 'Public' : 'Private'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+
+              <Divider />
+
+              <CardActions sx={{ p: 3, pt: 2 }}>
+                <Button
+                  component={Link}
+                  to={`/clubs/${club.id}`}
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<Group />}
                 >
                   View Club
-                </button>
-                
-                {userInfo?.role === 'admin' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // TODO: Navigate to club management
-                    }}
-                    style={{
-                      background: colors.link || '#007bff',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 4,
-                      padding: '8px 12px',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      fontWeight: 500,
-                    }}
-                  >
-                    Manage
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
         ))}
-      </div>
+      </Grid>
 
+      {/* Empty State */}
       {filteredClubs.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '3rem',
-          color: colors.textSecondary
-        }}>
-          <h3>No clubs found</h3>
-          <p>Try adjusting your search or category filters.</p>
-        </div>
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No clubs found
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Try adjusting your search terms or category filter
+          </Typography>
+        </Box>
       )}
-
-      {/* Create Club Modal */}
-      {showCreateModal && (
-        <CreateClubModal
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateClub}
-        />
-      )}
-    </div>
-  );
-};
-
-// Create Club Modal Component
-const CreateClubModal = ({ onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: '',
-    leader: ''
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: 8,
-        padding: '2rem',
-        maxWidth: 500,
-        width: '90%',
-        maxHeight: '90vh',
-        overflow: 'auto'
-      }}>
-        <h2 style={{ margin: '0 0 1.5rem 0', color: colors.textPrimary }}>
-          Create New Club
-        </h2>
-        
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-              Club Name
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #ddd',
-                borderRadius: 4,
-                fontSize: 14,
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              required
-              rows={4}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #ddd',
-                borderRadius: 4,
-                fontSize: 14,
-                resize: 'vertical'
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-              Category
-            </label>
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({...formData, category: e.target.value})}
-              required
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #ddd',
-                borderRadius: 4,
-                fontSize: 14,
-              }}
-            >
-              <option value="">Select Category</option>
-              <option value="Technology">Technology</option>
-              <option value="Sports">Sports</option>
-              <option value="Arts">Arts</option>
-              <option value="Academic">Academic</option>
-              <option value="Social">Social</option>
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-              Club Leader
-            </label>
-            <input
-              type="text"
-              value={formData.leader}
-              onChange={(e) => setFormData({...formData, leader: e.target.value})}
-              required
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #ddd',
-                borderRadius: 4,
-                fontSize: 14,
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                background: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: 4,
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: 14,
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              style={{
-                background: colors.primary,
-                color: 'white',
-                border: 'none',
-                borderRadius: 4,
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: 14,
-              }}
-            >
-              Create Club
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </Container>
   );
 };
 

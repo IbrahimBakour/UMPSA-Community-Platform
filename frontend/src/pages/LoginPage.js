@@ -1,265 +1,245 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { colors } from '../theme';
-
-const bgUrl = process.env.PUBLIC_URL + '/umpsa_0.jpg';
-const logoUrl = process.env.PUBLIC_URL + '/UMPSA Logo.png';
-
-// Demo users for temporary authentication
-const DEMO_USERS = {
-  'student@umpsa.edu.my': { password: 'student123', role: 'student', name: 'Ahmad Student' },
-  'club@umpsa.edu.my': { password: 'club123', role: 'club_member', name: 'Sara Club Member' },
-  'admin@umpsa.edu.my': { password: 'admin123', role: 'admin', name: 'Admin User' }
-};
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Alert,
+  CircularProgress,
+  Card,
+  CardContent,
+  Divider,
+  Chip,
+  Stack,
+} from '@mui/material';
+import {
+  LockOutlined,
+  Email,
+  Visibility,
+  VisibilityOff,
+  School,
+  Group,
+  AdminPanelSettings,
+} from '@mui/icons-material';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+
+  // Demo users for testing
+  const DEMO_USERS = {
+    'student@ump.edu.my': { password: 'student123', name: 'John Student', role: 'student' },
+    'member@ump.edu.my': { password: 'member123', name: 'Sarah Member', role: 'club member' },
+    'admin@ump.edu.my': { password: 'admin123', name: 'Admin User', role: 'admin' },
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+    setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      setError('Please enter both email and password.');
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Check if user exists in demo users
-      const user = DEMO_USERS[email];
+    // Simulate API call
+    setTimeout(() => {
+      const user = DEMO_USERS[formData.email];
       
-      if (!user) {
-        setError('User not found. Please check your email.');
-        return;
+      if (user && user.password === formData.password) {
+        const userInfo = {
+          email: formData.email,
+          name: user.name,
+          role: user.role,
+          loginTime: new Date().toISOString(),
+        };
+        
+        localStorage.setItem('userInfo', JSON.stringify(userInfo));
+        navigate('/dashboard');
+      } else {
+        setError('Invalid email or password');
       }
-
-      if (user.password !== password) {
-        setError('Invalid password. Please try again.');
-        return;
-      }
-
-      // Store user info in localStorage for temporary session management
-      const userInfo = {
-        email,
-        role: user.role,
-        name: user.name,
-        isAuthenticated: true,
-        loginTime: new Date().toISOString()
-      };
-      
-      localStorage.setItem('userInfo', JSON.stringify(userInfo));
-      
-      // Redirect to dashboard
-      navigate('/dashboard');
-      
-    } catch (error) {
-      setError('Login failed. Please try again.');
-    } finally {
       setIsLoading(false);
+    }, 1000);
+  };
+
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case 'admin':
+        return <AdminPanelSettings />;
+      case 'club member':
+        return <Group />;
+      case 'student':
+        return <School />;
+      default:
+        return null;
+    }
+  };
+
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'error';
+      case 'club member':
+        return 'primary';
+      case 'student':
+        return 'success';
+      default:
+        return 'default';
     }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100vw',
-      position: 'relative',
-      overflow: 'hidden',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column',
-    }}>
-      {/* Top navigation bar with centered logo */}
-      <nav style={{
-        width: '100%',
-        background: '#fff',
-        boxShadow: '0 2px 8px #eee',
-        padding: '1.5rem 0 1.2rem 0',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        zIndex: 10,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        <img
-          src={logoUrl}
-          alt="UMPSA Logo"
-          style={{
-            height: 56,
-            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))',
-            background: 'rgba(255,255,255,0.95)',
-            borderRadius: 12,
-            padding: 6,
-          }}
-        />
-      </nav>
-      {/* Background image with overlay */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        background: `url(${bgUrl}) center/cover no-repeat`,
-        zIndex: 0,
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        background: 'rgba(255, 255, 255, 0.32)', // less transparent overlay
-        zIndex: 1,
-      }} />
-      {/* Login Card */}
-      <form onSubmit={handleSubmit} style={{
-        background: '#fff',
-        borderRadius: 8,
-        boxShadow: '0 4px 32px rgba(0,0,0,0.12)',
-        padding: '2.5rem 2.5rem 2rem 2.5rem',
-        minWidth: 380,
-        maxWidth: '90vw',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 24,
-        zIndex: 2,
-        marginTop: 120, // to avoid overlap with nav
-      }}>
-        {/* System name inside the form */}
-        <div style={{
-          fontWeight: 600,
-          fontSize: 24,
-          color: colors.textPrimary,
-          textAlign: 'center',
-          letterSpacing: 1,
-          textShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          marginBottom: 12,
-        }}>
-          UMPSA Community Platform
-        </div>
-        
-        {/* Demo Users Info */}
-        <div style={{
-          background: '#f8f9fa',
-          borderRadius: 6,
-          padding: '12px 16px',
-          marginBottom: 16,
-          border: '1px solid #e9ecef',
-        }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary, marginBottom: 8 }}>
-            Demo Users (Temporary):
-          </div>
-          <div style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 1.4 }}>
-            <div><strong>Student:</strong> student@umpsa.edu.my / student123</div>
-            <div><strong>Club Member:</strong> club@umpsa.edu.my / club123</div>
-            <div><strong>Admin:</strong> admin@umpsa.edu.my / admin123</div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            disabled={isLoading}
-            style={{
-              border: 'none',
-              borderBottom: '2px solid #eee',
-              padding: '12px 0',
-              fontSize: 16,
-              outline: 'none',
-              marginBottom: 24,
-              background: 'transparent',
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+        {/* Header */}
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 2,
             }}
+          >
+            <LockOutlined sx={{ fontSize: 40, color: 'white' }} />
+          </Box>
+          <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
+            Welcome Back
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Sign in to your UMP Community account
+          </Typography>
+        </Box>
+
+        {/* Login Form */}
+        <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+
+          <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
             required
+            sx={{ mb: 3 }}
+            InputProps={{
+              startAdornment: <Email sx={{ mr: 1, color: 'text.secondary' }} />,
+            }}
           />
-          <div style={{ position: 'relative' }}>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              disabled={isLoading}
-              style={{
-                border: 'none',
-                borderBottom: '2px solid #eee',
-                padding: '12px 0',
-                fontSize: 16,
-                outline: 'none',
-                width: '100%',
-                background: 'transparent',
-              }}
-              required
-            />
-            <span
-              onClick={() => setShowPassword(s => !s)}
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                cursor: 'pointer',
-                color: colors.textSecondary,
-                fontSize: 20,
-                padding: 4,
-              }}
-              title={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? '🙈' : '👁️'}
-            </span>
-          </div>
-        </div>
+
+          <TextField
+            fullWidth
+            label="Password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            value={formData.password}
+            onChange={handleChange}
+            required
+            sx={{ mb: 3 }}
+            InputProps={{
+              startAdornment: <LockOutlined sx={{ mr: 1, color: 'text.secondary' }} />,
+              endAdornment: (
+                <Button
+                  onClick={() => setShowPassword(!showPassword)}
+                  sx={{ minWidth: 'auto', p: 0.5 }}
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </Button>
+              ),
+            }}
+          />
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            size="large"
+            disabled={isLoading}
+            sx={{ py: 1.5, mb: 2 }}
+          >
+            {isLoading ? <CircularProgress size={24} /> : 'Sign In'}
+          </Button>
+
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Don't have an account?{' '}
+              <Link to="/register" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                Sign up
+              </Link>
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <Link to="/forgot-password" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                Forgot Password?
+              </Link>
+            </Typography>
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 3 }}>
+          <Chip label="Demo Accounts" variant="outlined" />
+        </Divider>
+
+        {/* Demo Users */}
+        <Typography variant="h6" gutterBottom textAlign="center">
+          Try these demo accounts:
+        </Typography>
         
-        {error && (
-          <div style={{
-            color: colors.errorText || '#dc3545',
-            background: colors.errorBg || '#f8d7da',
-            borderRadius: 4,
-            padding: '8px 12px',
-            fontSize: 14,
-            textAlign: 'center',
-          }}>
-            {error}
-          </div>
-        )}
-        
-        <div style={{ width: 'fit-content', marginBottom: 16 }}>
-          <a href="/forgot-password" style={{ color: colors.link, fontSize: 15, textAlign: 'left', cursor: 'pointer', textDecoration: 'none' }}>Forgot Password?</a>
-        </div>
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{
-            background: isLoading ? '#ccc' : colors.primary,
-            color: colors.buttonText,
-            border: 'none',
-            borderRadius: 4,
-            padding: '12px 0',
-            fontSize: 18,
-            fontWeight: 500,
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            marginTop: 8,
-          }}
-        >
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-    </div>
+        <Stack spacing={2}>
+          {Object.entries(DEMO_USERS).map(([email, user]) => (
+            <Card key={email} variant="outlined" sx={{ cursor: 'pointer' }} 
+                  onClick={() => setFormData({ email, password: user.password })}>
+              <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      {user.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {email}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    icon={getRoleIcon(user.role)}
+                    label={user.role}
+                    color={getRoleColor(user.role)}
+                    size="small"
+                    variant="outlined"
+                  />
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Password: {user.password}
+                </Typography>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      </Paper>
+    </Container>
   );
 };
 
