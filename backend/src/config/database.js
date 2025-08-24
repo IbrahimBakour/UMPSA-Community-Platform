@@ -3,18 +3,17 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      bufferMaxEntries: 0,
-      bufferCommands: false,
+      // Modern Mongoose connection options
+      maxPoolSize: 10, // Maximum number of connections in the pool
+      serverSelectionTimeoutMS: 5000, // Timeout for server selection
+      socketTimeoutMS: 45000, // Timeout for socket operations
+      bufferCommands: true, // Enable buffering of commands
+      // bufferMaxEntries: 0, // Disable buffering (deprecated option removed)
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-
-    // Handle connection events
+    
+    // Connection event handlers
     mongoose.connection.on('error', (err) => {
       console.error('❌ MongoDB connection error:', err);
     });
@@ -31,10 +30,10 @@ const connectDB = async () => {
     process.on('SIGINT', async () => {
       try {
         await mongoose.connection.close();
-        console.log('✅ MongoDB connection closed through app termination');
+        console.log('MongoDB connection closed through app termination');
         process.exit(0);
       } catch (err) {
-        console.error('❌ Error during MongoDB connection closure:', err);
+        console.error('Error during MongoDB shutdown:', err);
         process.exit(1);
       }
     });
