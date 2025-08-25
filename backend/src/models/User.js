@@ -84,6 +84,12 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: Date,
   emailVerificationToken: String,
   emailVerificationExpires: Date,
+  passwordChangedAt: Date,
+  refreshTokens: {
+    type: [String],
+    default: [],
+    select: false,
+  },
   lastLogin: {
     type: Date,
     default: Date.now,
@@ -132,7 +138,8 @@ userSchema.pre('save', async function(next) {
   
   try {
     // Hash the password with cost of 12
-    this.password = await bcrypt.hash(this.password, authConfig.password.saltRounds);
+    const salt = await bcrypt.genSalt(authConfig.password.saltRounds);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
     next(error);
@@ -208,6 +215,7 @@ userSchema.methods.getPublicProfile = function() {
   delete userObject.emailVerificationExpires;
   delete userObject.loginAttempts;
   delete userObject.lockUntil;
+  delete userObject.refreshTokens;
   
   return userObject;
 };

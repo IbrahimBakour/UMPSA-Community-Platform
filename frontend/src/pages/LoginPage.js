@@ -113,9 +113,9 @@ const LoginPage = () => {
               height: 80,
               borderRadius: '50%',
               bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
               mx: 'auto',
               mb: 2,
             }}
@@ -175,7 +175,7 @@ const LoginPage = () => {
           />
 
           <Button
-            type="submit"
+          type="submit"
             fullWidth
             variant="contained"
             size="large"

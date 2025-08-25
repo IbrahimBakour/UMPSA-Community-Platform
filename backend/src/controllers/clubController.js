@@ -99,8 +99,8 @@ const getClub = async (req, res) => {
     
     // Find club with populated data
     const club = await Club.findById(clubId)
-      .populate('leaders', 'firstName lastName email profile.avatar')
-      .populate('creator', 'firstName lastName email profile.avatar');
+      .populate('leaders', 'name email avatarUrl')
+      .populate('creator', 'name email avatarUrl');
     
     if (!club) {
       return errorResponse(res, 'Club not found', 404);
@@ -118,7 +118,7 @@ const getClub = async (req, res) => {
       .find({ club: clubId, visibility: 'club', isActive: true })
       .sort({ createdAt: -1 })
       .limit(5)
-      .populate('author', 'firstName lastName profile.avatar');
+      .populate('author', 'name avatarUrl');
     
     // Transform club
     const transformedClub = transformClub(club);
@@ -216,7 +216,7 @@ const getClubMembers = async (req, res) => {
     
     const [memberships, total] = await Promise.all([
       ClubMember.find(filterQuery)
-        .populate('user', 'firstName lastName email profile.avatar academicInfo')
+        .populate('user', 'name email avatarUrl studentId faculty yearOfStudy')
         .sort({ joinedAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
@@ -285,7 +285,7 @@ const addMember = async (req, res) => {
     await Club.findByIdAndUpdate(clubId, { $inc: { memberCount: 1 } });
     
     // Populate user data for response
-    await membership.populate('user', 'firstName lastName email profile.avatar');
+    await membership.populate('user', 'name email avatarUrl');
     
     const transformedMember = {
       id: membership._id,
@@ -328,7 +328,7 @@ const updateMember = async (req, res) => {
       membership._id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('user', 'firstName lastName email profile.avatar');
+    ).populate('user', 'name email avatarUrl');
     
     // Transform and return updated membership
     const transformedMember = {
@@ -494,7 +494,7 @@ const getClubPosts = async (req, res) => {
     const Post = require('../models/Post');
     const [posts, total] = await Promise.all([
       Post.find(filterQuery)
-        .populate('author', 'firstName lastName profile.avatar')
+        .populate('author', 'name avatarUrl')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),

@@ -27,15 +27,33 @@ const registerValidation = [
     .withMessage('Password must be at least 8 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+  // Accept either 'name' OR both 'firstName' and 'lastName'
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Name must be between 2 and 50 characters'),
   body('firstName')
+    .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('First name must be between 2 and 50 characters'),
   body('lastName')
+    .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Last name must be between 2 and 50 characters'),
+  body()
+    .custom((value) => {
+      const hasName = typeof value.name === 'string' && value.name.trim().length >= 2;
+      const hasFirstLast = typeof value.firstName === 'string' && value.firstName.trim().length >= 2 && typeof value.lastName === 'string' && value.lastName.trim().length >= 2;
+      if (!hasName && !hasFirstLast) {
+        throw new Error('Provide either name or both firstName and lastName');
+      }
+      return true;
+    }),
   body('role')
+    .optional()
     .isIn(['student', 'club_member', 'admin'])
     .withMessage('Invalid role specified'),
   body('studentId')
@@ -107,9 +125,6 @@ const resetPasswordValidation = [
 ];
 
 // Routes
-// @route   POST /api/auth/register
-// @desc    Register a new user
-// @access  Public
 router.post('/register', 
   sanitize,
   registerValidation,
@@ -118,9 +133,6 @@ router.post('/register',
   register
 );
 
-// @route   POST /api/auth/login
-// @desc    Authenticate user & get token
-// @access  Public
 router.post('/login',
   sanitize,
   loginValidation,
@@ -129,9 +141,6 @@ router.post('/login',
   login
 );
 
-// @route   POST /api/auth/forgot-password
-// @desc    Send password reset email
-// @access  Public
 router.post('/forgot-password',
   sanitize,
   forgotPasswordValidation,
@@ -140,9 +149,6 @@ router.post('/forgot-password',
   forgotPassword
 );
 
-// @route   POST /api/auth/reset-password
-// @desc    Reset password with token
-// @access  Public
 router.post('/reset-password',
   sanitize,
   resetPasswordValidation,
@@ -150,9 +156,6 @@ router.post('/reset-password',
   resetPassword
 );
 
-// @route   POST /api/auth/change-password
-// @desc    Change user password
-// @access  Private
 router.post('/change-password',
   authenticate,
   sanitize,
@@ -161,34 +164,22 @@ router.post('/change-password',
   changePassword
 );
 
-// @route   GET /api/auth/me
-// @desc    Get current user profile
-// @access  Private
 router.get('/me',
   authenticate,
   getProfile
 );
 
-// @route   PUT /api/auth/me
-// @desc    Update current user profile
-// @access  Private
 router.put('/me',
   authenticate,
   sanitize,
   updateProfile
 );
 
-// @route   POST /api/auth/logout
-// @desc    Logout user (invalidate token)
-// @access  Private
 router.post('/logout',
   authenticate,
   logout
 );
 
-// @route   POST /api/auth/refresh
-// @desc    Refresh access token
-// @access  Public (with refresh token)
 router.post('/refresh',
   refreshToken
 );

@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { authConfig } = require('../config/auth');
+const { authConfig, generateToken, generateRefreshToken } = require('../config/auth');
 const { successResponse, errorResponse, transformUser } = require('../utils/response');
 
 // @desc    Register a new user
@@ -9,54 +9,41 @@ const { successResponse, errorResponse, transformUser } = require('../utils/resp
 // @access  Public
 const register = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, role, studentId, faculty, year } = req.body;
+    const { email, password, name, firstName, lastName, role, studentId, faculty, year, yearOfStudy } = req.body;
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return errorResponse(res, 'User with this email already exists', 400);
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(authConfig.password.saltRounds);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const resolvedName = (name && String(name).trim()) || [firstName, lastName].filter(Boolean).join(' ').trim();
+    if (!resolvedName) {
+      return errorResponse(res, 'Name is required', 400);
+    }
 
-    // Create user
+    // const salt = await bcrypt.genSalt(authConfig.password.saltRounds);
+    // const hashedPassword = await bcrypt.hash(password, salt);
+
     const userData = {
       email,
-      password: hashedPassword,
-      firstName,
-      lastName,
+      password: password,
+      name: resolvedName,
       role,
-      profile: {
-        studentId,
-        faculty,
-        year
-      }
+      studentId,
+      faculty,
+      yearOfStudy: yearOfStudy ?? year,
     };
 
     const user = new User(userData);
     await user.save();
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      authConfig.jwt.secret,
-      { expiresIn: authConfig.jwt.accessExpiry }
-    );
+    const token = generateToken({ id: user._id, email: user.email, role: user.role });
+    const refreshToken = generateRefreshToken({ id: user._id });
 
-    // Generate refresh token
-    const refreshToken = jwt.sign(
-      { id: user._id },
-      authConfig.jwt.refreshSecret,
-      { expiresIn: authConfig.jwt.refreshExpiry }
-    );
-
-    // Save refresh token to user
+    if (!user.refreshTokens) user.refreshTokens = [];
     user.refreshTokens.push(refreshToken);
     await user.save();
 
-    // Transform user data (remove sensitive information)
     const userResponse = transformUser(user);
 
     return successResponse(res, {
@@ -78,20 +65,24 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
+    // Find user by email and explicitly select password
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
+      console.log('User not found for email:', email);
       return errorResponse(res, 'Invalid credentials', 401);
     }
 
     // Check if user is active
     if (!user.isActive) {
+      console.log('User account is deactivated:', email);
       return errorResponse(res, 'Account is deactivated', 401);
     }
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Verify password using the User model's comparePassword method
+    const isPasswordValid = await user.comparePassword(password);
+    
     if (!isPasswordValid) {
+      console.log('Invalid password for user:', email);
       return errorResponse(res, 'Invalid credentials', 401);
     }
 
@@ -99,26 +90,18 @@ const login = async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      authConfig.jwt.secret,
-      { expiresIn: authConfig.jwt.accessExpiry }
-    );
+    // Generate tokens
+    const token = generateToken({ id: user._id, email: user.email, role: user.role });
+    const refreshToken = generateRefreshToken({ id: user._id });
 
-    // Generate refresh token
-    const refreshToken = jwt.sign(
-      { id: user._id },
-      authConfig.jwt.refreshSecret,
-      { expiresIn: authConfig.jwt.refreshExpiry }
-    );
-
-    // Save refresh token to user
+    // Add refresh token to user
+    if (!user.refreshTokens) user.refreshTokens = [];
     user.refreshTokens.push(refreshToken);
     await user.save();
 
-    // Transform user data
+    // Transform user data (remove password)
     const userResponse = transformUser(user);
+
 
     return successResponse(res, {
       user: userResponse,
@@ -137,21 +120,12 @@ const login = async (req, res) => {
 // @access  Private
 const getProfile = async (req, res) => {
   try {
-    // Get user with populated club memberships
-    const user = await User.findById(req.user._id)
-      .populate({
-        path: 'clubMemberships',
-        populate: {
-          path: 'club',
-          select: 'name description profilePicture category memberCount'
-        }
-      });
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return errorResponse(res, 'User not found', 404);
     }
 
-    // Transform user data
     const userResponse = transformUser(user);
 
     return successResponse(res, userResponse, 'Profile retrieved successfully');
@@ -167,16 +141,18 @@ const getProfile = async (req, res) => {
 // @access  Private
 const updateProfile = async (req, res) => {
   try {
-    const { firstName, lastName, profile, academicInfo } = req.body;
+    const { name, phone, location, bio, avatarUrl, studentId, faculty, yearOfStudy, year } = req.body;
 
-    // Build update object
     const updateData = {};
-    if (firstName) updateData.firstName = firstName;
-    if (lastName) updateData.lastName = lastName;
-    if (profile) updateData.profile = { ...req.user.profile, ...profile };
-    if (academicInfo) updateData.academicInfo = { ...req.user.academicInfo, ...academicInfo };
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (location) updateData.location = location;
+    if (bio) updateData.bio = bio;
+    if (avatarUrl) updateData.avatarUrl = avatarUrl;
+    if (studentId) updateData.studentId = studentId;
+    if (faculty) updateData.faculty = faculty;
+    if (yearOfStudy ?? year) updateData.yearOfStudy = yearOfStudy ?? year;
 
-    // Update user
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       updateData,
@@ -187,7 +163,6 @@ const updateProfile = async (req, res) => {
       return errorResponse(res, 'User not found', 404);
     }
 
-    // Transform user data
     const userResponse = transformUser(updatedUser);
 
     return successResponse(res, userResponse, 'Profile updated successfully');
@@ -205,23 +180,19 @@ const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    // Get user with password
     const user = await User.findById(req.user._id).select('+password');
     if (!user) {
       return errorResponse(res, 'User not found', 404);
     }
 
-    // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       return errorResponse(res, 'Current password is incorrect', 400);
     }
 
-    // Hash new password
     const salt = await bcrypt.genSalt(authConfig.password.saltRounds);
     const hashedNewPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update password and invalidate all refresh tokens
     user.password = hashedNewPassword;
     user.refreshTokens = [];
     user.passwordChangedAt = new Date();
@@ -243,8 +214,6 @@ const logout = async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     
     if (token) {
-      // Add token to blacklist (implement if needed)
-      // For now, just remove the refresh token from user
       await User.findByIdAndUpdate(req.user._id, {
         $pull: { refreshTokens: token }
       });
@@ -269,25 +238,16 @@ const refreshToken = async (req, res) => {
       return errorResponse(res, 'Refresh token is required', 400);
     }
 
-    // Verify refresh token
     const decoded = jwt.verify(refreshToken, authConfig.jwt.refreshSecret);
     
-    // Find user and check if refresh token exists
     const user = await User.findById(decoded.id);
-    if (!user || !user.refreshTokens.includes(refreshToken)) {
+    if (!user || !user.refreshTokens?.includes(refreshToken)) {
       return errorResponse(res, 'Invalid refresh token', 401);
     }
 
-    // Generate new access token
-    const newToken = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      authConfig.jwt.secret,
-      { expiresIn: authConfig.jwt.accessExpiry }
-    );
+    const newToken = generateToken({ id: user._id, email: user.email, role: user.role });
 
-    return successResponse(res, {
-      token: newToken
-    }, 'Token refreshed successfully');
+    return successResponse(res, { token: newToken }, 'Token refreshed successfully');
 
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -309,27 +269,21 @@ const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      // Don't reveal if user exists or not
       return successResponse(res, null, 'If an account exists, a password reset email has been sent');
     }
 
-    // Generate reset token
     const resetToken = jwt.sign(
       { id: user._id, type: 'password_reset' },
       authConfig.jwt.secret,
       { expiresIn: '1h' }
     );
 
-    // Save reset token to user
-    user.passwordResetToken = resetToken;
-    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
-    // TODO: Send reset email
-    // For now, just return success
     console.log('Password reset token:', resetToken);
 
     return successResponse(res, null, 'Password reset email sent');
@@ -347,34 +301,30 @@ const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
-    // Verify reset token
     const decoded = jwt.verify(token, authConfig.jwt.secret);
     
     if (decoded.type !== 'password_reset') {
       return errorResponse(res, 'Invalid reset token', 400);
     }
 
-    // Find user with reset token
     const user = await User.findOne({
       _id: decoded.id,
-      passwordResetToken: token,
-      passwordResetExpires: { $gt: Date.now() }
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
     });
 
     if (!user) {
       return errorResponse(res, 'Invalid or expired reset token', 400);
     }
 
-    // Hash new password
     const salt = await bcrypt.genSalt(authConfig.password.saltRounds);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update password and clear reset token
     user.password = hashedPassword;
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
     user.passwordChangedAt = new Date();
-    user.refreshTokens = []; // Invalidate all sessions
+    user.refreshTokens = [];
     await user.save();
 
     return successResponse(res, null, 'Password reset successful');

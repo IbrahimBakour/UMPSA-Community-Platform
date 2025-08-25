@@ -56,12 +56,17 @@ const transformUser = (user) => {
   return {
     id: userObj._id,
     email: userObj.email,
-    firstName: userObj.firstName,
-    lastName: userObj.lastName,
+    name: userObj.name,
     role: userObj.role,
-    profile: userObj.profile,
-    academicInfo: userObj.academicInfo,
+    phone: userObj.phone,
+    location: userObj.location,
+    bio: userObj.bio,
+    avatarUrl: userObj.avatarUrl,
+    studentId: userObj.studentId,
+    faculty: userObj.faculty,
+    yearOfStudy: userObj.yearOfStudy,
     isActive: userObj.isActive,
+    lastLogin: userObj.lastLogin,
     createdAt: userObj.createdAt,
     updatedAt: userObj.updatedAt
   };
