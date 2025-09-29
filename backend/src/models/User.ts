@@ -1,21 +1,55 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
-const userSchema = new mongoose.Schema({
-    studentId: { type: String, unique: true, required: true },
-    passwordHash: { type: String, required: true },
-    role: { type: String, enum: ["student", "clubMember", "admin"], default: "student" },
-    nickname: { type: String },
-    email: { type: String, index: true, sparse: true },
-    profilePicture: { type: String }, // URL
-    clubs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Club" }],
+export interface IUser extends Document {
+  studentId: string;
+  password: string;
+  role: "student" | "club_member" | "admin";
+  status: "active" | "restricted";
+  restriction?: {
+    type: "temporary" | "permanent";
+    until?: Date;
+  };
+  nickname?: string;
+  profilePicture?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const userSchema = new Schema<IUser>(
+  {
+    studentId: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["student", "club_member", "admin"],
+      default: "student",
+    },
+    status: {
+      type: String,
+      enum: ["active", "restricted"],
+      default: "active",
+    },
     restriction: {
-        status: { type: Boolean, default: false },
-        type: { type: String },
-        reason: { type: String },
-        restrictedUntil: { type: Date }
-    }
-}, { timestamps: true });
+      type: {
+        type: String,
+        enum: ["temporary", "permanent"],
+      },
+      until: Date,
+    },
+    nickname: String,
+    profilePicture: String,
+  },
+  {
+    timestamps: true,
+  }
+);
 
-const User = mongoose.model('User', userSchema);
-
-export default User;
+export default mongoose.model<IUser>("User", userSchema);
