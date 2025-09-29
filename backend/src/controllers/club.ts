@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Club from "../models/Club";
+import User from "../models/User";
 import { IUser } from "../models/User";
 
 interface AuthRequest extends Request {
@@ -24,12 +25,23 @@ export const createClub = async (req: AuthRequest, res: Response) => {
         .json({ message: "A club with this name already exists" });
     }
 
+    // Update initial member's role if needed
+    const initialMemberId = req.body.initialMemberId;
+    if (initialMemberId) {
+      const userToUpdate = await User.findById(initialMemberId);
+      if (userToUpdate && userToUpdate.role === "student") {
+        userToUpdate.role = "club_member";
+        await userToUpdate.save();
+      }
+      // Do not change role if admin
+    }
+
     const club = new Club({
       name,
       description,
       about,
       contact,
-      members: [req.body.initialMemberId], // Initial club member
+      members: [initialMemberId], // Initial club member
       createdBy: adminId,
     });
 
@@ -152,6 +164,14 @@ export const addMember = async (req: AuthRequest, res: Response) => {
         .status(400)
         .json({ message: "User is already a member of this club" });
     }
+
+    // Update user role if needed
+    const userToUpdate = await User.findById(memberId);
+    if (userToUpdate && userToUpdate.role === "student") {
+      userToUpdate.role = "club_member";
+      await userToUpdate.save();
+    }
+    // Do not change role if admin
 
     club.members.push(memberId);
     await club.save();

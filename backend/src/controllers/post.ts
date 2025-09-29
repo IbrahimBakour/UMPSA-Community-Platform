@@ -256,3 +256,212 @@ export const toggleLike = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: "Error toggling like" });
   }
 };
+
+// Add a comment to a post
+export const addComment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    const userId = req.user?._id;
+
+    if (!content?.trim()) {
+      return res.status(400).json({
+        message: "Comment content is required",
+      });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Check visibility permissions
+    if (post.visibility === "members") {
+      const club = await Club.findById(post.club);
+      if (!club?.isMember(userId?.toString() || "")) {
+        return res.status(403).json({
+          message: "This post is for club members only",
+        });
+      }
+    }
+
+    const comment = {
+      content,
+      author: userId,
+    };
+
+    const updatedPost = await Post.findByIdAndUpdate(
+      id,
+      { $push: { comments: comment } },
+      {
+        new: true,
+        populate: [
+          {
+            path: "comments.author",
+            select: "studentId nickname profilePicture",
+          },
+        ],
+      }
+    );
+
+    res.json({
+      message: "Comment added successfully",
+      comment: updatedPost?.comments[updatedPost.comments.length - 1],
+    });
+  } catch (error) {
+    console.error("Add comment error:", error);
+    res.status(500).json({ message: "Error adding comment" });
+  }
+};
+
+// Edit a comment
+export const editComment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { postId, commentId } = req.params;
+    const { content } = req.body;
+    const userId = req.user?._id;
+
+    if (!content?.trim()) {
+      return res.status(400).json({
+        message: "Comment content is required",
+      });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const comment = post.comments.find(
+      (c: any) => c._id.toString() === commentId
+    );
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Check if user is the comment author
+    if (
+      (comment.author as mongoose.Types.ObjectId).toString() !==
+      userId?.toString()
+    ) {
+      return res.status(403).json({
+        message: "Only the comment author can edit this comment",
+      });
+    }
+
+    comment.content = content;
+    await post.save();
+
+    await post.populate({
+      path: "comments.author",
+      select: "studentId nickname profilePicture",
+    });
+
+    res.json({
+      message: "Comment updated successfully",
+      comment,
+    });
+  } catch (error) {
+    console.error("Edit comment error:", error);
+    res.status(500).json({ message: "Error updating comment" });
+  }
+};
+
+// Delete a comment
+export const deleteComment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { postId, commentId } = req.params;
+    const userId = req.user?._id;
+    const userRole = req.user?.role;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const comment = post.comments.find(
+      (c: any) => c._id.toString() === commentId
+    );
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Allow deletion by comment author, post author, or admin
+    const isAuthorized =
+      (comment.author as mongoose.Types.ObjectId).toString() ===
+        userId?.toString() ||
+      (post.author as mongoose.Types.ObjectId).toString() ===
+        userId?.toString() ||
+      userRole === "admin";
+
+    if (!isAuthorized) {
+      return res.status(403).json({
+        message: "You are not authorized to delete this comment",
+      });
+    }
+
+    post.comments = post.comments.filter(
+      (c: any) => c._id.toString() !== commentId
+    );
+    await post.save();
+
+    res.json({
+      message: "Comment deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete comment error:", error);
+    res.status(500).json({ message: "Error deleting comment" });
+  }
+};
+
+// Get comments for a post
+export const getComments = async (
+  req: AuthRequest & { query: PaginationQuery },
+  res: Response
+) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user?._id;
+    const page = parseInt(req.query.page || "1");
+    const limit = parseInt(req.query.limit || "10");
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Check visibility permissions
+    if (post.visibility === "members") {
+      const club = await Club.findById(post.club);
+      if (!club?.isMember(userId?.toString() || "")) {
+        return res.status(403).json({
+          message: "This post is for club members only",
+        });
+      }
+    }
+
+    // Get paginated comments
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const totalComments = post.comments.length;
+
+    const paginatedComments = post.comments
+      .slice(startIndex, endIndex)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    await Post.populate(paginatedComments, {
+      path: "author",
+      select: "studentId nickname profilePicture",
+    });
+
+    res.json({
+      comments: paginatedComments,
+      totalPages: Math.ceil(totalComments / limit),
+      currentPage: page,
+      totalComments,
+    });
+  } catch (error) {
+    console.error("Get comments error:", error);
+    res.status(500).json({ message: "Error fetching comments" });
+  }
+};

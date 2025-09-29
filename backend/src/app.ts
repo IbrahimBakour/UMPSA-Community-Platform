@@ -4,6 +4,7 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import clubRoutes from "./routes/club";
+import postRoutes from "./routes/post";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/clubs", clubRoutes);
+app.use("/api/posts", postRoutes);
 
 // Basic test route
 app.get("/", (req, res) => {
