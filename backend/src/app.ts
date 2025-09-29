@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import clubRoutes from "./routes/club";
 import postRoutes from "./routes/post";
+import reportRoutes from "./routes/report";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/clubs", clubRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Basic test route
 app.get("/", (req, res) => {
