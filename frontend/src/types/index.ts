@@ -27,12 +27,24 @@ export interface Comment {
   createdAt: Date;
 }
 
+export interface Poll {
+  question: string;
+  options: string[];
+}
+
+export interface Event {
+  title: string;
+  date: string;
+}
+
 interface Post {
   _id: string;
   author: User;
   title: string;
   content: string;
   images?: string[]; // Changed from media
+  poll?: Poll;
+  event?: Event;
   likes: string[]; // Changed from reactions
   comments: Comment[];
   createdAt: Date;

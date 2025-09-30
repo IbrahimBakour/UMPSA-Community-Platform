@@ -1,15 +1,36 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import api from "./api";
-import { FeedPost, Comment } from "../types";
+import { FeedPost, Comment, Poll, Event } from "../types";
+import toast from "react-hot-toast";
+// import { get } from "react-hook-form";
+
+interface CreatePostPayload {
+  content: string;
+  images?: string[];
+  poll?: Poll;
+  event?: Event;
+}
 
 // API functions
-const getFeedPosts = async (): Promise<FeedPost[]> => {
-  const { data } = await api.get("/feed");
-  return data;
+const getFeedPosts = async ({
+  pageParam = 1,
+  limit = 10,
+}): Promise<{ posts: FeedPost[]; nextPage: number | null }> => {
+  const { data } = await api.get(
+    `/api/posts/club/68dadf9c9d7f65f91a877f81?page=${pageParam}&limit=${limit}`
+  );
+  return data.posts;
 };
 
-const createFeedPost = async (content: string): Promise<FeedPost> => {
-  const { data } = await api.post("/feed", { content });
+const createFeedPost = async (
+  postData: CreatePostPayload
+): Promise<FeedPost> => {
+  const { data } = await api.post("/feed", postData);
   return data;
 };
 
@@ -20,6 +41,10 @@ const getPendingFeedPosts = async (): Promise<FeedPost[]> => {
 
 const approveFeedPost = async (postId: string): Promise<void> => {
   await api.post(`/feed/${postId}/approve`);
+};
+
+const rejectFeedPost = async (postId: string): Promise<void> => {
+  await api.post(`/feed/${postId}/reject`);
 };
 
 const deleteFeedPost = async (postId: string): Promise<void> => {
@@ -51,18 +76,37 @@ const addReaction = async ({
 
 // React Query hooks
 export const useFeedPosts = () => {
-  return useQuery<FeedPost[], Error>({
+  return useInfiniteQuery<
+    { posts: FeedPost[]; nextPage: number | null },
+    Error
+  >({
     queryKey: ["feedPosts"],
-    queryFn: getFeedPosts,
+    queryFn: () => getFeedPosts({ pageParam: 1, limit: 10 }),
+    initialPageParam: 1, // ✅ required in React Query v5
+    getNextPageParam: (lastPage) => lastPage.nextPage,
   });
 };
 
-export const useCreateFeedPost = () => {
+export const useCreateFeedPost = (
+  isAdmin: boolean,
+  closeModal: () => void,
+  reset: () => void
+) => {
   const queryClient = useQueryClient();
-  return useMutation<FeedPost, Error, string>({
+  return useMutation<FeedPost, Error, CreatePostPayload>({
     mutationFn: createFeedPost,
     onSuccess: () => {
+      if (isAdmin) {
+        toast.success("Post created successfully!");
+      } else {
+        toast.success("Your post is submitted for review");
+      }
+      reset();
+      closeModal();
       queryClient.invalidateQueries({ queryKey: ["feedPosts"] });
+    },
+    onError: () => {
+      toast.error("Failed to create post. Please try again.");
     },
   });
 };
@@ -81,6 +125,16 @@ export const useApproveFeedPost = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingFeedPosts"] });
       queryClient.invalidateQueries({ queryKey: ["feedPosts"] });
+    },
+  });
+};
+
+export const useRejectFeedPost = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: rejectFeedPost,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pendingFeedPosts"] });
     },
   });
 };

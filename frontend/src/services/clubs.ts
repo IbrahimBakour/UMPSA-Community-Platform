@@ -18,6 +18,21 @@ const createClub = async (clubData: Partial<Club>): Promise<Club> => {
   return data;
 };
 
+const updateClub = async ({
+  clubId,
+  clubData,
+}: {
+  clubId: string;
+  clubData: Partial<Club>;
+}): Promise<Club> => {
+  const { data } = await api.put(`/api/clubs/${clubId}`, clubData);
+  return data;
+};
+
+const deleteClub = async (clubId: string): Promise<void> => {
+  await api.delete(`/api/clubs/${clubId}`);
+};
+
 const addMember = async ({
   clubId,
   userId,
@@ -31,7 +46,7 @@ const addMember = async ({
 
 const getClubPosts = async (clubId: string): Promise<ClubPost[]> => {
   const { data } = await api.get(`/api/posts/club/${clubId}?page=1&limit=10`);
-  console.log("Raw club posts data from backend:", data.posts[0]); // Log the first post for detailed inspection
+  console.log("Raw club posts data from backend:", data.posts); // Log the first post for detailed inspection
   return data.posts;
 };
 
@@ -66,6 +81,27 @@ export const useCreateClub = () => {
   const queryClient = useQueryClient();
   return useMutation<Club, Error, Partial<Club>>({
     mutationFn: createClub,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clubs"] });
+    },
+  });
+};
+
+export const useUpdateClub = (clubId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation<Club, Error, Partial<Club>>({
+    mutationFn: (clubData) => updateClub({ clubId, clubData }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["club", clubId] });
+      queryClient.invalidateQueries({ queryKey: ["clubs"] });
+    },
+  });
+};
+
+export const useDeleteClub = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: deleteClub,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
     },
