@@ -30,9 +30,10 @@ export interface Comment {
 interface Post {
   _id: string;
   author: User;
+  title: string;
   content: string;
-  media?: string[];
-  reactions: Reaction[];
+  images?: string[]; // Changed from media
+  likes: string[]; // Changed from reactions
   comments: Comment[];
   createdAt: Date;
 }

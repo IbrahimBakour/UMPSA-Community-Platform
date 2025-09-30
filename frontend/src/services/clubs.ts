@@ -30,8 +30,9 @@ const addMember = async ({
 };
 
 const getClubPosts = async (clubId: string): Promise<ClubPost[]> => {
-  const { data } = await api.get(`/api/clubs/${clubId}/posts`);
-  return data;
+  const { data } = await api.get(`/api/posts/club/${clubId}?page=1&limit=10`);
+  console.log("Raw club posts data from backend:", data.posts[0]); // Log the first post for detailed inspection
+  return data.posts;
 };
 
 const createClubPost = async ({

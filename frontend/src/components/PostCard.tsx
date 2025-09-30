@@ -17,11 +17,12 @@ const PostCard = ({ post }: PostCardProps) => {
           <p className="text-sm text-gray-500">{new Date(post.createdAt).toLocaleString()}</p>
         </div>
       </div>
+      <h3 className="text-xl font-bold mb-2">{post.title}</h3>
       <p>{post.content}</p>
-      {post.media && post.media.length > 0 && (
+      {post.images && post.images.length > 0 && (
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-          {post.media.map((mediaItem, index) => (
-            <img key={index} src={mediaItem} alt="Post media" className="w-full h-auto rounded-md" />
+          {post.images.map((imageItem, index) => (
+            <img key={index} src={imageItem} alt="Post media" className="w-full h-auto rounded-md" />
           ))}
         </div>
       )}

@@ -1,5 +1,5 @@
 import { useAddReaction } from '../services/posts';
-import { AnyPost, Reaction } from '../types';
+import { AnyPost } from '../types';
 import { FaThumbsUp, FaHeart, FaLaugh, FaThumbsDown } from 'react-icons/fa';
 import { useAuth } from '../hooks/useAuth';
 
@@ -11,53 +11,30 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
   const { user } = useAuth();
   const addReactionMutation = useAddReaction(post.type, post._id);
 
-  const handleReaction = (reactionType: Reaction['reaction']) => {
+  const handleReaction = (reactionType: 'like') => {
     if (user?.restriction?.status) {
       return;
     }
     addReactionMutation.mutate(reactionType);
   };
 
-  const getReactionCount = (reactionType: Reaction['reaction']) => {
-    return post.reactions.filter((r) => r.reaction === reactionType).length;
+  const getReactionCount = () => {
+    return post.likes.length;
   };
 
-  const userReaction = post.reactions.find((r) => r.userId === user?._id)?.reaction;
+  const userHasLiked = post.likes.includes(user?._id || '');
 
   return (
     <div className="flex items-center space-x-4 mt-4">
       <button
         onClick={() => handleReaction('like')}
-        className={`flex items-center space-x-1 ${userReaction === 'like' ? 'text-blue-600' : 'text-gray-500'}`}
+        className={`flex items-center space-x-1 ${userHasLiked ? 'text-blue-600' : 'text-gray-500'}`}
         disabled={user?.restriction?.status}
       >
         <FaThumbsUp />
-        <span>{getReactionCount('like')}</span>
+        <span>{getReactionCount()}</span>
       </button>
-      <button
-        onClick={() => handleReaction('love')}
-        className={`flex items-center space-x-1 ${userReaction === 'love' ? 'text-red-600' : 'text-gray-500'}`}
-        disabled={user?.restriction?.status}
-      >
-        <FaHeart />
-        <span>{getReactionCount('love')}</span>
-      </button>
-      <button
-        onClick={() => handleReaction('laugh')}
-        className={`flex items-center space-x-1 ${userReaction === 'laugh' ? 'text-yellow-600' : 'text-gray-500'}`}
-        disabled={user?.restriction?.status}
-      >
-        <FaLaugh />
-        <span>{getReactionCount('laugh')}</span>
-      </button>
-      <button
-        onClick={() => handleReaction('dislike')}
-        className={`flex items-center space-x-1 ${userReaction === 'dislike' ? 'text-gray-800' : 'text-gray-500'}`}
-        disabled={user?.restriction?.status}
-      >
-        <FaThumbsDown />
-        <span>{getReactionCount('dislike')}</span>
-      </button>
+      {/* Other reaction types (love, laugh, dislike) are not supported by the current backend 'likes' array */}
     </div>
   );
 };
