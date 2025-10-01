@@ -13,15 +13,22 @@ interface PaginationQuery {
   limit?: string;
 }
 
-// Create a new post
-export const createPost = async (req: AuthRequest, res: Response) => {
+// Create a new club post
+export const createClubPost = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, content, clubId, visibility, images } = req.body;
+    const {
+      content,
+      media,
+      poll,
+      calendarEvent,
+      link,
+    } = req.body;
+    const { clubId } = req.params;
     const userId = req.user?._id;
 
-    if (!title || !content || !clubId) {
+    if (!content?.trim()) {
       return res.status(400).json({
-        message: "Title, content and club ID are required",
+        message: "Post content is required",
       });
     }
 
@@ -36,28 +43,52 @@ export const createPost = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const post = new Post({
-      title,
-      content,
+    const postData: any = {
+      content: content.trim(),
+      postType: "club",
       club: clubId,
       author: userId,
-      visibility: visibility || "public",
-      images: images || [],
-    });
+      status: "approved", // Club posts are immediately approved
+      media: media || [],
+    };
 
+    // Add optional features
+    if (poll) {
+      postData.poll = {
+        question: poll.question?.trim(),
+        options: poll.options?.map((option: any) => ({
+          text: option.text?.trim(),
+          votes: 0,
+        })) || [],
+      };
+    }
+
+    if (calendarEvent) {
+      postData.calendarEvent = {
+        title: calendarEvent.title?.trim(),
+        date: new Date(calendarEvent.date),
+      };
+    }
+
+    if (link) {
+      postData.link = link.trim();
+    }
+
+    const post = new Post(postData);
     await post.save();
+
     await post.populate([
       { path: "author", select: "studentId nickname profilePicture" },
       { path: "club", select: "name" },
     ]);
 
     res.status(201).json({
-      message: "Post created successfully",
+      message: "Club post created successfully",
       post,
     });
   } catch (error) {
-    console.error("Create post error:", error);
-    res.status(500).json({ message: "Error creating post" });
+    console.error("Create club post error:", error);
+    res.status(500).json({ message: "Error creating club post" });
   }
 };
 
@@ -71,42 +102,46 @@ export const getClubPosts = async (
     const userId = req.user?._id;
     const page = parseInt(req.query.page || "1");
     const limit = parseInt(req.query.limit || "10");
+    const skip = (page - 1) * limit;
 
     const club = await Club.findById(clubId);
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
     }
 
-    const query: mongoose.FilterQuery<typeof Post> = {
+    // Only get approved club posts
+    const query = {
       club: clubId,
-      status: "active",
+      postType: "club",
+      status: "approved",
     };
-
-    if (!club.isMember(userId?.toString() || "")) {
-      query.visibility = "public";
-    }
 
     const [posts, total] = await Promise.all([
       Post.find(query)
-        .skip((page - 1) * limit)
+        .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
         .populate([
           { path: "author", select: "studentId nickname profilePicture" },
           { path: "club", select: "name" },
+          { path: "interactions.user", select: "studentId nickname profilePicture" },
         ]),
       Post.countDocuments(query),
     ]);
 
     res.json({
       posts,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      totalPosts: total,
+      pagination: {
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        totalPosts: total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
     });
   } catch (error) {
     console.error("Get club posts error:", error);
-    res.status(500).json({ message: "Error fetching posts" });
+    res.status(500).json({ message: "Error fetching club posts" });
   }
 };
 
@@ -120,18 +155,23 @@ export const getPost = async (req: AuthRequest, res: Response) => {
       { path: "author", select: "studentId nickname profilePicture" },
       { path: "club", select: "name" },
       { path: "comments.author", select: "studentId nickname profilePicture" },
+      { path: "interactions.user", select: "studentId nickname profilePicture" },
     ]);
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    if (post.visibility === "members") {
+    // Check if post is approved
+    if (post.status !== "approved") {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // For club posts, check if user has access
+    if (post.postType === "club" && post.club) {
       const club = await Club.findById(post.club);
-      if (!club?.isMember(userId?.toString() || "")) {
-        return res.status(403).json({
-          message: "This post is for club members only",
-        });
+      if (!club) {
+        return res.status(404).json({ message: "Club not found" });
       }
     }
 
@@ -147,7 +187,7 @@ export const getPost = async (req: AuthRequest, res: Response) => {
 export const updatePost = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, content, visibility, images } = req.body;
+    const { content, media, poll, calendarEvent, link } = req.body;
     const userId = req.user?._id;
 
     const post = await Post.findById(id);
@@ -163,11 +203,12 @@ export const updatePost = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const updateData: Partial<typeof post> = {};
-    if (title) updateData.title = title;
-    if (content) updateData.content = content;
-    if (visibility) updateData.visibility = visibility;
-    if (images) updateData.images = images;
+    const updateData: any = {};
+    if (content !== undefined) updateData.content = content;
+    if (media !== undefined) updateData.media = media;
+    if (poll !== undefined) updateData.poll = poll;
+    if (calendarEvent !== undefined) updateData.calendarEvent = calendarEvent;
+    if (link !== undefined) updateData.link = link;
 
     const updatedPost = await Post.findByIdAndUpdate(
       id,
@@ -218,42 +259,86 @@ export const deletePost = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Like/Unlike a post
-export const toggleLike = async (req: AuthRequest, res: Response) => {
+// Add/Update/Remove reaction to a post
+export const addReaction = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const { reactionType } = req.body;
     const userId = req.user?._id;
+
+    if (!reactionType) {
+      return res.status(400).json({
+        message: "Reaction type is required",
+      });
+    }
+
+    const allowedReactions = ["like", "love", "dislike", "laugh"];
+    if (!allowedReactions.includes(reactionType)) {
+      return res.status(400).json({
+        message: "Invalid reaction type. Allowed: like, love, dislike, laugh",
+      });
+    }
 
     const post = await Post.findById(id);
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    if (post.visibility === "members") {
-      const club = await Club.findById(post.club);
-      if (!club?.isMember(userId?.toString() || "")) {
-        return res.status(403).json({
-          message: "This post is for club members only",
-        });
-      }
+    // Check if post is approved
+    if (post.status !== "approved") {
+      return res.status(404).json({ message: "Post not found" });
     }
 
-    const isLiked = post.isLikedBy(userId?.toString() || "");
-    const updateOperation = isLiked
-      ? { $pull: { likes: userId } }
-      : { $addToSet: { likes: userId } };
+    // Check if user has already reacted
+    const hasReacted = post.hasReacted(userId?.toString() || "");
+    const currentReactionType = post.getReactionType(userId?.toString() || "");
 
-    const updatedPost = await Post.findByIdAndUpdate(id, updateOperation, {
-      new: true,
-    });
+    if (hasReacted && currentReactionType === reactionType) {
+      // Remove reaction if same type
+      await post.removeReaction(userId?.toString() || "");
+      res.json({
+        message: "Reaction removed",
+        reactionType: null,
+        reactionCounts: (post as any).reactionCounts,
+        totalReactions: (post as any).totalReactions,
+      });
+    } else {
+      // Add or update reaction
+      await post.addReaction(userId?.toString() || "", reactionType);
+      res.json({
+        message: "Reaction added",
+        reactionType,
+        reactionCounts: (post as any).reactionCounts,
+        totalReactions: (post as any).totalReactions,
+      });
+    }
+  } catch (error) {
+    console.error("Add reaction error:", error);
+    res.status(500).json({ message: "Error adding reaction" });
+  }
+};
+
+// Get post reactions
+export const getPostReactions = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const post = await Post.findById(id).populate([
+      { path: "interactions.user", select: "studentId nickname profilePicture" },
+    ]);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
 
     res.json({
-      message: isLiked ? "Post unliked" : "Post liked",
-      likesCount: updatedPost?.likes.length || 0,
+      reactions: post.interactions,
+      reactionCounts: (post as any).reactionCounts,
+      totalReactions: (post as any).totalReactions,
     });
   } catch (error) {
-    console.error("Toggle like error:", error);
-    res.status(500).json({ message: "Error toggling like" });
+    console.error("Get reactions error:", error);
+    res.status(500).json({ message: "Error fetching reactions" });
   }
 };
 
@@ -275,14 +360,9 @@ export const addComment = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Check visibility permissions
-    if (post.visibility === "members") {
-      const club = await Club.findById(post.club);
-      if (!club?.isMember(userId?.toString() || "")) {
-        return res.status(403).json({
-          message: "This post is for club members only",
-        });
-      }
+    // Check if post is approved
+    if (post.status !== "approved") {
+      return res.status(404).json({ message: "Post not found" });
     }
 
     const comment = {
@@ -430,14 +510,9 @@ export const getComments = async (
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Check visibility permissions
-    if (post.visibility === "members") {
-      const club = await Club.findById(post.club);
-      if (!club?.isMember(userId?.toString() || "")) {
-        return res.status(403).json({
-          message: "This post is for club members only",
-        });
-      }
+    // Check if post is approved
+    if (post.status !== "approved") {
+      return res.status(404).json({ message: "Post not found" });
     }
 
     // Get paginated comments

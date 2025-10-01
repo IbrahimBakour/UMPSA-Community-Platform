@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import clubRoutes from "./routes/club";
 import postRoutes from "./routes/post";
+import feedRoutes from "./routes/feed";
 import reportRoutes from "./routes/report";
 import userUploadRoutes from "./routes/userUpload";
 import clubUploadRoutes from "./routes/clubUpload";
@@ -26,6 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/feed", feedRoutes);
 app.use("/api/clubs", clubRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/reports", reportRoutes);

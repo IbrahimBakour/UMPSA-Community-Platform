@@ -1,31 +1,38 @@
 import express from "express";
 import {
-  createPost,
+  createClubPost,
   getClubPosts,
   getPost,
   updatePost,
   deletePost,
-  toggleLike,
+  addReaction,
+  getPostReactions,
   addComment,
   editComment,
   deleteComment,
   getComments,
 } from "../controllers/post";
 import { authMiddleware } from "../middlewares/auth";
-import { isClubMember } from "../middlewares/club";
 
 const router = express.Router();
 
-// Apply auth middleware to all routes except public ones
+// Public routes - no auth required
+router.get("/:id", getPost);
+router.get("/:id/reactions", getPostReactions);
+
+// Protected routes - require authentication
 router.use(authMiddleware);
 
-// Post routes
-router.post("/", createPost);
-router.get("/club/:clubId", getClubPosts);
-router.get("/:id", getPost);
+// Club post routes
+router.post("/clubs/:clubId", createClubPost);
+router.get("/clubs/:clubId", getClubPosts);
+
+// Post management routes
 router.put("/:id", updatePost);
 router.delete("/:id", deletePost);
-router.post("/:id/like", toggleLike);
+
+// Reaction routes
+router.post("/:id/reactions", addReaction);
 
 // Comment routes
 router.get("/:postId/comments", getComments);

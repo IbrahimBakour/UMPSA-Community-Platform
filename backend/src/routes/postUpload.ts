@@ -39,13 +39,13 @@ router.post(
       ) {
         return res.status(400).json({ message: "No files uploaded" });
       }
-      const imagePaths = req.files.map((file) => `/uploads/${file.filename}`);
+      const mediaPaths = req.files.map((file) => `/uploads/${file.filename}`);
       const post = await Post.findByIdAndUpdate(
         req.params.id,
-        { $push: { images: { $each: imagePaths } } },
+        { $push: { media: { $each: mediaPaths } } },
         { new: true }
       );
-      res.json({ message: "Images uploaded", images: post?.images });
+      res.json({ message: "Images uploaded", images: post?.media });
     } catch (error) {
       console.error("Post images upload error:", error);
       res.status(500).json({ message: "Error uploading images" });
