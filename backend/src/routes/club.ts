@@ -27,6 +27,8 @@ router.delete("/:id", isAdmin, deleteClub);
 // Club member only routes
 router.put("/:id", isClubMember, updateClub);
 router.post("/:id/members", isClubMember, addMember);
+// Backward compatible body-based removal, and preferred param-based route
 router.delete("/:id/members", isClubMember, removeMember);
+router.delete("/:id/members/:memberId", isClubMember, removeMember);
 
 export default router;

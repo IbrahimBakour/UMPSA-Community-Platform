@@ -16,6 +16,13 @@ export interface IClub extends Document {
   isMember(userId: string): boolean;
   // Virtual properties
   memberCount: number;
+  // Membership audit log (optional)
+  membershipEvents?: Array<{
+    action: "added" | "removed";
+    user: IUser["_id"];
+    by: IUser["_id"];
+    at: Date;
+  }>;
 }
 
 const clubSchema = new Schema<IClub>(
@@ -61,6 +68,18 @@ const clubSchema = new Schema<IClub>(
     timestamps: true,
   }
 );
+
+// Add membershipEvents schema path
+clubSchema.add({
+  membershipEvents: [
+    {
+      action: { type: String, enum: ["added", "removed"] },
+      user: { type: Schema.Types.ObjectId, ref: "User" },
+      by: { type: Schema.Types.ObjectId, ref: "User" },
+      at: { type: Date, default: Date.now },
+    },
+  ],
+});
 
 // Ensure at least one club member exists
 clubSchema.pre("save", function (next) {

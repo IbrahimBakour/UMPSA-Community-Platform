@@ -58,13 +58,42 @@ export const createClub = async (req: AuthRequest, res: Response) => {
 };
 
 // Get all clubs
-export const getClubs = async (_req: Request, res: Response) => {
+export const getClubs = async (req: Request, res: Response) => {
   try {
-    const clubs = await Club.find()
-      .populate("members", "studentId nickname profilePicture")
-      .populate("createdBy", "studentId");
+    const page = parseInt((req.query.page as string) || "1");
+    const limit = parseInt((req.query.limit as string) || "10");
+    const search = (req.query.search as string)?.trim();
+    const skip = (page - 1) * limit;
 
-    res.json(clubs);
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { about: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const [clubs, total] = await Promise.all([
+      Club.find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .populate("members", "studentId nickname profilePicture")
+        .populate("createdBy", "studentId"),
+      Club.countDocuments(query),
+    ]);
+
+    res.json({
+      clubs,
+      pagination: {
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        totalClubs: total,
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Get clubs error:", error);
     res.status(500).json({ message: "Error fetching clubs" });
@@ -174,6 +203,14 @@ export const addMember = async (req: AuthRequest, res: Response) => {
     // Do not change role if admin
 
     club.members.push(memberId);
+    // Audit event
+    (club as any).membershipEvents = (club as any).membershipEvents || [];
+    (club as any).membershipEvents.push({
+      action: "added",
+      user: memberId,
+      by: req.user?._id,
+      at: new Date(),
+    });
     await club.save();
 
     res.json({
@@ -189,7 +226,7 @@ export const addMember = async (req: AuthRequest, res: Response) => {
 // Remove member from club (Club members only)
 export const removeMember = async (req: AuthRequest, res: Response) => {
   try {
-    const { memberId } = req.body;
+    const memberId = (req.params as any).memberId || (req.body as any).memberId;
     const club = await Club.findById(req.params.id);
 
     if (!club) {
@@ -211,6 +248,14 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
     }
 
     club.members = club.members.filter((id: any) => id.toString() !== memberId);
+    // Audit event
+    (club as any).membershipEvents = (club as any).membershipEvents || [];
+    (club as any).membershipEvents.push({
+      action: "removed",
+      user: memberId,
+      by: req.user?._id,
+      at: new Date(),
+    });
     await club.save();
 
     res.json({
