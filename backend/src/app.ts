@@ -8,6 +8,7 @@ import postRoutes from "./routes/post";
 import feedRoutes from "./routes/feed";
 import reportRoutes from "./routes/report";
 import userUploadRoutes from "./routes/userUpload";
+import userRoutes from "./routes/user";
 import clubUploadRoutes from "./routes/clubUpload";
 import postUploadRoutes from "./routes/postUpload";
 
@@ -32,6 +33,7 @@ app.use("/api/clubs", clubRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/users", userUploadRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/clubs", clubUploadRoutes);
 app.use("/api/posts", postUploadRoutes);
 

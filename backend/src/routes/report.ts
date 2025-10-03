@@ -4,6 +4,8 @@ import {
   listReports,
   getReport,
   updateReport,
+  restrictUserFromReport,
+  unrestrictUserFromReport,
 } from "../controllers/report";
 import { authMiddleware } from "../middlewares/auth";
 
@@ -19,5 +21,7 @@ router.post("/", createReport);
 router.get("/", listReports);
 router.get("/:id", getReport);
 router.put("/:id", updateReport);
+router.post("/:id/restrictUser", restrictUserFromReport);
+router.post("/:id/unrestrictUser", unrestrictUserFromReport);
 
 export default router;
