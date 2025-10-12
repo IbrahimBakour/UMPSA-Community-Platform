@@ -115,7 +115,7 @@ export const getClubPosts = async (
       postType: "club",
       status: "approved",
     };
-
+    
     const [posts, total] = await Promise.all([
       Post.find(query)
         .skip(skip)
@@ -132,9 +132,9 @@ export const getClubPosts = async (
     res.json({
       posts,
       pagination: {
-        totalPages: Math.ceil(total / limit),
-        currentPage: page,
-        totalPosts: total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      totalPosts: total,
         hasNext: page < Math.ceil(total / limit),
         hasPrev: page > 1,
       },

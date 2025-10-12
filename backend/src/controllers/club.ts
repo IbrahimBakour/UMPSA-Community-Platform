@@ -79,7 +79,7 @@ export const getClubs = async (req: Request, res: Response) => {
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
-        .populate("members", "studentId nickname profilePicture")
+      .populate("members", "studentId nickname profilePicture")
         .populate("createdBy", "studentId"),
       Club.countDocuments(query),
     ]);

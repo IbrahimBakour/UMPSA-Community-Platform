@@ -128,20 +128,20 @@ const postSchema = new Schema<IPost>(
     // Post features
     poll: {
       question: {
-        type: String,
+      type: String,
         trim: true,
-      },
+    },
       options: [
         {
           text: {
-            type: String,
+      type: String,
             required: true,
             trim: true,
-          },
+    },
           votes: {
-            type: Number,
-            default: 0,
-          },
+      type: Number,
+      default: 0,
+    },
         },
       ],
     },
@@ -163,8 +163,8 @@ const postSchema = new Schema<IPost>(
     interactions: [
       {
         user: {
-          type: Schema.Types.ObjectId,
-          ref: "User",
+        type: Schema.Types.ObjectId,
+        ref: "User",
           required: true,
         },
         type: {
