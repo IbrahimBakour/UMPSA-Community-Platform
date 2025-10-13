@@ -12,6 +12,7 @@ import userRoutes from "./routes/user";
 import clubUploadRoutes from "./routes/clubUpload";
 import postUploadRoutes from "./routes/postUpload";
 import uploadRoutes from "./routes/upload";
+import adminRoutes from "./routes/admin";
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/clubs", clubUploadRoutes);
 app.use("/api/posts", postUploadRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Basic test route
 app.get("/", (req, res) => {
