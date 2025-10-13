@@ -13,6 +13,7 @@ import clubUploadRoutes from "./routes/clubUpload";
 import postUploadRoutes from "./routes/postUpload";
 import uploadRoutes from "./routes/upload";
 import adminRoutes from "./routes/admin";
+import pollRoutes from "./routes/poll";
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use("/api/clubs", clubUploadRoutes);
 app.use("/api/posts", postUploadRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/polls", pollRoutes);
 
 // Basic test route
 app.get("/", (req, res) => {

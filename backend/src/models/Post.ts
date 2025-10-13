@@ -38,12 +38,18 @@ export interface IReaction {
 export interface IPollOption {
   text: string;
   votes: number;
+  voters: string[]; // store user id strings for quick inclusion checks
 }
 
 // Poll Interface
 export interface IPoll {
   question: string;
   options: IPollOption[];
+  allowMultipleVotes: boolean;
+  endDate?: Date;
+  totalVotes: number;
+  createdAt: Date;
+  isActive: boolean;
 }
 
 // Calendar Event Interface
@@ -128,22 +134,45 @@ const postSchema = new Schema<IPost>(
     // Post features
     poll: {
       question: {
-      type: String,
+        type: String,
         trim: true,
-    },
+      },
       options: [
         {
           text: {
-      type: String,
+            type: String,
             required: true,
             trim: true,
-    },
+          },
           votes: {
-      type: Number,
-      default: 0,
-    },
+            type: Number,
+            default: 0,
+          },
+          voters: {
+            type: [String],
+            default: [],
+          },
         },
       ],
+      allowMultipleVotes: {
+        type: Boolean,
+        default: false,
+      },
+      endDate: {
+        type: Date,
+      },
+      totalVotes: {
+        type: Number,
+        default: 0,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+      isActive: {
+        type: Boolean,
+        default: true,
+      },
     },
     calendarEvent: {
       title: {
