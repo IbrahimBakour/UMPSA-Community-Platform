@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Post from "../models/Post";
 import { IUser } from "../models/User";
 import { validateAndCreatePollData } from "./poll";
+import { triggerPostApprovedNotification, triggerPostRejectedNotification } from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -200,6 +201,9 @@ export const approveFeedPost = async (req: AuthRequest, res: Response) => {
       { path: "author", select: "studentId nickname profilePicture" },
     ]);
 
+    // Trigger notification
+    await triggerPostApprovedNotification(String((post as any)._id), String((post as any).author), String((req.user as any)!._id));
+
     res.json({
       message: "Post approved successfully",
       post,
@@ -230,6 +234,9 @@ export const rejectFeedPost = async (req: AuthRequest, res: Response) => {
 
     post.status = "rejected";
     await post.save();
+
+    // Trigger notification
+    await triggerPostRejectedNotification(String((post as any)._id), String((post as any).author), String((req.user as any)!._id), reason);
 
     res.json({
       message: "Post rejected successfully",

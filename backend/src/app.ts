@@ -14,6 +14,7 @@ import postUploadRoutes from "./routes/postUpload";
 import uploadRoutes from "./routes/upload";
 import adminRoutes from "./routes/admin";
 import pollRoutes from "./routes/poll";
+import notificationRoutes from "./routes/notification";
 
 dotenv.config();
 
@@ -42,6 +43,7 @@ app.use("/api/posts", postUploadRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/polls", pollRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Basic test route
 app.get("/", (req, res) => {

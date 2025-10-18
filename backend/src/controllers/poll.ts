@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Post from "../models/Post";
 import User from "../models/User";
 import { IUser } from "../models/User";
+import { triggerPollVotedNotification } from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -112,6 +113,9 @@ export const votePoll = async (req: AuthRequest, res: Response) => {
 
     (post.poll as any).totalVotes = ((post.poll as any).totalVotes || 0) + optionIndexes.length;
     await post.save();
+
+    // Trigger notification for poll votes
+    await triggerPollVotedNotification(String((post as any)._id), String((post as any).author), userId);
 
     res.json({
       message: "Vote recorded successfully",

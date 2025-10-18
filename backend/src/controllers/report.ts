@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Report from "../models/Report";
 import User from "../models/User";
 import { IUser } from "../models/User";
+import { triggerReportSubmittedNotification, triggerReportResolvedNotification } from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -25,6 +26,14 @@ export const createReport = async (req: AuthRequest, res: Response) => {
       status: "pending",
     });
     await report.save();
+
+    // Get all admin users to notify them
+    const admins = await User.find({ role: "admin" }).select("_id");
+    const adminIds = admins.map(admin => String(admin._id));
+
+    // Trigger notification to all admins
+    await triggerReportSubmittedNotification(String(report._id), String(userId), adminIds);
+
     res.status(201).json({ message: "Report submitted", report });
   } catch (error) {
     console.error("Create report error:", error);
@@ -83,6 +92,12 @@ export const updateReport = async (req: AuthRequest, res: Response) => {
     if (reviewNotes) report.reviewNotes = reviewNotes;
     report.reviewedBy = req.user._id;
     await report.save();
+
+    // Trigger notification when report is resolved
+    if (status === "resolved") {
+      await triggerReportResolvedNotification(String(report._id), String(report.reportedBy), String(req.user._id));
+    }
+
     res.json({ message: "Report updated", report });
   } catch (error) {
     console.error("Update report error:", error);

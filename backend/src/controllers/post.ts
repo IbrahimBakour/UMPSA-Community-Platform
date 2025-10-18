@@ -4,6 +4,7 @@ import Post from "../models/Post";
 import Club from "../models/Club";
 import { IUser } from "../models/User";
 import { validateAndCreatePollData } from "./poll";
+import { triggerPostLikedNotification, triggerPostCommentedNotification, triggerPollVotedNotification } from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -306,6 +307,12 @@ export const addReaction = async (req: AuthRequest, res: Response) => {
     } else {
       // Add or update reaction
       await post.addReaction(userId?.toString() || "", reactionType);
+      
+      // Trigger notification for likes
+      if (reactionType === "like" || reactionType === "love") {
+        await triggerPostLikedNotification(String((post as any)._id), String((post as any).author), userId?.toString() || "");
+      }
+      
       res.json({
         message: "Reaction added",
         reactionType,
@@ -384,6 +391,9 @@ export const addComment = async (req: AuthRequest, res: Response) => {
         ],
       }
     );
+
+    // Trigger notification for comments
+    await triggerPostCommentedNotification(String((post as any)._id), String((post as any).author), userId?.toString() || "");
 
     res.json({
       message: "Comment added successfully",
