@@ -1,7 +1,7 @@
 import express from "express";
 import { authMiddleware } from "../middlewares/auth";
 import {
-  createPoll,
+  validateAndCreatePollData,
   votePoll,
   getPollResults,
   updatePoll,
@@ -16,8 +16,7 @@ const router = express.Router();
 // All poll routes require authentication
 router.use(authMiddleware);
 
-// Poll CRUD operations
-router.post("/:postId", createPoll);
+// Poll CRUD operations (no separate create route - polls are created with posts)
 router.put("/:postId", updatePoll);
 router.delete("/:postId", deletePoll);
 

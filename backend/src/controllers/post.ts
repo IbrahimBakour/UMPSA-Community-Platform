@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Post from "../models/Post";
 import Club from "../models/Club";
 import { IUser } from "../models/User";
+import { validateAndCreatePollData } from "./poll";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -54,13 +55,13 @@ export const createClubPost = async (req: AuthRequest, res: Response) => {
 
     // Add optional features
     if (poll) {
-      postData.poll = {
-        question: poll.question?.trim(),
-        options: poll.options?.map((option: any) => ({
-          text: option.text?.trim(),
-          votes: 0,
-        })) || [],
-      };
+      try {
+        postData.poll = validateAndCreatePollData(poll);
+      } catch (error) {
+        return res.status(400).json({ 
+          message: error instanceof Error ? error.message : "Invalid poll data" 
+        });
+      }
     }
 
     if (calendarEvent) {
