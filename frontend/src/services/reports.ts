@@ -123,3 +123,27 @@ export const useUnrestrictUserFromReport = () => {
     },
   });
 };
+
+// Legacy exports for backward compatibility
+export const useResolveReport = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: async (reportId) => {
+      await api.post(`${API_ENDPOINTS.REPORTS}/${reportId}/resolve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+};
+export const useRestrictUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { userId: string; restriction: any }>({
+    mutationFn: async ({ userId, restriction }) => {
+      await api.post(`${API_ENDPOINTS.USERS}/${userId}/restrict`, restriction);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+};

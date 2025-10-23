@@ -9,7 +9,7 @@ const MainLayout = () => {
   return (
     <div>
       <Navbar />
-      {user?.restriction?.status && (
+      {user?.status === 'restricted' && (
         <div className="bg-red-500 text-white text-center p-2">
           You are currently restricted. Some actions may be disabled.
         </div>

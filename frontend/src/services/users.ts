@@ -87,7 +87,7 @@ export const useUpdateUserRole = () => {
   const queryClient = useQueryClient();
   return useMutation<{ message: string; user: User }, Error, { userId: string; role: string }>({
     mutationFn: updateUserRole,
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       toast.success(`User role updated to ${variables.role}!`);
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
@@ -102,7 +102,7 @@ export const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
   return useMutation<{ message: string; user: User }, Error, { userId: string; status: string }>({
     mutationFn: updateUserStatus,
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       toast.success(`User status updated to ${variables.status}!`);
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
@@ -143,6 +143,36 @@ export const useDeleteUser = () => {
     },
     onError: () => {
       toast.error("Failed to delete user. Please try again.");
+    },
+  });
+};
+
+// Legacy exports for backward compatibility
+export const useUsers = useAllUsers;
+export const useSearchUsers = (searchTerm: string) => {
+  return useAllUsers({ search: searchTerm });
+};
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation<User, Error, Partial<User>>({
+    mutationFn: async (userData) => {
+      const response = await api.put(API_ENDPOINTS.USER_PROFILE, userData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+};
+export const usePromoteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation<User, Error, string>({
+    mutationFn: async (userId) => {
+      const response = await api.post(`${API_ENDPOINTS.USERS}/${userId}/promote`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };

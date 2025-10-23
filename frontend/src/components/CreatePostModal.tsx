@@ -11,7 +11,7 @@ const CreatePostModal = () => {
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
 
-  const isRestricted = user?.restriction?.status === true;
+  const isRestricted = user?.status === 'restricted';
 
   return (
     <div>

@@ -31,7 +31,7 @@ export const uploadClubMedia = async (files: { profilePicture?: File; banner?: F
 
 export const uploadPostMedia = async (files: File[]): Promise<{ message: string; urls: string[] }> => {
   const formData = new FormData();
-  files.forEach((file, index) => {
+  files.forEach((file) => {
     formData.append("postMedia", file);
   });
 
@@ -56,4 +56,18 @@ export const getFileInfo = async (fileUrl: string): Promise<{ message: string; f
     params: { fileUrl }
   });
   return response.data;
+};
+
+// Legacy export for backward compatibility
+export const uploadFile = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await api.post(API_ENDPOINTS.UPLOADS, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data.url;
 };

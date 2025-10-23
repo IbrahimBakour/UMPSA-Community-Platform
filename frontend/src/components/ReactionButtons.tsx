@@ -13,7 +13,7 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
   const addReactionMutation = useAddReaction(post.type, post._id);
 
   const handleReaction = (reactionType: 'like' | 'love' | 'laugh' | 'dislike') => {
-    if (user?.restriction?.status) {
+    if (user?.status === 'restricted') {
       return;
     }
     addReactionMutation.mutate(reactionType);
@@ -36,7 +36,7 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
         whileTap={{ scale: 0.9 }}
         onClick={() => handleReaction('like')}
         className={`flex items-center space-x-1 ${userHasReacted('like') ? 'text-blue-600' : 'text-gray-500'}`}
-        disabled={user?.restriction?.status}
+        disabled={user?.status === 'restricted'}
       >
         <FaThumbsUp />
         <span>{getReactionCount('like')}</span>
@@ -45,7 +45,7 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
         whileTap={{ scale: 0.9 }}
         onClick={() => handleReaction('love')}
         className={`flex items-center space-x-1 ${userHasReacted('love') ? 'text-red-600' : 'text-gray-500'}`}
-        disabled={user?.restriction?.status}
+        disabled={user?.status === 'restricted'}
       >
         <FaHeart />
         <span>{getReactionCount('love')}</span>
@@ -54,7 +54,7 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
         whileTap={{ scale: 0.9 }}
         onClick={() => handleReaction('laugh')}
         className={`flex items-center space-x-1 ${userHasReacted('laugh') ? 'text-yellow-600' : 'text-gray-500'}`}
-        disabled={user?.restriction?.status}
+        disabled={user?.status === 'restricted'}
       >
         <FaLaugh />
         <span>{getReactionCount('laugh')}</span>
@@ -63,7 +63,7 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
         whileTap={{ scale: 0.9 }}
         onClick={() => handleReaction('dislike')}
         className={`flex items-center space-x-1 ${userHasReacted('dislike') ? 'text-gray-600' : 'text-gray-500'}`}
-        disabled={user?.restriction?.status}
+        disabled={user?.status === 'restricted'}
       >
         <FaThumbsDown />
         <span>{getReactionCount('dislike')}</span>

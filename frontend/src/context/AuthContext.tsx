@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (user: User, token: string) => void;
   logout: () => void;
   updateUser: (user: User) => void;
+  setUser: (user: User | null) => void;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -85,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     login,
     logout,
     updateUser,
+    setUser,
   };
 
   return (
