@@ -378,6 +378,9 @@ export const addComment = async (req: AuthRequest, res: Response) => {
       author: userId,
     };
 
+    // Trigger notification BEFORE populating (to get the raw ObjectId)
+    await triggerPostCommentedNotification(String((post as any)._id), String((post as any).author), userId?.toString() || "");
+
     const updatedPost = await Post.findByIdAndUpdate(
       id,
       { $push: { comments: comment } },
@@ -391,9 +394,6 @@ export const addComment = async (req: AuthRequest, res: Response) => {
         ],
       }
     );
-
-    // Trigger notification for comments
-    await triggerPostCommentedNotification(String((post as any)._id), String((post as any).author), userId?.toString() || "");
 
     res.json({
       message: "Comment added successfully",

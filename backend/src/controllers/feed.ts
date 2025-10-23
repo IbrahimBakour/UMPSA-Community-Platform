@@ -197,12 +197,12 @@ export const approveFeedPost = async (req: AuthRequest, res: Response) => {
     post.status = "approved";
     await post.save();
 
+    // Trigger notification BEFORE populating (to get the raw ObjectId)
+    await triggerPostApprovedNotification(String((post as any)._id), String((post as any).author), String((req.user as any)!._id));
+
     await post.populate([
       { path: "author", select: "studentId nickname profilePicture" },
     ]);
-
-    // Trigger notification
-    await triggerPostApprovedNotification(String((post as any)._id), String((post as any).author), String((req.user as any)!._id));
 
     res.json({
       message: "Post approved successfully",
@@ -235,7 +235,7 @@ export const rejectFeedPost = async (req: AuthRequest, res: Response) => {
     post.status = "rejected";
     await post.save();
 
-    // Trigger notification
+    // Trigger notification BEFORE populating (to get the raw ObjectId)
     await triggerPostRejectedNotification(String((post as any)._id), String((post as any).author), String((req.user as any)!._id), reason);
 
     res.json({

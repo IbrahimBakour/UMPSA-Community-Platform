@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Report from "../models/Report";
 import User from "../models/User";
 import { IUser } from "../models/User";
-import { triggerReportSubmittedNotification, triggerReportResolvedNotification } from "../services/notificationTriggers";
+import { triggerReportSubmittedNotification, triggerReportResolvedNotification, triggerUserRestrictedNotification, triggerUserUnrestrictedNotification } from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -146,6 +146,14 @@ export const restrictUserFromReport = async (req: AuthRequest, res: Response) =>
     } as any;
     await user.save();
 
+    // Trigger notification BEFORE saving report
+    await triggerUserRestrictedNotification(
+      userId, 
+      String((req.user as any)!._id), 
+      restriction.type,
+      restriction.until ? `until ${new Date(restriction.until).toISOString()}` : undefined
+    );
+
     report.status = "reviewed";
     report.reviewedBy = req.user._id;
     report.reviewNotes = `Restricted user ${userId} (${restriction.type}${
@@ -195,6 +203,9 @@ export const unrestrictUserFromReport = async (req: AuthRequest, res: Response) 
     user.status = "active";
     user.restriction = undefined as any;
     await user.save();
+
+    // Trigger notification BEFORE saving report
+    await triggerUserUnrestrictedNotification(userId, String((req.user as any)!._id));
 
     report.status = "reviewed";
     report.reviewedBy = req.user._id;

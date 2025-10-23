@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Club from "../models/Club";
 import User from "../models/User";
 import { IUser } from "../models/User";
+import { triggerClubJoinedNotification, triggerClubLeftNotification } from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -213,6 +214,9 @@ export const addMember = async (req: AuthRequest, res: Response) => {
     });
     await club.save();
 
+    // Trigger notification BEFORE populating (to get raw ObjectIds)
+    await triggerClubJoinedNotification(String((club as any)._id), String(memberId), club.members.map(m => String(m)));
+
     res.json({
       message: "Member added successfully",
       club: await club.populate(["members", "createdBy"]),
@@ -257,6 +261,9 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
       at: new Date(),
     });
     await club.save();
+
+    // Trigger notification BEFORE populating (to get raw ObjectIds)
+    await triggerClubLeftNotification(String((club as any)._id), String(memberId), club.members.map(m => String(m)));
 
     res.json({
       message: "Member removed successfully",
