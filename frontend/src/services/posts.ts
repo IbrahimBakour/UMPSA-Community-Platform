@@ -5,104 +5,127 @@ import {
   useInfiniteQuery,
 } from "@tanstack/react-query";
 import api from "./api";
-import { FeedPost, Comment, Poll, Event } from "../types";
+import { FeedPost, ClubPost, Comment, IReaction, CreatePostForm, PaginatedResponse } from "../types";
+import { API_ENDPOINTS, POST_TYPES, POST_STATUS } from "../utils/constants";
 import toast from "react-hot-toast";
-// import { get } from "react-hook-form";
-
-interface CreatePostPayload {
-  content: string;
-  images?: string[];
-  poll?: Poll;
-  event?: Event;
-}
 
 // API functions
-const getFeedPosts = async ({
-  pageParam = 1,
-  limit = 10,
-}): Promise<{ posts: FeedPost[]; nextPage: number | null }> => {
-  const { data } = await api.get(
-    `/api/posts/club/68dadf9c9d7f65f91a877f81?page=${pageParam}&limit=${limit}`
-  );
-  return data.posts;
+const getFeedPosts = async (params?: {
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedResponse<FeedPost>> => {
+  const response = await api.get(API_ENDPOINTS.FEED_POSTS, { params });
+  return response.data;
 };
 
-const createFeedPost = async (
-  postData: CreatePostPayload
-): Promise<FeedPost> => {
-  const { data } = await api.post("/feed", postData);
-  return data;
+const getClubPosts = async (clubId: string, params?: {
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedResponse<ClubPost>> => {
+  const response = await api.get(`${API_ENDPOINTS.CLUB_POSTS}/${clubId}/posts`, { params });
+  return response.data;
 };
 
-const getPendingFeedPosts = async (): Promise<FeedPost[]> => {
-  const { data } = await api.get("/feed/pending");
-  return data;
+const createFeedPost = async (postData: CreatePostForm): Promise<FeedPost> => {
+  const response = await api.post(API_ENDPOINTS.FEED_POSTS, postData);
+  return response.data.post;
 };
 
-const approveFeedPost = async (postId: string): Promise<void> => {
-  await api.post(`/feed/${postId}/approve`);
+const createClubPost = async (clubId: string, postData: CreatePostForm): Promise<ClubPost> => {
+  const response = await api.post(`${API_ENDPOINTS.CLUB_POSTS}/${clubId}/posts`, postData);
+  return response.data.post;
 };
 
-const rejectFeedPost = async (postId: string): Promise<void> => {
-  await api.post(`/feed/${postId}/reject`);
+const getPendingFeedPosts = async (params?: {
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedResponse<FeedPost>> => {
+  const response = await api.get(`${API_ENDPOINTS.FEED_POSTS}/pending`, { params });
+  return response.data;
 };
 
-const deleteFeedPost = async (postId: string): Promise<void> => {
-  await api.delete(`/feed/${postId}`);
+const approveFeedPost = async (postId: string): Promise<{ message: string; post: FeedPost }> => {
+  const response = await api.put(`${API_ENDPOINTS.FEED_POSTS}/${postId}/approve`, {
+    status: POST_STATUS.APPROVED
+  });
+  return response.data;
 };
 
-const addComment = async ({
-  postId,
-  content,
-}: {
-  postId: string;
-  content: string;
-}): Promise<Comment> => {
-  const { data } = await api.post(`/api/posts/${postId}/comments`, {
+const rejectFeedPost = async (postId: string, reason?: string): Promise<{ message: string; reason: string }> => {
+  const response = await api.put(`${API_ENDPOINTS.FEED_POSTS}/${postId}/reject`, {
+    status: POST_STATUS.REJECTED,
+    reason
+  });
+  return response.data;
+};
+
+const deletePost = async (postId: string): Promise<{ message: string }> => {
+  const response = await api.delete(`${API_ENDPOINTS.CLUB_POSTS}/${postId}`);
+  return response.data;
+};
+
+const addComment = async (postId: string, content: string): Promise<{ message: string; comment: Comment }> => {
+  const response = await api.post(`${API_ENDPOINTS.CLUB_POSTS}/${postId}/comments`, {
     content,
   });
-  return data;
+  return response.data;
 };
 
-const addReaction = async ({
-  postId,
-  reaction,
-}: {
-  postId: string;
-  reaction: string;
-}): Promise<void> => {
-  await api.post(`/api/posts/${postId}/like`, { reaction });
+const addReaction = async (postId: string, reactionType: string): Promise<{
+  message: string;
+  reactionType: string | null;
+  reactionCounts: Record<string, number>;
+  totalReactions: number;
+}> => {
+  const response = await api.post(`${API_ENDPOINTS.CLUB_POSTS}/${postId}/reactions`, { 
+    reactionType 
+  });
+  return response.data;
+};
+
+const getPostReactions = async (postId: string): Promise<{
+  reactions: IReaction[];
+  reactionCounts: Record<string, number>;
+  totalReactions: number;
+}> => {
+  const response = await api.get(`${API_ENDPOINTS.CLUB_POSTS}/${postId}/reactions`);
+  return response.data;
+};
+
+const getComments = async (postId: string, params?: {
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedResponse<Comment>> => {
+  const response = await api.get(`${API_ENDPOINTS.CLUB_POSTS}/${postId}/comments`, { params });
+  return response.data;
 };
 
 // React Query hooks
-export const useFeedPosts = () => {
-  return useInfiniteQuery<
-    { posts: FeedPost[]; nextPage: number | null },
-    Error
-  >({
-    queryKey: ["feedPosts"],
-    queryFn: () => getFeedPosts({ pageParam: 1, limit: 10 }),
-    initialPageParam: 1, // ✅ required in React Query v5
-    getNextPageParam: (lastPage) => lastPage.nextPage,
+export const useFeedPosts = (params?: { page?: number; limit?: number }) => {
+  return useQuery<PaginatedResponse<FeedPost>, Error>({
+    queryKey: ["feedPosts", params],
+    queryFn: () => getFeedPosts(params),
   });
 };
 
-export const useCreateFeedPost = (
-  isAdmin: boolean,
-  closeModal: () => void,
-  reset: () => void
-) => {
+export const useClubPosts = (clubId: string, params?: { page?: number; limit?: number }) => {
+  return useQuery<PaginatedResponse<ClubPost>, Error>({
+    queryKey: ["clubPosts", clubId, params],
+    queryFn: () => getClubPosts(clubId, params),
+    enabled: !!clubId,
+  });
+};
+
+export const useCreateFeedPost = () => {
   const queryClient = useQueryClient();
-  return useMutation<FeedPost, Error, CreatePostPayload>({
+  return useMutation<FeedPost, Error, CreatePostForm>({
     mutationFn: createFeedPost,
-    onSuccess: () => {
-      if (isAdmin) {
-        toast.success("Post created successfully!");
+    onSuccess: (data) => {
+      if (data.status === POST_STATUS.APPROVED) {
+        toast.success("Post created and published successfully!");
       } else {
-        toast.success("Your post is submitted for review");
+        toast.success("Post created and submitted for review");
       }
-      reset();
-      closeModal();
       queryClient.invalidateQueries({ queryKey: ["feedPosts"] });
     },
     onError: () => {
@@ -111,67 +134,124 @@ export const useCreateFeedPost = (
   });
 };
 
-export const usePendingFeedPosts = () => {
-  return useQuery<FeedPost[], Error>({
-    queryKey: ["pendingFeedPosts"],
-    queryFn: getPendingFeedPosts,
+export const useCreateClubPost = (clubId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation<ClubPost, Error, CreatePostForm>({
+    mutationFn: (postData) => createClubPost(clubId, postData),
+    onSuccess: () => {
+      toast.success("Club post created successfully!");
+      queryClient.invalidateQueries({ queryKey: ["clubPosts", clubId] });
+    },
+    onError: () => {
+      toast.error("Failed to create club post. Please try again.");
+    },
+  });
+};
+
+export const usePendingFeedPosts = (params?: { page?: number; limit?: number }) => {
+  return useQuery<PaginatedResponse<FeedPost>, Error>({
+    queryKey: ["pendingFeedPosts", params],
+    queryFn: () => getPendingFeedPosts(params),
   });
 };
 
 export const useApproveFeedPost = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
+  return useMutation<{ message: string; post: FeedPost }, Error, string>({
     mutationFn: approveFeedPost,
     onSuccess: () => {
+      toast.success("Post approved successfully!");
       queryClient.invalidateQueries({ queryKey: ["pendingFeedPosts"] });
       queryClient.invalidateQueries({ queryKey: ["feedPosts"] });
+    },
+    onError: () => {
+      toast.error("Failed to approve post. Please try again.");
     },
   });
 };
 
 export const useRejectFeedPost = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: rejectFeedPost,
+  return useMutation<{ message: string; reason: string }, Error, { postId: string; reason?: string }>({
+    mutationFn: ({ postId, reason }) => rejectFeedPost(postId, reason),
     onSuccess: () => {
+      toast.success("Post rejected successfully!");
       queryClient.invalidateQueries({ queryKey: ["pendingFeedPosts"] });
+    },
+    onError: () => {
+      toast.error("Failed to reject post. Please try again.");
     },
   });
 };
 
 export const useDeletePost = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: deleteFeedPost,
+  return useMutation<{ message: string }, Error, string>({
+    mutationFn: deletePost,
     onSuccess: () => {
+      toast.success("Post deleted successfully!");
       queryClient.invalidateQueries({ queryKey: ["feedPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["clubPosts"] });
       queryClient.invalidateQueries({ queryKey: ["pendingFeedPosts"] });
     },
-  });
-};
-
-export const useAddComment = (postType: "feed" | "club", postId: string) => {
-  const queryClient = useQueryClient();
-  return useMutation<Comment, Error, string>({
-    mutationFn: (content) => addComment({ postId, content }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feedPosts"] }); // This could be more specific
-      queryClient.invalidateQueries({
-        queryKey: ["clubPosts", postType === "club" ? postId : undefined],
-      });
+    onError: () => {
+      toast.error("Failed to delete post. Please try again.");
     },
   });
 };
 
-export const useAddReaction = (postType: "feed" | "club", postId: string) => {
+export const useAddComment = (postId: string) => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: (reaction) => addReaction({ postId, reaction }),
+  return useMutation<{ message: string; comment: Comment }, Error, string>({
+    mutationFn: (content) => addComment(postId, content),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feedPosts"] }); // This could be more specific
-      queryClient.invalidateQueries({
-        queryKey: ["clubPosts", postType === "club" ? postId : undefined],
-      });
+      toast.success("Comment added successfully!");
+      queryClient.invalidateQueries({ queryKey: ["feedPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["clubPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
     },
+    onError: () => {
+      toast.error("Failed to add comment. Please try again.");
+    },
+  });
+};
+
+export const useAddReaction = (postId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation<{
+    message: string;
+    reactionType: string | null;
+    reactionCounts: Record<string, number>;
+    totalReactions: number;
+  }, Error, string>({
+    mutationFn: (reactionType) => addReaction(postId, reactionType),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feedPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["clubPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["reactions", postId] });
+    },
+    onError: () => {
+      toast.error("Failed to add reaction. Please try again.");
+    },
+  });
+};
+
+export const usePostReactions = (postId: string) => {
+  return useQuery<{
+    reactions: IReaction[];
+    reactionCounts: Record<string, number>;
+    totalReactions: number;
+  }, Error>({
+    queryKey: ["reactions", postId],
+    queryFn: () => getPostReactions(postId),
+    enabled: !!postId,
+  });
+};
+
+export const useComments = (postId: string, params?: { page?: number; limit?: number }) => {
+  return useQuery<PaginatedResponse<Comment>, Error>({
+    queryKey: ["comments", postId, params],
+    queryFn: () => getComments(postId, params),
+    enabled: !!postId,
   });
 };
