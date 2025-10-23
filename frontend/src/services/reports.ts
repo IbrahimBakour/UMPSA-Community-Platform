@@ -1,58 +1,125 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from './api';
-import { Report } from '../types';
+import { Report, CreateReportForm, PaginatedResponse } from '../types';
+import { API_ENDPOINTS } from '../utils/constants';
+import toast from 'react-hot-toast';
 
-const createReport = async (reportData: Partial<Report>): Promise<Report> => {
-  const { data } = await api.post("/api/reports", reportData);
-  return data;
+const createReport = async (reportData: CreateReportForm): Promise<{ message: string; report: Report }> => {
+  const response = await api.post(API_ENDPOINTS.REPORTS, reportData);
+  return response.data;
 };
 
-const getReports = async (): Promise<Report[]> => {
-    const { data } = await api.get("/api/reports");
-    return data;
+const getReports = async (params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  targetType?: string;
+}): Promise<PaginatedResponse<Report>> => {
+  const response = await api.get(API_ENDPOINTS.REPORTS, { params });
+  return response.data;
 };
 
-const resolveReport = async (reportId: string): Promise<void> => {
-    await api.post(`/api/reports/${reportId}/resolve`);
+const getReportById = async (reportId: string): Promise<Report> => {
+  const response = await api.get(`${API_ENDPOINTS.REPORTS}/${reportId}`);
+  return response.data;
 };
 
-const restrictUser = async (userId: string, restriction: any): Promise<void> => {
-    await api.post(`/api/users/${userId}/restrict`, restriction);
+const updateReport = async ({
+  reportId,
+  reportData,
+}: {
+  reportId: string;
+  reportData: Partial<Report>;
+}): Promise<{ message: string; report: Report }> => {
+  const response = await api.put(`${API_ENDPOINTS.REPORTS}/${reportId}`, reportData);
+  return response.data;
+};
+
+const restrictUserFromReport = async (reportId: string): Promise<{ message: string }> => {
+  const response = await api.post(`${API_ENDPOINTS.REPORTS}/${reportId}/restrictUser`);
+  return response.data;
+};
+
+const unrestrictUserFromReport = async (reportId: string): Promise<{ message: string }> => {
+  const response = await api.post(`${API_ENDPOINTS.REPORTS}/${reportId}/unrestrictUser`);
+  return response.data;
 };
 
 export const useCreateReport = () => {
-    const queryClient = useQueryClient();
-    return useMutation<Report, Error, Partial<Report>>({
-        mutationFn: createReport,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['reports'] });
-        },
-    });
+  const queryClient = useQueryClient();
+  return useMutation<{ message: string; report: Report }, Error, CreateReportForm>({
+    mutationFn: createReport,
+    onSuccess: () => {
+      toast.success("Report submitted successfully!");
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+    onError: () => {
+      toast.error("Failed to submit report. Please try again.");
+    },
+  });
 };
 
-export const useReports = () => {
-    return useQuery<Report[], Error>({
-        queryKey: ['reports'],
-        queryFn: getReports,
-    });
+export const useReports = (params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  targetType?: string;
+}) => {
+  return useQuery<PaginatedResponse<Report>, Error>({
+    queryKey: ['reports', params],
+    queryFn: () => getReports(params),
+  });
 };
 
-export const useResolveReport = () => {
-    const queryClient = useQueryClient();
-    return useMutation<void, Error, string>({
-        mutationFn: resolveReport,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['reports'] });
-        },
-    });
+export const useReportById = (reportId: string) => {
+  return useQuery<Report, Error>({
+    queryKey: ['report', reportId],
+    queryFn: () => getReportById(reportId),
+    enabled: !!reportId,
+  });
 };
 
-export const useRestrictUser = () => {
-    const queryClient = useQueryClient();
-    return useMutation<void, Error, { userId: string, restriction: any }>({
-        mutationFn: ({ userId, restriction }) => restrictUser(userId, restriction),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['reports'] });
-        },
-    });
+export const useUpdateReport = () => {
+  const queryClient = useQueryClient();
+  return useMutation<{ message: string; report: Report }, Error, { reportId: string; reportData: Partial<Report> }>({
+    mutationFn: updateReport,
+    onSuccess: (data, variables) => {
+      toast.success("Report updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['report', variables.reportId] });
+    },
+    onError: () => {
+      toast.error("Failed to update report. Please try again.");
+    },
+  });
+};
+
+export const useRestrictUserFromReport = () => {
+  const queryClient = useQueryClient();
+  return useMutation<{ message: string }, Error, string>({
+    mutationFn: restrictUserFromReport,
+    onSuccess: () => {
+      toast.success("User restricted successfully!");
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: () => {
+      toast.error("Failed to restrict user. Please try again.");
+    },
+  });
+};
+
+export const useUnrestrictUserFromReport = () => {
+  const queryClient = useQueryClient();
+  return useMutation<{ message: string }, Error, string>({
+    mutationFn: unrestrictUserFromReport,
+    onSuccess: () => {
+      toast.success("User unrestricted successfully!");
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: () => {
+      toast.error("Failed to unrestrict user. Please try again.");
+    },
+  });
 };

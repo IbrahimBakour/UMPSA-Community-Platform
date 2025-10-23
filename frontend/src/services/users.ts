@@ -1,74 +1,148 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from './api';
-import { User } from '../types';
+import { User, PaginatedResponse, UserStats, UserActivity } from '../types';
+import { API_ENDPOINTS } from '../utils/constants';
+import toast from 'react-hot-toast';
 
-const getUsers = async (): Promise<User[]> => {
-  const { data } = await api.get("/api/users");
-  return data;
+const getAllUsers = async (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  status?: string;
+}): Promise<PaginatedResponse<User>> => {
+  const response = await api.get(API_ENDPOINTS.USERS, { params });
+  return response.data;
 };
 
-const searchUsers = async (searchTerm: string): Promise<User[]> => {
-  const { data } = await api.get(`/api/users/search?q=${searchTerm}`);
-  return data;
+const getUserById = async (userId: string): Promise<User> => {
+  const response = await api.get(`${API_ENDPOINTS.USERS}/${userId}`);
+  return response.data;
 };
 
-const updateUser = async (userData: Partial<User>): Promise<User> => {
-  const { data } = await api.put(`/api/users/me`, userData);
-  return data;
+const updateUserRole = async ({
+  userId,
+  role,
+}: {
+  userId: string;
+  role: string;
+}): Promise<{ message: string; user: User }> => {
+  const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/role`, { role });
+  return response.data;
 };
 
-const promoteUser = async (userId: string): Promise<User> => {
-  const { data } = await api.post(`/api/users/${userId}/promote`);
-  return data;
+const updateUserStatus = async ({
+  userId,
+  status,
+}: {
+  userId: string;
+  status: string;
+}): Promise<{ message: string; user: User }> => {
+  const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/status`, { status });
+  return response.data;
 };
 
-const assignUserToClub = async ({ userId, clubId }: { userId: string, clubId: string }): Promise<User> => {
-  const { data } = await api.post(`/api/users/${userId}/assign-club`, { clubId });
-  return data;
+const getUserStats = async (userId: string): Promise<UserStats> => {
+  const response = await api.get(`${API_ENDPOINTS.USERS}/${userId}/stats`);
+  return response.data;
 };
 
-export const useUsers = () => {
-  return useQuery<User[], Error>({
-    queryKey: ['users'],
-    queryFn: getUsers,
+const getUserActivity = async (userId: string, params?: {
+  page?: number;
+  limit?: number;
+  days?: number;
+}): Promise<PaginatedResponse<UserActivity>> => {
+  const response = await api.get(`${API_ENDPOINTS.USERS}/${userId}/activity`, { params });
+  return response.data;
+};
+
+const deleteUser = async (userId: string): Promise<{ message: string }> => {
+  const response = await api.delete(`${API_ENDPOINTS.USERS}/${userId}`);
+  return response.data;
+};
+
+export const useAllUsers = (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  status?: string;
+}) => {
+  return useQuery<PaginatedResponse<User>, Error>({
+    queryKey: ['users', params],
+    queryFn: () => getAllUsers(params),
   });
 };
 
-export const useSearchUsers = (searchTerm: string) => {
-  return useQuery<User[], Error>({
-    queryKey: ['users', searchTerm],
-    queryFn: () => searchUsers(searchTerm),
-    enabled: !!searchTerm,
+export const useUserById = (userId: string) => {
+  return useQuery<User, Error>({
+    queryKey: ['user', userId],
+    queryFn: () => getUserById(userId),
+    enabled: !!userId,
   });
 };
 
-export const useUpdateUser = () => {
+export const useUpdateUserRole = () => {
   const queryClient = useQueryClient();
-  return useMutation<User, Error, Partial<User>>({
-    mutationFn: updateUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+  return useMutation<{ message: string; user: User }, Error, { userId: string; role: string }>({
+    mutationFn: updateUserRole,
+    onSuccess: (data, variables) => {
+      toast.success(`User role updated to ${variables.role}!`);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
+    },
+    onError: () => {
+      toast.error("Failed to update user role. Please try again.");
     },
   });
 };
 
-export const usePromoteUser = () => {
+export const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
-  return useMutation<User, Error, string>({
-    mutationFn: promoteUser,
-    onSuccess: () => {
+  return useMutation<{ message: string; user: User }, Error, { userId: string; status: string }>({
+    mutationFn: updateUserStatus,
+    onSuccess: (data, variables) => {
+      toast.success(`User status updated to ${variables.status}!`);
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
+    },
+    onError: () => {
+      toast.error("Failed to update user status. Please try again.");
     },
   });
 };
 
-export const useAssignUserToClub = () => {
+export const useUserStats = (userId: string) => {
+  return useQuery<UserStats, Error>({
+    queryKey: ['userStats', userId],
+    queryFn: () => getUserStats(userId),
+    enabled: !!userId,
+  });
+};
+
+export const useUserActivity = (userId: string, params?: {
+  page?: number;
+  limit?: number;
+  days?: number;
+}) => {
+  return useQuery<PaginatedResponse<UserActivity>, Error>({
+    queryKey: ['userActivity', userId, params],
+    queryFn: () => getUserActivity(userId, params),
+    enabled: !!userId,
+  });
+};
+
+export const useDeleteUser = () => {
   const queryClient = useQueryClient();
-  return useMutation<User, Error, { userId: string, clubId: string }>({
-    mutationFn: assignUserToClub,
+  return useMutation<{ message: string }, Error, string>({
+    mutationFn: deleteUser,
     onSuccess: () => {
+      toast.success("User deleted successfully!");
       queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: () => {
+      toast.error("Failed to delete user. Please try again.");
     },
   });
 };

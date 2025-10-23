@@ -233,6 +233,15 @@ export interface UserStats {
   lastActivity: Date;
 }
 
+export interface UserActivity {
+  _id: string;
+  type: 'post_created' | 'post_liked' | 'comment_added' | 'club_joined' | 'poll_voted';
+  description: string;
+  timestamp: Date;
+  relatedPost?: string;
+  relatedClub?: string;
+}
+
 export interface ClubStats {
   totalMembers: number;
   totalPosts: number;

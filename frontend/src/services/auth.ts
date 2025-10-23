@@ -31,6 +31,6 @@ export const changePassword = async (passwordData: {
   currentPassword: string;
   newPassword: string;
 }): Promise<{ message: string }> => {
-  const response = await api.put<{ message: string }>('/api/users/change-password', passwordData);
+  const response = await api.put<{ message: string }>(API_ENDPOINTS.USER_CHANGE_PASSWORD, passwordData);
   return response.data;
 };

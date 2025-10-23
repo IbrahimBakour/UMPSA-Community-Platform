@@ -2,17 +2,17 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
-  useInfiniteQuery,
 } from "@tanstack/react-query";
 import api from "./api";
 import { FeedPost, ClubPost, Comment, IReaction, CreatePostForm, PaginatedResponse } from "../types";
-import { API_ENDPOINTS, POST_TYPES, POST_STATUS } from "../utils/constants";
+import { API_ENDPOINTS } from "../utils/constants";
 import toast from "react-hot-toast";
 
 // API functions
 const getFeedPosts = async (params?: {
   page?: number;
   limit?: number;
+  status?: string;
 }): Promise<PaginatedResponse<FeedPost>> => {
   const response = await api.get(API_ENDPOINTS.FEED_POSTS, { params });
   return response.data;
@@ -26,14 +26,14 @@ const getClubPosts = async (clubId: string, params?: {
   return response.data;
 };
 
-const createFeedPost = async (postData: CreatePostForm): Promise<FeedPost> => {
+const createFeedPost = async (postData: CreatePostForm): Promise<{ message: string; post: FeedPost }> => {
   const response = await api.post(API_ENDPOINTS.FEED_POSTS, postData);
-  return response.data.post;
+  return response.data;
 };
 
-const createClubPost = async (clubId: string, postData: CreatePostForm): Promise<ClubPost> => {
+const createClubPost = async (clubId: string, postData: CreatePostForm): Promise<{ message: string; post: ClubPost }> => {
   const response = await api.post(`${API_ENDPOINTS.CLUB_POSTS}/${clubId}/posts`, postData);
-  return response.data.post;
+  return response.data;
 };
 
 const getPendingFeedPosts = async (params?: {
@@ -45,17 +45,12 @@ const getPendingFeedPosts = async (params?: {
 };
 
 const approveFeedPost = async (postId: string): Promise<{ message: string; post: FeedPost }> => {
-  const response = await api.put(`${API_ENDPOINTS.FEED_POSTS}/${postId}/approve`, {
-    status: POST_STATUS.APPROVED
-  });
+  const response = await api.put(`${API_ENDPOINTS.FEED_POSTS}/${postId}/approve`);
   return response.data;
 };
 
 const rejectFeedPost = async (postId: string, reason?: string): Promise<{ message: string; reason: string }> => {
-  const response = await api.put(`${API_ENDPOINTS.FEED_POSTS}/${postId}/reject`, {
-    status: POST_STATUS.REJECTED,
-    reason
-  });
+  const response = await api.put(`${API_ENDPOINTS.FEED_POSTS}/${postId}/reject`, { reason });
   return response.data;
 };
 
@@ -101,7 +96,7 @@ const getComments = async (postId: string, params?: {
 };
 
 // React Query hooks
-export const useFeedPosts = (params?: { page?: number; limit?: number }) => {
+export const useFeedPosts = (params?: { page?: number; limit?: number; status?: string }) => {
   return useQuery<PaginatedResponse<FeedPost>, Error>({
     queryKey: ["feedPosts", params],
     queryFn: () => getFeedPosts(params),
@@ -118,10 +113,10 @@ export const useClubPosts = (clubId: string, params?: { page?: number; limit?: n
 
 export const useCreateFeedPost = () => {
   const queryClient = useQueryClient();
-  return useMutation<FeedPost, Error, CreatePostForm>({
+  return useMutation<{ message: string; post: FeedPost }, Error, CreatePostForm>({
     mutationFn: createFeedPost,
     onSuccess: (data) => {
-      if (data.status === POST_STATUS.APPROVED) {
+      if (data.post.status === 'approved') {
         toast.success("Post created and published successfully!");
       } else {
         toast.success("Post created and submitted for review");
@@ -136,7 +131,7 @@ export const useCreateFeedPost = () => {
 
 export const useCreateClubPost = (clubId: string) => {
   const queryClient = useQueryClient();
-  return useMutation<ClubPost, Error, CreatePostForm>({
+  return useMutation<{ message: string; post: ClubPost }, Error, CreatePostForm>({
     mutationFn: (postData) => createClubPost(clubId, postData),
     onSuccess: () => {
       toast.success("Club post created successfully!");

@@ -1,13 +1,13 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import LoginPage from "./pages/LoginPage";
-// import FeedPage from "./pages/FeedPage";
+import FeedPage from "./pages/FeedPage";
 import ClubsPage from "./pages/ClubsPage";
 import ClubProfilePage from "./pages/ClubProfilePage";
 import ReportsPage from "./pages/ReportsPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminPanel from "./pages/AdminPanel";
-import MainLayout from "./layouts/MainLayout";
+import MainLayout from "./components/layout/MainLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AdminRoute from "./routes/AdminRoute";
 import PendingPostsPage from "./pages/admin/PendingPostsPage";
@@ -60,7 +60,7 @@ function App() {
                     duration: 0.5,
                   }}
                 >
-                  {/* <FeedPage /> */}
+                  <FeedPage />
                 </motion.div>
               }
             />

@@ -1,21 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "./api";
-import { Club, ClubPost, User } from "../types";
+import { Club, ClubPost, User, PaginatedResponse, CreateClubForm } from "../types";
+import { API_ENDPOINTS } from "../utils/constants";
+import toast from "react-hot-toast";
 
 // API functions
-const getClubs = async (): Promise<Club[]> => {
-  const { data } = await api.get("/api/clubs");
-  return data;
+const getClubs = async (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}): Promise<PaginatedResponse<Club>> => {
+  const response = await api.get(API_ENDPOINTS.CLUBS, { params });
+  return response.data;
 };
 
 const getClub = async (clubId: string): Promise<Club> => {
-  const { data } = await api.get(`/api/clubs/${clubId}`);
-  return data;
+  const response = await api.get(`${API_ENDPOINTS.CLUBS}/${clubId}`);
+  return response.data;
 };
 
-const createClub = async (clubData: Partial<Club>): Promise<Club> => {
-  const { data } = await api.post("/api/clubs", clubData);
-  return data;
+const createClub = async (clubData: CreateClubForm): Promise<{ message: string; club: Club }> => {
+  const response = await api.post(API_ENDPOINTS.CLUBS, clubData);
+  return response.data;
 };
 
 const updateClub = async ({
@@ -23,14 +29,15 @@ const updateClub = async ({
   clubData,
 }: {
   clubId: string;
-  clubData: Partial<Club>;
-}): Promise<Club> => {
-  const { data } = await api.put(`/api/clubs/${clubId}`, clubData);
-  return data;
+  clubData: Partial<CreateClubForm>;
+}): Promise<{ message: string; club: Club }> => {
+  const response = await api.put(`${API_ENDPOINTS.CLUBS}/${clubId}`, clubData);
+  return response.data;
 };
 
-const deleteClub = async (clubId: string): Promise<void> => {
-  await api.delete(`/api/clubs/${clubId}`);
+const deleteClub = async (clubId: string): Promise<{ message: string }> => {
+  const response = await api.delete(`${API_ENDPOINTS.CLUBS}/${clubId}`);
+  return response.data;
 };
 
 const addMember = async ({
@@ -39,33 +46,27 @@ const addMember = async ({
 }: {
   clubId: string;
   userId: string;
-}): Promise<User> => {
-  const { data } = await api.post(`/api/clubs/${clubId}/members`, { userId });
-  return data;
+}): Promise<{ message: string; member: User }> => {
+  const response = await api.post(`${API_ENDPOINTS.CLUBS}/${clubId}/members`, { userId });
+  return response.data;
 };
 
-const getClubPosts = async (clubId: string): Promise<ClubPost[]> => {
-  const { data } = await api.get(`/api/posts/club/${clubId}?page=1&limit=10`);
-  console.log("Raw club posts data from backend:", data.posts); // Log the first post for detailed inspection
-  return data.posts;
-};
-
-const createClubPost = async ({
+const removeMember = async ({
   clubId,
-  content,
+  memberId,
 }: {
   clubId: string;
-  content: string;
-}): Promise<ClubPost> => {
-  const { data } = await api.post(`/api/clubs/${clubId}/posts`, { content });
-  return data;
+  memberId: string;
+}): Promise<{ message: string }> => {
+  const response = await api.delete(`${API_ENDPOINTS.CLUBS}/${clubId}/members/${memberId}`);
+  return response.data;
 };
 
 // React Query hooks
-export const useClubs = () => {
-  return useQuery<Club[], Error>({
-    queryKey: ["clubs"],
-    queryFn: getClubs,
+export const useClubs = (params?: { page?: number; limit?: number; search?: string }) => {
+  return useQuery<PaginatedResponse<Club>, Error>({
+    queryKey: ["clubs", params],
+    queryFn: () => getClubs(params),
   });
 };
 
@@ -79,59 +80,73 @@ export const useClub = (clubId: string) => {
 
 export const useCreateClub = () => {
   const queryClient = useQueryClient();
-  return useMutation<Club, Error, Partial<Club>>({
+  return useMutation<{ message: string; club: Club }, Error, CreateClubForm>({
     mutationFn: createClub,
     onSuccess: () => {
+      toast.success("Club created successfully!");
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
+    },
+    onError: () => {
+      toast.error("Failed to create club. Please try again.");
     },
   });
 };
 
 export const useUpdateClub = (clubId: string) => {
   const queryClient = useQueryClient();
-  return useMutation<Club, Error, Partial<Club>>({
+  return useMutation<{ message: string; club: Club }, Error, Partial<CreateClubForm>>({
     mutationFn: (clubData) => updateClub({ clubId, clubData }),
     onSuccess: () => {
+      toast.success("Club updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["club", clubId] });
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
+    },
+    onError: () => {
+      toast.error("Failed to update club. Please try again.");
     },
   });
 };
 
 export const useDeleteClub = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
+  return useMutation<{ message: string }, Error, string>({
     mutationFn: deleteClub,
     onSuccess: () => {
+      toast.success("Club deleted successfully!");
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete club. Please try again.");
     },
   });
 };
 
 export const useAddMember = (clubId: string) => {
   const queryClient = useQueryClient();
-  return useMutation<User, Error, string>({
+  return useMutation<{ message: string; member: User }, Error, string>({
     mutationFn: (userId) => addMember({ clubId, userId }),
     onSuccess: () => {
+      toast.success("Member added successfully!");
       queryClient.invalidateQueries({ queryKey: ["club", clubId] });
+      queryClient.invalidateQueries({ queryKey: ["clubs"] });
+    },
+    onError: () => {
+      toast.error("Failed to add member. Please try again.");
     },
   });
 };
 
-export const useClubPosts = (clubId: string) => {
-  return useQuery<ClubPost[], Error>({
-    queryKey: ["clubPosts", clubId],
-    queryFn: () => getClubPosts(clubId),
-    enabled: !!clubId,
-  });
-};
-
-export const useCreateClubPost = (clubId: string) => {
+export const useRemoveMember = (clubId: string) => {
   const queryClient = useQueryClient();
-  return useMutation<ClubPost, Error, string>({
-    mutationFn: (content) => createClubPost({ clubId, content }),
+  return useMutation<{ message: string }, Error, string>({
+    mutationFn: (memberId) => removeMember({ clubId, memberId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clubPosts", clubId] });
+      toast.success("Member removed successfully!");
+      queryClient.invalidateQueries({ queryKey: ["club", clubId] });
+      queryClient.invalidateQueries({ queryKey: ["clubs"] });
+    },
+    onError: () => {
+      toast.error("Failed to remove member. Please try again.");
     },
   });
 };

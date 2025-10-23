@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
   // Users
   USERS: '/api/users',
   USER_PROFILE: '/api/users/profile',
+  USER_CHANGE_PASSWORD: '/api/users/change-password',
   USER_STATS: '/api/users/stats',
   
   // Posts
@@ -45,6 +46,7 @@ export const API_ENDPOINTS = {
   UPLOAD_PROFILE: '/api/upload/profile',
   UPLOAD_CLUB: '/api/upload/club',
   UPLOAD_POST: '/api/upload/post',
+  UPLOADS: '/api/upload',
   
   // Admin
   ADMIN_DASHBOARD: '/api/admin/dashboard',
