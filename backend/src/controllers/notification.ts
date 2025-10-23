@@ -330,6 +330,11 @@ export const createBulkNotifications = async (
   } = {}
 ) => {
   try {
+    // Check if there are any recipients
+    if (!recipientIds || recipientIds.length === 0) {
+      return [];
+    }
+
     const {
       priority = "medium",
       relatedPost,
@@ -357,6 +362,7 @@ export const createBulkNotifications = async (
     }));
 
     const createdNotifications = await Notification.insertMany(notifications);
+    
     return createdNotifications;
   } catch (error) {
     console.error("Create bulk notifications error:", error);

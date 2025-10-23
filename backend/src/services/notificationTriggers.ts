@@ -60,8 +60,6 @@ export const triggerPostLikedNotification = async (
     // Don't notify if user liked their own post
     if (String(postAuthorId) === String(likerId)) return;
 
-    console.log("Creating post liked notification:", { postId, postAuthorId, likerId });
-
     await createNotification(
       "post_liked",
       "Post Liked",
@@ -74,8 +72,6 @@ export const triggerPostLikedNotification = async (
         data: { action: "liked" }
       }
     );
-
-    console.log("Post liked notification created successfully");
   } catch (error) {
     console.error("Error creating post liked notification:", error);
   }
@@ -220,22 +216,46 @@ export const triggerReportSubmittedNotification = async (
   adminIds: string[]
 ) => {
   try {
-    console.log("Creating report submitted notification:", { reportId, reporterId, adminIds });
+    if (adminIds.length === 0) {
+      return;
+    }
 
-    await createBulkNotifications(
-      "report_submitted",
-      "New Report Submitted",
-      "A new report has been submitted for review.",
-      adminIds,
-      {
-        priority: "high",
-        relatedReport: reportId,
-        relatedUser: reporterId,
-        data: { action: "submitted" }
+    try {
+      await createBulkNotifications(
+        "report_submitted",
+        "New Report Submitted",
+        "A new report has been submitted for review.",
+        adminIds,
+        {
+          priority: "high",
+          relatedReport: reportId,
+          relatedUser: reporterId,
+          data: { action: "submitted" }
+        }
+      );
+    } catch (bulkError) {
+      console.error("Bulk notification failed, trying individual notifications:", bulkError);
+      
+      // Fallback: create individual notifications
+      for (const adminId of adminIds) {
+        try {
+          await createNotification(
+            "report_submitted",
+            "New Report Submitted",
+            "A new report has been submitted for review.",
+            adminId,
+            {
+              priority: "high",
+              relatedReport: reportId,
+              relatedUser: reporterId,
+              data: { action: "submitted" }
+            }
+          );
+        } catch (individualError) {
+          console.error(`Failed to create notification for admin ${adminId}:`, individualError);
+        }
       }
-    );
-
-    console.log("Report submitted notification created successfully");
+    }
   } catch (error) {
     console.error("Error creating report submitted notification:", error);
   }

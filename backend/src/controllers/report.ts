@@ -32,7 +32,9 @@ export const createReport = async (req: AuthRequest, res: Response) => {
     const adminIds = admins.map(admin => String(admin._id));
 
     // Trigger notification to all admins
-    await triggerReportSubmittedNotification(String(report._id), String(userId), adminIds);
+    if (adminIds.length > 0) {
+      await triggerReportSubmittedNotification(String(report._id), String(userId), adminIds);
+    }
 
     res.status(201).json({ message: "Report submitted", report });
   } catch (error) {
