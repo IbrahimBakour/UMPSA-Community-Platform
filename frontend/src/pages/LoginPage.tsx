@@ -26,11 +26,10 @@ const LoginPage = () => {
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
-      const { user, token } = await loginService(data.studentId, data.password);
-      login(user, token);
+      const response = await loginService({ studentId: data.studentId, password: data.password });
+      login(response.user, response.token);
       toast.success("Logged in successfully!");
       navigate("/feed");
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Invalid credentials. Please try again.");
     }

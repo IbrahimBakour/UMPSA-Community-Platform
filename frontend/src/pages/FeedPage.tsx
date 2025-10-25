@@ -23,7 +23,11 @@ const FeedPage: React.FC = () => {
     status: 'approved',
   });
 
-  const posts = postsData?.data || [];
+  // Handle the response structure - it could be posts, feedPosts, or data
+  const posts = postsData?.posts || postsData?.feedPosts || postsData?.data || [];
+  
+  // Ensure posts is an array
+  const postsArray = Array.isArray(posts) ? posts : [];
 
   if (isLoading) {
     return <LoadingPage />;
@@ -89,7 +93,7 @@ const FeedPage: React.FC = () => {
 
       {/* Posts */}
       <div className="space-y-6">
-        {posts.length === 0 ? (
+        {postsArray.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -103,7 +107,7 @@ const FeedPage: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          posts.map((post) => (
+          postsArray.map((post) => (
             <PostCard key={post._id} post={post} />
           ))
         )}
@@ -196,10 +200,10 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {/* Media */}
           {post.media && post.media.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-2">
-              {post.media.slice(0, 4).map((media: any, index: number) => (
+              {post.media.slice(0, 4).map((mediaUrl: string, index: number) => (
                 <div key={index} className="relative">
                   <img
-                    src={media.url}
+                    src={mediaUrl}
                     alt={`Post media ${index + 1}`}
                     className="w-full h-32 object-cover rounded-lg"
                   />
