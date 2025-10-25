@@ -83,7 +83,7 @@ export const useUpdateReport = () => {
   const queryClient = useQueryClient();
   return useMutation<{ message: string; report: Report }, Error, { reportId: string; reportData: Partial<Report> }>({
     mutationFn: updateReport,
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       toast.success("Report updated successfully!");
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       queryClient.invalidateQueries({ queryKey: ['report', variables.reportId] });

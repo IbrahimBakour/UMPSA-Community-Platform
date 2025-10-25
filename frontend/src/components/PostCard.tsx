@@ -62,14 +62,13 @@ const PostCard = ({ post }: PostCardProps) => {
           </button>
         )}
       </div>
-      <h3 className="text-xl font-bold mb-2">{post.title}</h3>
-      <p>{post.content}</p>
-      {post.images && post.images.length > 0 && (
+      <p className="text-lg">{post.content}</p>
+      {post.media && post.media.length > 0 && (
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-          {post.images.map((imageItem, index) => (
+          {post.media.map((mediaUrl, index) => (
             <img
               key={index}
-              src={imageItem}
+              src={mediaUrl}
               alt="Post media"
               className="w-full h-auto rounded-md"
             />
@@ -82,7 +81,7 @@ const PostCard = ({ post }: PostCardProps) => {
           <div className="mt-2 space-y-2">
             {post.poll.options.map((option, index) => (
               <div key={index} className="flex items-center justify-between">
-                <span>{option}</span>
+                <span>{option.text}</span>
                 <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
                   Vote
                 </button>
@@ -91,11 +90,11 @@ const PostCard = ({ post }: PostCardProps) => {
           </div>
         </div>
       )}
-      {post.event && (
+      {post.calendarEvent && (
         <div className="mt-4">
-          <h4 className="font-bold">{post.event.title}</h4>
+          <h4 className="font-bold">{post.calendarEvent.title}</h4>
           <p className="text-gray-600">
-            {new Date(post.event.date).toLocaleDateString()}
+            {new Date(post.calendarEvent.date).toLocaleDateString()}
           </p>
           <button className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
             Going
@@ -104,7 +103,7 @@ const PostCard = ({ post }: PostCardProps) => {
       )}
       <ReactionButtons post={post} />
       <CommentList comments={post.comments} />
-      <CommentInput postId={post._id} postType={post.type} />
+      <CommentInput postId={post._id} postType={post.postType} />
       <ConfirmationModal
         isOpen={isConfirmationOpen}
         onClose={() => setConfirmationOpen(false)}

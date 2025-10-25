@@ -10,7 +10,7 @@ interface ReactionButtonsProps {
 
 const ReactionButtons = ({ post }: ReactionButtonsProps) => {
   const { user } = useAuth();
-  const addReactionMutation = useAddReaction(post.type, post._id);
+  const addReactionMutation = useAddReaction(post._id);
 
   const handleReaction = (reactionType: 'like' | 'love' | 'laugh' | 'dislike') => {
     if (user?.status === 'restricted') {
@@ -20,14 +20,13 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
   };
 
   const getReactionCount = (reactionType: 'like' | 'love' | 'laugh' | 'dislike') => {
-    // This is a simplified count. In a real app, you'd have a more complex structure
-    // to store counts for each reaction type.
-    return post.likes.length; // Assuming 'likes' array stores all reactions for now
+    if (!post.interactions || post.interactions.length === 0) return 0;
+    return post.interactions.filter(r => r.type === reactionType).length;
   };
 
   const userHasReacted = (reactionType: 'like' | 'love' | 'laugh' | 'dislike') => {
-    // Simplified check: assuming user can only have one reaction type per post
-    return post.likes.includes(user?._id || '');
+    if (!post.interactions || !user) return false;
+    return post.interactions.some(r => r.user === user._id && r.type === reactionType);
   };
 
   return (
