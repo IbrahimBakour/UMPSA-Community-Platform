@@ -2,16 +2,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { useCreateReport, useReports, useResolveReport } from '../services/reports';
+import { useCreateReport, useReports, useUpdateReport, useRestrictUserFromReport } from '../services/reports';
 import { useAuth } from '../hooks/useAuth';
 import { useState } from 'react';
 import ConfirmationModal from '../components/ConfirmationModal';
-import RestrictUserModal from '../components/RestrictUserModal';
 
 const reportSchema = z.object({
-  description: z.string().min(1, 'Description cannot be empty'),
-  againstUser: z.string().optional(),
-  postLink: z.string().optional(),
+  targetType: z.enum(['user', 'post', 'club']),
+  targetId: z.string().min(1, 'Target ID is required'),
+  reason: z.string().min(1, 'Reason cannot be empty'),
 });
 
 type ReportFormInputs = z.infer<typeof reportSchema>;
@@ -19,11 +18,16 @@ type ReportFormInputs = z.infer<typeof reportSchema>;
 const ReportsPage = () => {
   const { isAdmin } = useAuth();
   const createReportMutation = useCreateReport();
-  const { data: reports, isLoading, error } = useReports();
-  const resolveReportMutation = useResolveReport();
+  const { data: reportsData, isLoading, error } = useReports();
+  const updateReportMutation = useUpdateReport();
+  const restrictUserMutation = useRestrictUserFromReport();
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [isResolveConfirmationOpen, setResolveConfirmationOpen] = useState(false);
-  const [isRestrictModalOpen, setRestrictModalOpen] = useState(false);
+  const [isRestrictConfirmationOpen, setRestrictConfirmationOpen] = useState(false);
+  
+  // Handle response structure
+  const reports = reportsData?.reports || reportsData?.data || [];
+  const reportsArray = Array.isArray(reports) ? reports : [];
 
   const {
     register,
@@ -48,7 +52,10 @@ const ReportsPage = () => {
 
   const handleResolve = () => {
     if (selectedReportId) {
-      resolveReportMutation.mutate(selectedReportId, {
+      updateReportMutation.mutate({ 
+        reportId: selectedReportId, 
+        reportData: { status: 'resolved' } 
+      }, {
         onSuccess: () => {
           toast.success('Report resolved successfully!');
           setSelectedReportId(null);
@@ -61,37 +68,55 @@ const ReportsPage = () => {
     }
   };
 
+  const handleRestrictUser = () => {
+    if (selectedReportId) {
+      restrictUserMutation.mutate(selectedReportId, {
+        onSuccess: () => {
+          toast.success('User restricted successfully!');
+          setSelectedReportId(null);
+          setRestrictConfirmationOpen(false);
+        },
+        onError: () => {
+          toast.error('Failed to restrict user. Please try again.');
+        },
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="bg-white rounded-lg shadow-md p-4 mb-4">
         <h1 className="text-3xl font-bold mb-4">Submit a Report</h1>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+            <label htmlFor="targetType" className="block text-sm font-medium text-gray-700">Report Type</label>
+            <select {...register('targetType')} id="targetType" className="w-full p-2 border border-gray-300 rounded-md">
+              <option value="user">User</option>
+              <option value="club">Club</option>
+            </select>
+            {errors.targetType && <p className="text-red-500 text-sm">{errors.targetType.message}</p>}
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="targetId" className="block text-sm font-medium text-gray-700">Target</label>
+            <input
+              {...register('targetId')}
+              id="targetId"
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="For User: Student ID (e.g., CB22000) | For Club: Club name"
+            />
+            {errors.targetId && <p className="text-red-500 text-sm">{errors.targetId.message}</p>}
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="reason" className="block text-sm font-medium text-gray-700">Reason</label>
             <textarea
-              {...register('description')}
-              id="description"
+              {...register('reason')}
+              id="reason"
               className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Please describe why you are reporting this"
             ></textarea>
-            {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="againstUser" className="block text-sm font-medium text-gray-700">Against User (ID)</label>
-            <input
-              {...register('againstUser')}
-              id="againstUser"
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="postLink" className="block text-sm font-medium text-gray-700">Post Link</label>
-            <input
-              {...register('postLink')}
-              id="postLink"
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
+            {errors.reason && <p className="text-red-500 text-sm">{errors.reason.message}</p>}
           </div>
 
           <button
@@ -109,33 +134,37 @@ const ReportsPage = () => {
           <h2 className="text-2xl font-bold mb-4">Open Reports</h2>
           {isLoading && <p>Loading reports...</p>}
           {error && <p>Error fetching reports: {error.message}</p>}
-          {reports && (
+          {reportsArray.length > 0 && (
             <ul>
-              {reports.map((report) => (
+              {reportsArray.map((report) => (
                 <li key={report._id} className="border-b py-2">
-                  <p><strong>Description:</strong> {report.description}</p>
-                  <p><strong>Against:</strong> {report.againstUser}</p>
-                  <p><strong>Post:</strong> {report.postLink}</p>
+                  <p><strong>Target Type:</strong> {report.targetType}</p>
+                  <p><strong>Target ID:</strong> {report.targetId}</p>
+                  <p><strong>Reason:</strong> {report.reason}</p>
+                  <p><strong>Status:</strong> {report.status}</p>
                   <div className="mt-2">
-                    <button 
-                      onClick={() => {
-                        setSelectedReportId(report._id);
-                        setResolveConfirmationOpen(true);
-                      }}
-                      className="mr-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    >
-                      Mark Resolved
-                    </button>
-                    <button className="mr-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Dismiss</button>
-                    <button 
-                      onClick={() => {
-                        setSelectedReportId(report._id);
-                        setRestrictModalOpen(true);
-                      }}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                    >
-                      Restrict User
-                    </button>
+                    {report.status !== 'resolved' && (
+                      <button 
+                        onClick={() => {
+                          setSelectedReportId(report._id);
+                          setResolveConfirmationOpen(true);
+                        }}
+                        className="mr-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                      >
+                        Mark Resolved
+                      </button>
+                    )}
+                    {report.targetType === 'user' && report.status !== 'resolved' && (
+                      <button 
+                        onClick={() => {
+                          setSelectedReportId(report._id);
+                          setRestrictConfirmationOpen(true);
+                        }}
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                      >
+                        Restrict User
+                      </button>
+                    )}
                   </div>
                 </li>
               ))}
@@ -150,13 +179,13 @@ const ReportsPage = () => {
         title="Resolve Report"
         message="Are you sure you want to mark this report as resolved?"
       />
-      {selectedReportId && (
-        <RestrictUserModal
-          isOpen={isRestrictModalOpen}
-          onClose={() => setRestrictModalOpen(false)}
-          userId={reports?.find(r => r._id === selectedReportId)?.againstUser || ''}
-        />
-      )}
+      <ConfirmationModal
+        isOpen={isRestrictConfirmationOpen}
+        onClose={() => setRestrictConfirmationOpen(false)}
+        onConfirm={handleRestrictUser}
+        title="Restrict User"
+        message="Are you sure you want to restrict this user based on this report?"
+      />
     </div>
   );
 };

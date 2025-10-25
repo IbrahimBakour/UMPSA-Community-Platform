@@ -14,13 +14,17 @@ const ClubProfilePage = () => {
     error: clubError,
   } = useClub(id!);
   const {
-    data: posts,
+    data: postsData,
     isLoading: isLoadingPosts,
     error: postsError,
   } = useClubPosts(id!);
   const { user } = useAuth();
 
-  const isClubMember = club?.members.some((member) => member._id === user?._id);
+  // Extract posts array from PaginatedResponse
+  const posts: any[] = Array.isArray(postsData) ? postsData : (Array.isArray(postsData?.data) ? postsData.data : []);
+  
+  // Fix member check - members is an array of strings (User IDs)
+  const isClubMember = club?.members.some((memberId) => memberId === user?._id);
 
   if (isLoadingClub || isLoadingPosts) {
     return <div>Loading...</div>;
@@ -59,9 +63,13 @@ const ClubProfilePage = () => {
 
       <div>
         <h2 className="text-2xl font-bold mb-4">Posts</h2>
-        {posts?.map((post) => (
-          <PostCard key={post._id} post={post} />
-        ))}
+        {posts.length === 0 ? (
+          <p>No posts yet</p>
+        ) : (
+          posts.map((post) => (
+            <PostCard key={post._id} post={post} />
+          ))
+        )}
       </div>
     </div>
   );

@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { useAssignUserToClub } from '../services/users';
+import api from '../services/api';
 import { useClubs } from '../services/clubs';
+import { Club } from '../types';
 
 const assignClubSchema = z.object({
   clubId: z.string().min(1, 'Please select a club'),
@@ -18,8 +19,10 @@ interface AssignClubFormProps {
 }
 
 const AssignClubForm = ({ userId, closeModal }: AssignClubFormProps) => {
-  const assignUserToClubMutation = useAssignUserToClub();
-  const { data: clubs, isLoading } = useClubs();
+  const { data: clubsData, isLoading } = useClubs();
+  
+  // Extract clubs array from PaginatedResponse
+  const clubs: Club[] = Array.isArray(clubsData) ? clubsData : (Array.isArray(clubsData?.data) ? clubsData.data : []);
 
   const {
     register,
@@ -29,16 +32,14 @@ const AssignClubForm = ({ userId, closeModal }: AssignClubFormProps) => {
     resolver: zodResolver(assignClubSchema),
   });
 
-  const onSubmit = (data: AssignClubFormInputs) => {
-    assignUserToClubMutation.mutate({ userId, clubId: data.clubId }, {
-      onSuccess: () => {
-        toast.success('User assigned to club successfully!');
-        closeModal();
-      },
-      onError: () => {
-        toast.error('Failed to assign user to club. Please try again.');
-      },
-    });
+  const onSubmit = async (data: AssignClubFormInputs) => {
+    try {
+      await api.post(`/api/clubs/${data.clubId}/members`, { userId });
+      toast.success('User assigned to club successfully!');
+      closeModal();
+    } catch (error) {
+      toast.error('Failed to assign user to club. Please try again.');
+    }
   };
 
   return (
@@ -54,7 +55,7 @@ const AssignClubForm = ({ userId, closeModal }: AssignClubFormProps) => {
           {isLoading ? (
             <option>Loading clubs...</option>
           ) : (
-            clubs?.map((club) => (
+            clubs.map((club) => (
               <option key={club._id} value={club._id}>
                 {club.name}
               </option>
@@ -75,9 +76,8 @@ const AssignClubForm = ({ userId, closeModal }: AssignClubFormProps) => {
         <button
           type="submit"
           className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-          disabled={assignUserToClubMutation.isPending}
         >
-          {assignUserToClubMutation.isPending ? 'Assigning...' : 'Assign'}
+          Assign
         </button>
       </div>
     </form>

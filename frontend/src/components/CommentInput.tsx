@@ -15,11 +15,11 @@ interface CommentInputProps {
   postType: 'feed' | 'club';
 }
 
-const CommentInput = ({ postId, postType }: CommentInputProps) => {
+const CommentInput = ({ postId }: CommentInputProps) => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<CommentFormInputs>({
     resolver: zodResolver(commentSchema),
   });
-  const addCommentMutation = useAddComment(postType, postId);
+  const addCommentMutation = useAddComment(postId);
 
   const onSubmit = (data: CommentFormInputs) => {
     addCommentMutation.mutate(data.content, {

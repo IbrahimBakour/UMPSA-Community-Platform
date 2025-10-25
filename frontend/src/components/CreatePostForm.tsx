@@ -1,12 +1,12 @@
 
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateFeedPost } from '../services/posts';
 import { useState } from 'react';
 import { FaImage, FaPoll, FaCalendarAlt } from 'react-icons/fa';
-import { useAuth } from '../hooks/useAuth';
 import { uploadFile } from '../services/uploads';
+import toast from 'react-hot-toast';
 
 const createPostSchema = z.object({
   content: z.string().min(1, 'Post content cannot be empty'),
@@ -14,6 +14,8 @@ const createPostSchema = z.object({
   poll: z.object({
     question: z.string().min(1, 'Poll question cannot be empty'),
     options: z.array(z.string().min(1, 'Option cannot be empty')).min(2, 'You must have at least two options'),
+    allowMultipleVotes: z.boolean(),
+    endDate: z.date().optional(),
   }).optional(),
   event: z.object({
     title: z.string().min(1, 'Event title cannot be empty'),
@@ -24,29 +26,58 @@ const createPostSchema = z.object({
 type CreatePostFormInputs = z.infer<typeof createPostSchema>;
 
 const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
-  const { isAdmin } = useAuth();
   const {
     register,
     handleSubmit,
     reset,
-    control,
     formState: { errors },
     setValue,
   } = useForm<CreatePostFormInputs>({
     resolver: zodResolver(createPostSchema),
   });
-  const createPostMutation = useCreateFeedPost(isAdmin || false, closeModal, reset as () => void);
+  const createPostMutation = useCreateFeedPost();
   const [postType, setPostType] = useState<'text' | 'image' | 'poll' | 'event'>('text');
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "poll.options" as "poll.options",
-  });
+  const addPollOption = () => {
+    setPollOptions([...pollOptions, '']);
+  };
+
+  const removePollOption = (index: number) => {
+    setPollOptions(pollOptions.filter((_, i) => i !== index));
+  };
+
+  const updatePollOption = (index: number, value: string) => {
+    const newOptions = [...pollOptions];
+    newOptions[index] = value;
+    setPollOptions(newOptions);
+  };
 
   const onSubmit = (data: CreatePostFormInputs) => {
-    createPostMutation.mutate(data);
+    // Transform data to match CreatePostForm type
+    const postData = {
+      content: data.content,
+      media: data.images ? data.images.map(img => new File([], img)) : undefined,
+      poll: data.poll ? {
+        question: data.poll.question,
+        options: pollOptions.filter(opt => opt.trim() !== ''),
+        allowMultipleVotes: false,
+      } : undefined,
+      calendarEvent: data.event ? {
+        title: data.event.title,
+        date: new Date(data.event.date),
+      } : undefined,
+    };
+    
+    createPostMutation.mutate(postData, {
+      onSuccess: () => {
+        closeModal();
+        reset();
+        setPollOptions(['', '']);
+      }
+    });
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,14 +127,21 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
           <input {...register('poll.question')} placeholder="Poll Question" className="w-full p-2 border border-gray-300 rounded-md" />
           {errors.poll?.question && <p className="text-red-500 text-sm">{errors.poll.question.message}</p>}
           <div className="mt-2 space-y-2">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-center space-x-2">
-                <input {...register(`poll.options.${index}`)} placeholder={`Option ${index + 1}`} className="w-full p-2 border border-gray-300 rounded-md" />
-                <button type="button" onClick={() => remove(index)}>Remove</button>
+            {pollOptions.map((option, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <input 
+                  value={option}
+                  onChange={(e) => updatePollOption(index, e.target.value)}
+                  placeholder={`Option ${index + 1}`} 
+                  className="w-full p-2 border border-gray-300 rounded-md" 
+                />
+                {pollOptions.length > 2 && (
+                  <button type="button" onClick={() => removePollOption(index)}>Remove</button>
+                )}
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => append('')} className="mt-2 text-indigo-600">Add Option</button>
+          <button type="button" onClick={addPollOption} className="mt-2 text-indigo-600">Add Option</button>
         </div>
       )}
 

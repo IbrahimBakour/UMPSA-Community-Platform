@@ -15,7 +15,6 @@ const ClubsManagementPage = () => {
   const clubsArray = Array.isArray(clubs) ? clubs : [];
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
-  const [isEditModalOpen, setEditModalOpen] = useState(false);
 
   const handleDelete = () => {
     if (selectedClub) {
@@ -61,10 +60,7 @@ const ClubsManagementPage = () => {
               <td className="border px-4 py-2">{club.description || 'N/A'}</td>
               <td className="border px-4 py-2">
                 <button 
-                  onClick={() => {
-                    setSelectedClub(club);
-                    setEditModalOpen(true);
-                  }}
+                  onClick={() => setSelectedClub(club)}
                   className="mr-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
                 >
                   Edit
@@ -93,7 +89,9 @@ const ClubsManagementPage = () => {
         />
       )}
       {selectedClub && (
-        <EditClubModal club={selectedClub} />
+        <div className="mt-4">
+          <EditClubModal club={selectedClub} />
+        </div>
       )}
     </div>
   );

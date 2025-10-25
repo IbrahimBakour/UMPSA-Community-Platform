@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "./api";
-import { Club, ClubPost, User, PaginatedResponse, CreateClubForm } from "../types";
+import { Club, User, PaginatedResponse, CreateClubForm } from "../types";
 import { API_ENDPOINTS } from "../utils/constants";
 import toast from "react-hot-toast";
+import { useClubPosts as usePostsClubPosts } from "./posts";
 
 // API functions
 const getClubs = async (params?: {
@@ -150,3 +151,6 @@ export const useRemoveMember = (clubId: string) => {
     },
   });
 };
+
+// Hook to get club posts (uses posts service)
+export const useClubPosts = usePostsClubPosts;

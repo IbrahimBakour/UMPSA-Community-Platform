@@ -7,6 +7,10 @@ import { useDeletePost } from "../services/posts";
 import { useState } from "react";
 import ConfirmationModal from "./ConfirmationModal";
 import toast from "react-hot-toast";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useCreateReport } from '../services/reports';
 // import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { motion } from "framer-motion";
 
@@ -14,10 +18,22 @@ interface PostCardProps {
   post: AnyPost;
 }
 
+const reportPostSchema = z.object({
+  reason: z.string().min(1, 'Reason cannot be empty'),
+});
+
+type ReportPostFormInputs = z.infer<typeof reportPostSchema>;
+
 const PostCard = ({ post }: PostCardProps) => {
   const { isAdmin } = useAuth();
   const deletePostMutation = useDeletePost();
+  const createReportMutation = useCreateReport();
   const [isConfirmationOpen, setConfirmationOpen] = useState(false);
+  const [isReportModalOpen, setReportModalOpen] = useState(false);
+  
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<ReportPostFormInputs>({
+    resolver: zodResolver(reportPostSchema),
+  });
 
   const handleDelete = () => {
     deletePostMutation.mutate(post._id, {
@@ -27,6 +43,23 @@ const PostCard = ({ post }: PostCardProps) => {
       },
       onError: () => {
         toast.error("Failed to delete post. Please try again.");
+      },
+    });
+  };
+
+  const handleReportSubmit = (data: ReportPostFormInputs) => {
+    createReportMutation.mutate({
+      targetType: 'post',
+      targetId: post._id,
+      reason: data.reason,
+    }, {
+      onSuccess: () => {
+        toast.success("Post reported successfully!");
+        setReportModalOpen(false);
+        reset();
+      },
+      onError: () => {
+        toast.error("Failed to report post. Please try again.");
       },
     });
   };
@@ -53,14 +86,22 @@ const PostCard = ({ post }: PostCardProps) => {
             </p>
           </div>
         </div>
-        {isAdmin && (
+        <div className="flex items-center space-x-2">
           <button
-            onClick={() => setConfirmationOpen(true)}
-            className="text-red-500 hover:text-red-700"
+            onClick={() => setReportModalOpen(true)}
+            className="text-orange-500 hover:text-orange-700 text-sm"
           >
-            Delete
+            Report
           </button>
-        )}
+          {isAdmin && (
+            <button
+              onClick={() => setConfirmationOpen(true)}
+              className="text-red-500 hover:text-red-700 text-sm"
+            >
+              Delete
+            </button>
+          )}
+        </div>
       </div>
       <p className="text-lg">{post.content}</p>
       {post.media && post.media.length > 0 && (
@@ -111,6 +152,49 @@ const PostCard = ({ post }: PostCardProps) => {
         title="Delete Post"
         message="Are you sure you want to delete this post? This action cannot be undone."
       />
+      
+      {/* Report Post Modal */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Report Post</h2>
+            <form onSubmit={handleSubmit(handleReportSubmit)}>
+              <div className="mb-4">
+                <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason for reporting
+                </label>
+                <textarea
+                  {...register('reason')}
+                  id="reason"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows={4}
+                  placeholder="Please describe why you are reporting this post"
+                ></textarea>
+                {errors.reason && <p className="text-red-500 text-sm mt-1">{errors.reason.message}</p>}
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportModalOpen(false);
+                    reset();
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createReportMutation.isPending}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
+                >
+                  {createReportMutation.isPending ? 'Reporting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Report from "../models/Report";
 import User from "../models/User";
+import Club from "../models/Club";
 import { IUser } from "../models/User";
 import { triggerReportSubmittedNotification, triggerReportResolvedNotification, triggerUserRestrictedNotification, triggerUserUnrestrictedNotification } from "../services/notificationTriggers";
 
@@ -18,10 +19,32 @@ export const createReport = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    // Handle different target types
+    let processedTargetId = targetId;
+    
+    if (targetType === "user") {
+      // For user reports, targetId is a studentId (e.g., "CB22000")
+      // Find the user by studentId
+      const user = await User.findOne({ studentId: targetId });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      processedTargetId = user._id;
+    } else if (targetType === "club") {
+      // For club reports, targetId is a club name
+      // Find the club by name
+      const club = await Club.findOne({ name: targetId });
+      if (!club) {
+        return res.status(404).json({ message: "Club not found" });
+      }
+      processedTargetId = club._id;
+    }
+    // For post reports, targetId is already an ObjectId (post ID)
+
     const report = new Report({
       reportedBy: userId,
       targetType,
-      targetId,
+      targetId: processedTargetId,
       reason,
       status: "pending",
     });

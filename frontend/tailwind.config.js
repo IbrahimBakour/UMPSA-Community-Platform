@@ -5,6 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Custom brand colors (extending Tailwind defaults)
         // Primary Brand Colors (from UMPSA logo)
         primary: {
           50: '#f0fdfa',

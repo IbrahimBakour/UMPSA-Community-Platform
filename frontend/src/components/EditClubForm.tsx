@@ -36,7 +36,14 @@ const EditClubForm = ({ club, closeModal }: EditClubFormProps) => {
   });
 
   const onSubmit = (data: EditClubFormInputs) => {
-    updateClubMutation.mutate(data, {
+    // Convert string to File if needed, or remove profilePicture from update
+    const updateData = {
+      name: data.name,
+      description: data.description,
+      // Don't include profilePicture if it's a string (URL), as the backend expects File
+    };
+    
+    updateClubMutation.mutate(updateData, {
       onSuccess: () => {
         toast.success('Club updated successfully!');
         reset();

@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { IUser } from "./User";
 
-export type ReportTargetType = "user" | "post" | "comment";
+export type ReportTargetType = "user" | "post" | "club";
 export type ReportStatus = "pending" | "reviewed" | "resolved";
 
 export interface IReport extends Document {
@@ -25,11 +25,11 @@ const reportSchema = new Schema<IReport>(
     },
     targetType: {
       type: String,
-      enum: ["user", "post", "comment"],
+      enum: ["user", "post", "club"],
       required: true,
     },
     targetId: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.Mixed, // Can be ObjectId, String (studentId), or String (club name)
       required: true,
     },
     reason: {

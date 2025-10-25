@@ -57,6 +57,15 @@ export const getFileInfo = async (filePath: string): Promise<{ message: string; 
 };
 
 // Legacy export for backward compatibility
-// This function appears to be a legacy export for backward compatibility, as per the comment above.
-// It's not strictly needed if all usages of `uploadFile` have been replaced with the newer, more specific upload functions (e.g., uploadPostMedia, uploadClubMedia).
-// If no code in your project imports/uses `uploadFile`, or all usage has been migrated away, you can safely delete this function.
+export const uploadFile = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await api.post(API_ENDPOINTS.UPLOAD_POST, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data.url || response.data.urls?.[0] || '';
+};

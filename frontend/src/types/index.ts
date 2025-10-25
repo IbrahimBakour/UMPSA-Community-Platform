@@ -110,7 +110,7 @@ export interface Club {
 }
 
 // Report Types
-export type ReportTargetType = 'user' | 'post' | 'comment';
+export type ReportTargetType = 'user' | 'post' | 'club';
 export type ReportStatus = 'pending' | 'reviewed' | 'resolved';
 
 export interface Report {

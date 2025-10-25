@@ -43,14 +43,9 @@ export interface AvatarProps
 const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
   ({ className, size, variant, src, alt, fallback, online, offline, ...props }, ref) => {
     const [imageError, setImageError] = React.useState(false);
-    const [imageLoaded, setImageLoaded] = React.useState(false);
 
     const handleImageError = () => {
       setImageError(true);
-    };
-
-    const handleImageLoad = () => {
-      setImageLoaded(true);
     };
 
     const getInitials = (name: string) => {
@@ -78,7 +73,6 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
               alt={alt}
               className="w-full h-full object-cover"
               onError={handleImageError}
-              onLoad={handleImageLoad}
             />
           ) : (
             <span className="select-none">{initials}</span>

@@ -22,8 +22,11 @@ interface AddMemberFormProps {
 const AddMemberForm = ({ clubId, closeModal }: AddMemberFormProps) => {
   const addMemberMutation = useAddMember(clubId);
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: users, isLoading } = useSearchUsers(searchTerm);
+  const { data: usersData, isLoading } = useSearchUsers(searchTerm);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  
+  // Extract users array from PaginatedResponse
+  const users: User[] = Array.isArray(usersData) ? usersData : (Array.isArray(usersData?.data) ? usersData.data : []);
 
   const {
     handleSubmit,
