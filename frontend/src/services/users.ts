@@ -43,8 +43,8 @@ const updateUserStatus = async ({
   return response.data;
 };
 
-const getUserStats = async (userId: string): Promise<UserStats> => {
-  const response = await api.get(`${API_ENDPOINTS.USERS}/${userId}/stats`);
+const getUserStats = async (): Promise<UserStats> => {
+  const response = await api.get(API_ENDPOINTS.USER_STATS);
   return response.data;
 };
 
@@ -113,11 +113,10 @@ export const useUpdateUserStatus = () => {
   });
 };
 
-export const useUserStats = (userId: string) => {
+export const useUserStats = () => {
   return useQuery<UserStats, Error>({
-    queryKey: ['userStats', userId],
-    queryFn: () => getUserStats(userId),
-    enabled: !!userId,
+    queryKey: ['userStats'],
+    queryFn: () => getUserStats(),
   });
 };
 
@@ -166,9 +165,9 @@ export const useUpdateUser = () => {
 };
 export const usePromoteUser = () => {
   const queryClient = useQueryClient();
-  return useMutation<User, Error, string>({
-    mutationFn: async (userId) => {
-      const response = await api.post(`${API_ENDPOINTS.USERS}/${userId}/promote`);
+  return useMutation<{ message: string; user: User }, Error, { userId: string; role: string }>({
+    mutationFn: async ({ userId, role }) => {
+      const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/role`, { role });
       return response.data;
     },
     onSuccess: () => {

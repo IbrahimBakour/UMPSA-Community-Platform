@@ -7,14 +7,14 @@ export const login = async (loginData: LoginForm): Promise<AuthResponse> => {
   return response.data;
 };
 
-export const register = async (registerData: RegisterForm): Promise<AuthResponse> => {
-  const response = await api.post<AuthResponse>(API_ENDPOINTS.REGISTER, registerData);
-  return response.data;
+// Note: Register endpoint not implemented in backend - using import instead
+export const register = async (_registerData: RegisterForm): Promise<AuthResponse> => {
+  throw new Error("Registration not implemented. Use admin import instead.");
 };
 
+// Note: Refresh endpoint not implemented in backend
 export const refreshToken = async (): Promise<AuthResponse> => {
-  const response = await api.post<AuthResponse>(API_ENDPOINTS.REFRESH);
-  return response.data;
+  throw new Error("Token refresh not implemented in backend.");
 };
 
 export const getCurrentUser = async (): Promise<User> => {
@@ -32,5 +32,15 @@ export const changePassword = async (passwordData: {
   newPassword: string;
 }): Promise<{ message: string }> => {
   const response = await api.put<{ message: string }>(API_ENDPOINTS.USER_CHANGE_PASSWORD, passwordData);
+  return response.data;
+};
+
+// Admin-only function for importing users
+export const importUsers = async (file: File): Promise<{ message: string; imported: number }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post<{ message: string; imported: number }>(API_ENDPOINTS.IMPORT_USERS, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
   return response.data;
 };

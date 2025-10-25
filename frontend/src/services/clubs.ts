@@ -15,7 +15,7 @@ const getClubs = async (params?: {
 };
 
 const getClub = async (clubId: string): Promise<Club> => {
-  const response = await api.get(`${API_ENDPOINTS.CLUBS}/${clubId}`);
+  const response = await api.get(API_ENDPOINTS.CLUB.replace(':id', clubId));
   return response.data;
 };
 
@@ -31,12 +31,12 @@ const updateClub = async ({
   clubId: string;
   clubData: Partial<CreateClubForm>;
 }): Promise<{ message: string; club: Club }> => {
-  const response = await api.put(`${API_ENDPOINTS.CLUBS}/${clubId}`, clubData);
+  const response = await api.put(API_ENDPOINTS.CLUB_UPDATE.replace(':id', clubId), clubData);
   return response.data;
 };
 
 const deleteClub = async (clubId: string): Promise<{ message: string }> => {
-  const response = await api.delete(`${API_ENDPOINTS.CLUBS}/${clubId}`);
+  const response = await api.delete(API_ENDPOINTS.CLUB_DELETE.replace(':id', clubId));
   return response.data;
 };
 
@@ -47,7 +47,7 @@ const addMember = async ({
   clubId: string;
   userId: string;
 }): Promise<{ message: string; member: User }> => {
-  const response = await api.post(`${API_ENDPOINTS.CLUBS}/${clubId}/members`, { userId });
+  const response = await api.post(API_ENDPOINTS.CLUB_MEMBER_ADD.replace(':id', clubId), { userId });
   return response.data;
 };
 
@@ -58,7 +58,7 @@ const removeMember = async ({
   clubId: string;
   memberId: string;
 }): Promise<{ message: string }> => {
-  const response = await api.delete(`${API_ENDPOINTS.CLUBS}/${clubId}/members/${memberId}`);
+  const response = await api.delete(API_ENDPOINTS.CLUB_MEMBER_REMOVE.replace(':id', clubId).replace(':memberId', memberId));
   return response.data;
 };
 

@@ -22,7 +22,7 @@ const getClubPosts = async (clubId: string, params?: {
   page?: number;
   limit?: number;
 }): Promise<PaginatedResponse<ClubPost>> => {
-  const response = await api.get(`${API_ENDPOINTS.CLUB_POSTS}/${clubId}/posts`, { params });
+  const response = await api.get(API_ENDPOINTS.CLUB_POSTS.replace(':clubId', clubId), { params });
   return response.data;
 };
 
@@ -32,7 +32,7 @@ const createFeedPost = async (postData: CreatePostForm): Promise<{ message: stri
 };
 
 const createClubPost = async (clubId: string, postData: CreatePostForm): Promise<{ message: string; post: ClubPost }> => {
-  const response = await api.post(`${API_ENDPOINTS.CLUB_POSTS}/${clubId}/posts`, postData);
+  const response = await api.post(API_ENDPOINTS.CLUB_POST_CREATE.replace(':clubId', clubId), postData);
   return response.data;
 };
 
@@ -40,27 +40,27 @@ const getPendingFeedPosts = async (params?: {
   page?: number;
   limit?: number;
 }): Promise<PaginatedResponse<FeedPost>> => {
-  const response = await api.get(`${API_ENDPOINTS.FEED_POSTS}/pending`, { params });
+  const response = await api.get(API_ENDPOINTS.FEED_PENDING_POSTS, { params });
   return response.data;
 };
 
 const approveFeedPost = async (postId: string): Promise<{ message: string; post: FeedPost }> => {
-  const response = await api.put(`${API_ENDPOINTS.FEED_POSTS}/${postId}/approve`);
+  const response = await api.put(API_ENDPOINTS.FEED_POST_APPROVE.replace(':id', postId));
   return response.data;
 };
 
 const rejectFeedPost = async (postId: string, reason?: string): Promise<{ message: string; reason: string }> => {
-  const response = await api.put(`${API_ENDPOINTS.FEED_POSTS}/${postId}/reject`, { reason });
+  const response = await api.put(API_ENDPOINTS.FEED_POST_REJECT.replace(':id', postId), { reason });
   return response.data;
 };
 
 const deletePost = async (postId: string): Promise<{ message: string }> => {
-  const response = await api.delete(`${API_ENDPOINTS.CLUB_POSTS}/${postId}`);
+  const response = await api.delete(API_ENDPOINTS.POST_DELETE.replace(':id', postId));
   return response.data;
 };
 
 const addComment = async (postId: string, content: string): Promise<{ message: string; comment: Comment }> => {
-  const response = await api.post(`${API_ENDPOINTS.CLUB_POSTS}/${postId}/comments`, {
+  const response = await api.post(API_ENDPOINTS.POST_COMMENT_CREATE.replace(':id', postId), {
     content,
   });
   return response.data;
@@ -72,7 +72,7 @@ const addReaction = async (postId: string, reactionType: string): Promise<{
   reactionCounts: Record<string, number>;
   totalReactions: number;
 }> => {
-  const response = await api.post(`${API_ENDPOINTS.CLUB_POSTS}/${postId}/reactions`, { 
+  const response = await api.post(API_ENDPOINTS.POST_REACTIONS.replace(':id', postId), { 
     reactionType 
   });
   return response.data;
@@ -83,7 +83,7 @@ const getPostReactions = async (postId: string): Promise<{
   reactionCounts: Record<string, number>;
   totalReactions: number;
 }> => {
-  const response = await api.get(`${API_ENDPOINTS.CLUB_POSTS}/${postId}/reactions`);
+  const response = await api.get(API_ENDPOINTS.POST_REACTIONS.replace(':id', postId));
   return response.data;
 };
 
@@ -91,7 +91,7 @@ const getComments = async (postId: string, params?: {
   page?: number;
   limit?: number;
 }): Promise<PaginatedResponse<Comment>> => {
-  const response = await api.get(`${API_ENDPOINTS.CLUB_POSTS}/${postId}/comments`, { params });
+  const response = await api.get(API_ENDPOINTS.POST_COMMENTS.replace(':postId', postId), { params });
   return response.data;
 };
 
