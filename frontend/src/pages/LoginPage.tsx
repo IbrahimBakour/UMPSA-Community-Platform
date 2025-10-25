@@ -27,7 +27,12 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginFormInputs) => {
     try {
       const response = await loginService({ studentId: data.studentId, password: data.password });
-      login(response.user, response.token);
+      // Map backend response to frontend format
+      const user = {
+        ...response.user,
+        _id: response.user.id || response.user._id,
+      };
+      login(user, response.token);
       toast.success("Logged in successfully!");
       navigate("/feed");
     } catch (error) {

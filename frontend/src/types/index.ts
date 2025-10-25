@@ -17,7 +17,14 @@ export interface User {
 
 export interface AuthResponse {
   token: string;
-  user: User;
+  user: {
+    id?: string;
+    _id?: string;
+    studentId: string;
+    role: 'student' | 'club_member' | 'admin';
+    nickname?: string;
+    profilePicture?: string;
+  };
 }
 
 // Post Types

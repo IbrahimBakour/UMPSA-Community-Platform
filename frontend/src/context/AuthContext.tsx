@@ -8,6 +8,7 @@ interface AuthContextType {
   isClubMember: boolean;
   user: User | null;
   token: string | null;
+  isInitialized: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
   updateUser: (user: User) => void;
@@ -29,17 +30,19 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token")
-  );
+  const [token, setToken] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // On initial load, if a token exists, fetch the user profile
-    if (token) {
+    // Initialize from localStorage on mount
+    const initAuth = () => {
+      const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
-      if (storedUser) {
+      
+      if (storedToken && storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
+          setToken(storedToken);
           setUser(parsedUser);
         } catch (error) {
           console.error("Error parsing stored user:", error);
@@ -47,12 +50,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.removeItem("user");
           localStorage.removeItem("token");
           setToken(null);
+          setUser(null);
         }
+      } else {
+        setToken(null);
+        setUser(null);
       }
-    } else {
-      setUser(null);
-    }
-  }, [token]);
+      setIsInitialized(true);
+    };
+
+    initAuth();
+  }, []);
 
   const login = (newUser: User, newToken: string) => {
     localStorage.setItem("token", newToken);
@@ -87,11 +95,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
     updateUser,
     setUser,
+    isInitialized,
   };
 
   return (
     <AuthContext.Provider value={authContextValue}>
-      {children}
+      {isInitialized ? children : (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 };

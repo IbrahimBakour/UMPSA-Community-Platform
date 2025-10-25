@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import LoginPage from "./pages/LoginPage";
 import FeedPage from "./pages/FeedPage";
@@ -26,6 +26,7 @@ function App() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Navigate to="/feed" replace />} />
         <Route
           path="/login"
           element={
