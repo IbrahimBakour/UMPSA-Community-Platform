@@ -1,11 +1,11 @@
 import api from "./api";
-import { Post, IPoll, ApiResponse } from "../types";
+import { Post, IPoll, ApiResponse, PollAnalytics } from "../types";
 import { API_ENDPOINTS } from "../utils/constants";
 
 // Vote on a poll
 export const votePoll = async (postId: string, optionIndexes: number[]): Promise<ApiResponse> => {
   const response = await api.post<ApiResponse>(
-    `${API_ENDPOINTS.POLLS}/${postId}/vote`,
+    API_ENDPOINTS.POLL_VOTE.replace(':postId', postId),
     { optionIndexes }
   );
   return response.data;
@@ -23,14 +23,14 @@ export const getPollResults = async (postId: string): Promise<{
   }>;
   userVote?: number[];
 }> => {
-  const response = await api.get(`${API_ENDPOINTS.POLLS}/${postId}/results`);
+  const response = await api.get(API_ENDPOINTS.POLL_RESULTS.replace(':postId', postId));
   return response.data;
 };
 
 // Update poll (admin/author only)
 export const updatePoll = async (postId: string, pollData: Partial<IPoll>): Promise<ApiResponse> => {
   const response = await api.put<ApiResponse>(
-    `${API_ENDPOINTS.POLLS}/${postId}`,
+    API_ENDPOINTS.POLL_UPDATE.replace(':postId', postId),
     pollData
   );
   return response.data;
@@ -38,7 +38,7 @@ export const updatePoll = async (postId: string, pollData: Partial<IPoll>): Prom
 
 // Delete poll (admin/author only)
 export const deletePoll = async (postId: string): Promise<ApiResponse> => {
-  const response = await api.delete<ApiResponse>(`${API_ENDPOINTS.POLLS}/${postId}`);
+  const response = await api.delete<ApiResponse>(API_ENDPOINTS.POLL_DELETE.replace(':postId', postId));
   return response.data;
 };
 
@@ -65,14 +65,8 @@ export const getAllPolls = async (params?: {
 // Get poll analytics (admin only)
 export const getPollAnalytics = async (params?: {
   days?: number;
-}): Promise<{
-  totalPolls: number;
-  activePolls: number;
-  totalVotes: number;
-  pollsByType: Array<{ _id: string; count: number }>;
-  votesOverTime: Array<{ date: string; count: number }>;
-}> => {
-  const response = await api.get(`${API_ENDPOINTS.POLLS}/analytics`, { params });
+}): Promise<PollAnalytics> => {
+  const response = await api.get(API_ENDPOINTS.POLL_ANALYTICS, { params });
   return response.data;
 };
 
@@ -90,6 +84,6 @@ export const getUserPollHistory = async (params?: {
     hasPrev: boolean;
   };
 }> => {
-  const response = await api.get(`${API_ENDPOINTS.POLLS}/history`, { params });
+  const response = await api.get(API_ENDPOINTS.POLL_HISTORY, { params });
   return response.data;
 };

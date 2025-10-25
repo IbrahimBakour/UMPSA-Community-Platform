@@ -20,7 +20,7 @@ const getReports = async (params?: {
 };
 
 const getReportById = async (reportId: string): Promise<Report> => {
-  const response = await api.get(`${API_ENDPOINTS.REPORTS}/${reportId}`);
+  const response = await api.get(API_ENDPOINTS.REPORT.replace(':id', reportId));
   return response.data;
 };
 
@@ -31,17 +31,17 @@ const updateReport = async ({
   reportId: string;
   reportData: Partial<Report>;
 }): Promise<{ message: string; report: Report }> => {
-  const response = await api.put(`${API_ENDPOINTS.REPORTS}/${reportId}`, reportData);
+  const response = await api.put(API_ENDPOINTS.REPORT_UPDATE.replace(':id', reportId), reportData);
   return response.data;
 };
 
 const restrictUserFromReport = async (reportId: string): Promise<{ message: string }> => {
-  const response = await api.post(`${API_ENDPOINTS.REPORTS}/${reportId}/restrictUser`);
+  const response = await api.post(API_ENDPOINTS.REPORT_RESTRICT_USER.replace(':id', reportId));
   return response.data;
 };
 
 const unrestrictUserFromReport = async (reportId: string): Promise<{ message: string }> => {
-  const response = await api.post(`${API_ENDPOINTS.REPORTS}/${reportId}/unrestrictUser`);
+  const response = await api.post(API_ENDPOINTS.REPORT_UNRESTRICT_USER.replace(':id', reportId));
   return response.data;
 };
 
