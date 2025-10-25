@@ -17,44 +17,87 @@ export const DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true';
 export const API_ENDPOINTS = {
   // Auth
   LOGIN: '/api/auth/login',
-  REGISTER: '/api/auth/register',
-  REFRESH: '/api/auth/refresh',
+  REGISTER: '/api/auth/register', // Not implemented in backend
+  REFRESH: '/api/auth/refresh', // Not implemented in backend
+  IMPORT_USERS: '/api/auth/import',
   
   // Users
   USERS: '/api/users',
-  USER_PROFILE: '/api/users/profile',
-  USER_CHANGE_PASSWORD: '/api/users/change-password',
+  USER_PROFILE: '/api/users/me',
+  USER_CHANGE_PASSWORD: '/api/users/me/password',
   USER_STATS: '/api/users/stats',
+  USER_ACTIVITY: '/api/users/:userId/activity',
+  USER_ROLE: '/api/users/:userId/role',
+  USER_STATUS: '/api/users/:userId/status',
   
   // Posts
   FEED_POSTS: '/api/feed',
-  CLUB_POSTS: '/api/posts',
-  POST_REACTIONS: '/api/posts',
-  POST_COMMENTS: '/api/posts',
+  FEED_POST: '/api/feed/:id',
+  FEED_POST_APPROVE: '/api/feed/:id/approve',
+  FEED_POST_REJECT: '/api/feed/:id/reject',
+  FEED_PENDING_POSTS: '/api/feed/admin/pending',
+  FEED_STATS: '/api/feed/admin/stats',
+  
+  CLUB_POSTS: '/api/posts/clubs/:clubId',
+  CLUB_POST_CREATE: '/api/posts/clubs/:clubId',
+  POST: '/api/posts/:id',
+  POST_UPDATE: '/api/posts/:id',
+  POST_DELETE: '/api/posts/:id',
+  POST_REACTIONS: '/api/posts/:id/reactions',
+  POST_COMMENTS: '/api/posts/:postId/comments',
+  POST_COMMENT_CREATE: '/api/posts/:id/comments',
+  POST_COMMENT_UPDATE: '/api/posts/:postId/comments/:commentId',
+  POST_COMMENT_DELETE: '/api/posts/:postId/comments/:commentId',
   
   // Polls
   POLLS: '/api/polls',
+  POLL_VOTE: '/api/polls/:postId/vote',
+  POLL_RESULTS: '/api/polls/:postId/results',
+  POLL_UPDATE: '/api/polls/:postId',
+  POLL_DELETE: '/api/polls/:postId',
+  POLL_ANALYTICS: '/api/polls/analytics',
+  POLL_HISTORY: '/api/polls/history',
   
   // Clubs
   CLUBS: '/api/clubs',
-  CLUB_MEMBERS: '/api/clubs',
+  CLUB: '/api/clubs/:id',
+  CLUB_CREATE: '/api/clubs',
+  CLUB_UPDATE: '/api/clubs/:id',
+  CLUB_DELETE: '/api/clubs/:id',
+  CLUB_MEMBERS: '/api/clubs/:id/members',
+  CLUB_MEMBER_ADD: '/api/clubs/:id/members',
+  CLUB_MEMBER_REMOVE: '/api/clubs/:id/members/:memberId',
   
   // Reports
   REPORTS: '/api/reports',
+  REPORT: '/api/reports/:id',
+  REPORT_CREATE: '/api/reports',
+  REPORT_UPDATE: '/api/reports/:id',
+  REPORT_RESTRICT_USER: '/api/reports/:id/restrictUser',
+  REPORT_UNRESTRICT_USER: '/api/reports/:id/unrestrictUser',
   
   // Uploads
   UPLOAD_PROFILE: '/api/upload/profile',
-  UPLOAD_CLUB: '/api/upload/club',
-  UPLOAD_POST: '/api/upload/post',
-  UPLOADS: '/api/upload',
+  UPLOAD_CLUB: '/api/upload/clubs/:clubId',
+  UPLOAD_POST: '/api/upload/posts',
+  UPLOAD_DELETE: '/api/upload/file',
+  UPLOAD_INFO: '/api/upload/info/:filePath',
   
   // Admin
   ADMIN_DASHBOARD: '/api/admin/dashboard',
-  ADMIN_USERS: '/api/admin/users',
   ADMIN_ANALYTICS: '/api/admin/analytics',
+  ADMIN_ACTIVITIES: '/api/admin/activities',
+  ADMIN_USER_ACTIVITY: '/api/admin/users/activity',
+  ADMIN_SYSTEM_HEALTH: '/api/admin/system/health',
   
   // Notifications
   NOTIFICATIONS: '/api/notifications',
+  NOTIFICATION_STATS: '/api/notifications/stats',
+  NOTIFICATION_READ: '/api/notifications/:notificationId/read',
+  NOTIFICATION_READ_ALL: '/api/notifications/read-all',
+  NOTIFICATION_DELETE: '/api/notifications/:notificationId',
+  NOTIFICATION_CLEANUP: '/api/notifications/cleanup/expired',
+  NOTIFICATION_ANALYTICS: '/api/notifications/analytics',
 } as const;
 
 // User Roles
@@ -121,7 +164,7 @@ export const REPORT_STATUS = {
 export const REPORT_TARGET_TYPES = {
   USER: 'user',
   POST: 'post',
-  CLUB: 'club',
+  COMMENT: 'comment',
 } as const;
 
 // Pagination

@@ -2,14 +2,15 @@
 export interface User {
   _id: string;
   studentId: string;
-  role: 'student' | 'admin' | 'club_member';
+  password?: string; // Only present in some contexts
+  role: 'student' | 'club_member' | 'admin';
   status: 'active' | 'restricted';
-  nickname: string;
-  profilePicture?: string;
   restriction?: {
     type: 'temporary' | 'permanent';
     until?: Date;
   };
+  nickname?: string;
+  profilePicture?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,13 +24,12 @@ export interface AuthResponse {
 export interface IReaction {
   user: string; // User ID
   type: 'like' | 'love' | 'dislike' | 'laugh';
-  createdAt: Date;
 }
 
 export interface Comment {
   _id: string;
-  author: string; // User ID
   content: string;
+  author: string; // User ID
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,15 +58,15 @@ export interface ICalendarEvent {
 export interface Post {
   _id: string;
   content: string;
-  postType: 'feed' | 'club';
+  media?: string[]; // Array of file URLs
   author: string; // User ID
+  postType: 'feed' | 'club';
   club?: string; // Club ID (for club posts)
-  media: string[]; // Array of file URLs
-  interactions: IReaction[];
-  comments: Comment[];
   poll?: IPoll;
   calendarEvent?: ICalendarEvent;
   link?: string;
+  interactions: IReaction[];
+  comments: Comment[];
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Date;
   updatedAt: Date;
@@ -87,8 +87,8 @@ export type AnyPost = FeedPost | ClubPost;
 
 // Club Types
 export interface IMembershipEvent {
-  member: string; // User ID
   action: 'added' | 'removed';
+  user: string; // User ID
   by: string; // User ID
   at: Date;
 }
@@ -96,26 +96,30 @@ export interface IMembershipEvent {
 export interface Club {
   _id: string;
   name: string;
-  description: string;
+  description?: string;
   profilePicture?: string;
   banner?: string;
   about?: string;
   contact?: string;
   members: string[]; // Array of user IDs
   createdBy: string; // User ID
-  membershipEvents: IMembershipEvent[];
+  membershipEvents?: IMembershipEvent[];
+  memberCount?: number; // Virtual field
   createdAt: Date;
   updatedAt: Date;
 }
 
 // Report Types
+export type ReportTargetType = 'user' | 'post' | 'comment';
+export type ReportStatus = 'pending' | 'reviewed' | 'resolved';
+
 export interface Report {
   _id: string;
   reportedBy: string; // User ID
-  targetType: 'user' | 'post' | 'club';
+  targetType: ReportTargetType;
   targetId: string; // ID of the reported entity
   reason: string;
-  status: 'pending' | 'reviewed' | 'resolved';
+  status: ReportStatus;
   reviewedBy?: string; // User ID
   reviewNotes?: string;
   createdAt: Date;
@@ -146,16 +150,18 @@ export interface Notification {
   type: NotificationType;
   title: string;
   message: string;
+  priority: NotificationPriority;
   recipient: string; // User ID
   recipients?: string[]; // For bulk notifications
-  priority: NotificationPriority;
-  isRead: boolean;
-  isDelivered: boolean;
   relatedPost?: string; // Post ID
   relatedClub?: string; // Club ID
   relatedReport?: string; // Report ID
   relatedUser?: string; // User ID
   data?: any; // Additional arbitrary data
+  isRead: boolean;
+  isDelivered: boolean;
+  readAt?: Date;
+  deliveredAt?: Date;
   expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -163,11 +169,27 @@ export interface Notification {
 
 // API Response Types
 export interface PaginatedResponse<T> {
-  data: T[];
+  [key: string]: T[] | {
+    totalPages: number;
+    currentPage: number;
+    totalUsers?: number;
+    totalPosts?: number;
+    totalClubs?: number;
+    totalNotifications?: number;
+    totalPolls?: number;
+    totalReports?: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
   pagination: {
     totalPages: number;
     currentPage: number;
-    totalItems: number;
+    totalUsers?: number;
+    totalPosts?: number;
+    totalClubs?: number;
+    totalNotifications?: number;
+    totalPolls?: number;
+    totalReports?: number;
     hasNext: boolean;
     hasPrev: boolean;
   };
@@ -210,7 +232,7 @@ export interface CreatePostForm {
 
 export interface CreateClubForm {
   name: string;
-  description: string;
+  description?: string;
   about?: string;
   contact?: string;
   profilePicture?: File;
@@ -219,27 +241,35 @@ export interface CreateClubForm {
 }
 
 export interface CreateReportForm {
-  targetType: 'user' | 'post' | 'club';
+  targetType: ReportTargetType;
   targetId: string;
   reason: string;
 }
 
 // Statistics Types
 export interface UserStats {
-  totalPosts: number;
-  totalComments: number;
-  totalReactions: number;
-  joinDate: Date;
-  lastActivity: Date;
+  totalUsers: number;
+  activeUsers: number;
+  restrictedUsers: number;
+  students: number;
+  clubMembers: number;
+  admins: number;
 }
 
 export interface UserActivity {
-  _id: string;
-  type: 'post_created' | 'post_liked' | 'comment_added' | 'club_joined' | 'poll_voted';
-  description: string;
-  timestamp: Date;
-  relatedPost?: string;
-  relatedClub?: string;
+  user: {
+    _id: string;
+    studentId: string;
+    nickname?: string;
+    role: string;
+    status: string;
+    createdAt: Date;
+  };
+  activity: {
+    postsCreated: number;
+    clubsJoined: number;
+    reportsSubmitted: number;
+  };
 }
 
 export interface ClubStats {
@@ -250,10 +280,221 @@ export interface ClubStats {
 }
 
 export interface AdminStats {
-  totalUsers: number;
-  totalPosts: number;
-  totalClubs: number;
-  totalReports: number;
-  pendingPosts: number;
-  pendingReports: number;
+  overview: {
+    totalUsers: number;
+    totalPosts: number;
+    totalClubs: number;
+    totalReports: number;
+    activeUsers: number;
+    restrictedUsers: number;
+  };
+  userStats: {
+    students: number;
+    clubMembers: number;
+    admins: number;
+    userGrowthPercentage: string;
+  };
+  postStats: {
+    feedPosts: number;
+    clubPosts: number;
+    approvedPosts: number;
+    pendingPosts: number;
+    rejectedPosts: number;
+    postGrowthPercentage: string;
+  };
+  reportStats: {
+    pendingReports: number;
+    reviewedReports: number;
+    resolvedReports: number;
+  };
+  recentActivity: {
+    newUsersThisWeek: number;
+    newPostsThisWeek: number;
+    newReportsThisWeek: number;
+    newClubsThisWeek: number;
+    newUsersThisMonth: number;
+    newPostsThisMonth: number;
+  };
+  lastUpdated: Date;
+}
+
+// Additional types for backend compatibility
+export interface DashboardStats extends AdminStats {}
+
+export interface SystemHealth {
+  status: 'healthy' | 'degraded' | 'error';
+  timestamp: Date;
+  responseTime: number;
+  database: {
+    status: string;
+    responseTime: number;
+    connectionState: number;
+  };
+  memory: {
+    rss: number;
+    heapTotal: number;
+    heapUsed: number;
+    external: number;
+  };
+  cpu: {
+    user: number;
+    system: number;
+  };
+  system: {
+    uptime: number;
+    nodeVersion: string;
+    platform: string;
+    arch: string;
+  };
+  storage: {
+    uploads: string;
+  };
+  environment: {
+    nodeEnv: string;
+    port: string;
+  };
+}
+
+export interface AdminAnalytics {
+  period: {
+    days: number;
+    startDate: Date;
+    endDate: Date;
+  };
+  moderation: {
+    reportsByType: Array<{
+      _id: string;
+      count: number;
+      pending: number;
+      reviewed: number;
+      resolved: number;
+    }>;
+  };
+  engagement: {
+    metrics: {
+      totalPosts: number;
+      avgInteractions: number;
+      avgComments: number;
+      postsWithMedia: number;
+      postsWithPolls: number;
+    };
+  };
+  clubs: {
+    mostActive: Array<{
+      name: string;
+      memberCount: number;
+      postCount: number;
+      recentPosts: number;
+    }>;
+  };
+  content: {
+    topPosts: Array<{
+      _id: string;
+      content: string;
+      postType: string;
+      interactionCount: number;
+      commentCount: number;
+      engagementScore: number;
+      createdAt: Date;
+      author: {
+        studentId: string;
+        nickname?: string;
+      };
+    }>;
+  };
+}
+
+export interface PollAnalytics {
+  period: {
+    days: number;
+    startDate: Date;
+    endDate: Date;
+  };
+  overview: {
+    totalPolls: number;
+    activePolls: number;
+    endedPolls: number;
+    totalVotes: number;
+  };
+  trends: {
+    creationTrends: Array<{
+      _id: {
+        year: number;
+        month: number;
+        day: number;
+      };
+      count: number;
+      totalVotes: number;
+    }>;
+    voteDistribution: Array<{
+      _id: string;
+      pollCount: number;
+      totalVotes: number;
+      avgVotesPerPoll: number;
+    }>;
+  };
+  popular: {
+    mostPopularPolls: Array<{
+      _id: string;
+      content: string;
+      pollQuestion: string;
+      totalVotes: number;
+      optionsCount: number;
+      author: {
+        studentId: string;
+        nickname?: string;
+      };
+      createdAt: Date;
+      postType: string;
+    }>;
+    recentActivity: Array<{
+      _id: string;
+      pollQuestion: string;
+      totalVotes: number;
+      author: {
+        studentId: string;
+        nickname?: string;
+      };
+      createdAt: Date;
+      postType: string;
+    }>;
+  };
+}
+
+export interface NotificationAnalytics {
+  period: {
+    days: number;
+    startDate: Date;
+    endDate: Date;
+  };
+  overview: {
+    totalNotifications: number;
+    readRate: string;
+    deliveryRate: string;
+  };
+  breakdown: {
+    byType: Array<{
+      _id: string;
+      count: number;
+    }>;
+    byPriority: Array<{
+      _id: string;
+      count: number;
+    }>;
+  };
+  recentActivity: Array<{
+    _id: string;
+    type: string;
+    title: string;
+    message: string;
+    recipient: {
+      studentId: string;
+      nickname?: string;
+    };
+    relatedUser?: {
+      studentId: string;
+      nickname?: string;
+    };
+    createdAt: Date;
+  }>;
 }
