@@ -56,10 +56,10 @@ export const getFileInfo = async (filePath: string): Promise<{ message: string; 
   return response.data;
 };
 
-// Legacy export for backward compatibility
+// Legacy export for backward compatibility - for post media
 export const uploadFile = async (file: File): Promise<string> => {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("postMedia", file); // Use correct field name
 
   const response = await api.post(API_ENDPOINTS.UPLOAD_POST, formData, {
     headers: {
@@ -67,5 +67,6 @@ export const uploadFile = async (file: File): Promise<string> => {
     },
   });
 
-  return response.data.url || response.data.urls?.[0] || '';
+  // Return the path from the uploaded file
+  return response.data.mediaUrls?.[0] || response.data.uploadedFiles?.[0]?.path || '';
 };

@@ -144,26 +144,26 @@ const ReportsPage = () => {
                   <p><strong>Status:</strong> {report.status}</p>
                   <div className="mt-2">
                     {report.status !== 'resolved' && (
-                      <button 
-                        onClick={() => {
-                          setSelectedReportId(report._id);
-                          setResolveConfirmationOpen(true);
-                        }}
-                        className="mr-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                      >
-                        Mark Resolved
-                      </button>
+                    <button 
+                      onClick={() => {
+                        setSelectedReportId(report._id);
+                        setResolveConfirmationOpen(true);
+                      }}
+                      className="mr-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    >
+                      Mark Resolved
+                    </button>
                     )}
                     {report.targetType === 'user' && report.status !== 'resolved' && (
-                      <button 
-                        onClick={() => {
-                          setSelectedReportId(report._id);
+                    <button 
+                      onClick={() => {
+                        setSelectedReportId(report._id);
                           setRestrictConfirmationOpen(true);
-                        }}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                      >
-                        Restrict User
-                      </button>
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    >
+                      Restrict User
+                    </button>
                     )}
                   </div>
                 </li>

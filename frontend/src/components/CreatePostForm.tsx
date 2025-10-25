@@ -37,7 +37,7 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
   });
   const createPostMutation = useCreateFeedPost();
   const [postType, setPostType] = useState<'text' | 'image' | 'poll' | 'event'>('text');
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<Array<{ preview: string; url: string }>>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
 
@@ -107,6 +107,8 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
         closeModal();
         reset();
         setPostType('text');
+        // Clean up blob URLs
+        imagePreviews.forEach(img => URL.revokeObjectURL(img.preview));
         setImagePreviews([]);
         setPollOptions(['', '']);
       },
@@ -121,15 +123,35 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
     if (files.length === 0) return;
 
     setIsUploading(true);
-    const newImagePreviews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews(prev => [...prev, ...newImagePreviews]);
+    
+    // Create preview URLs immediately
+    const newPreviews = files.map(file => ({
+      preview: URL.createObjectURL(file),
+      url: '', // Will be set after upload
+    }));
+    setImagePreviews(prev => [...prev, ...newPreviews]);
 
     try {
-      const uploadedImageUrls = await Promise.all(files.map(uploadFile));
-      setValue('images', [...(imagePreviews || []), ...uploadedImageUrls]);
+      // Upload files and get URLs
+      const uploadedUrls = await Promise.all(files.map(uploadFile));
+      
+      // Update previews with actual URLs
+      setImagePreviews(prev => {
+        const updated = [...prev];
+        const startIndex = updated.length - files.length;
+        uploadedUrls.forEach((url, index) => {
+          updated[startIndex + index] = { ...updated[startIndex + index], url };
+        });
+        return updated;
+      });
+      
+      // Update form with uploaded URLs
+      const allUrls = [...imagePreviews.map(img => img.url), ...uploadedUrls].filter(Boolean);
+      setValue('images', allUrls);
     } catch (error) {
       toast.error('Failed to upload images. Please try again.');
-      setImagePreviews([]);
+      // Remove failed uploads from previews
+      setImagePreviews(prev => prev.slice(0, prev.length - files.length));
     } finally {
       setIsUploading(false);
     }
@@ -147,7 +169,7 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
       )}
 
       {/* Images section - available for all post types */}
-      <div className="mt-4">
+        <div className="mt-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">Add Images (Optional)</label>
         <input 
           type="file" 
@@ -165,10 +187,10 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
         {isUploading && <p className="text-sm text-gray-600 mt-2">Uploading images...</p>}
         {imagePreviews.length > 0 && (
           <div className="mt-3 grid grid-cols-3 gap-2">
-            {imagePreviews.map((preview, index) => (
+            {imagePreviews.map((image, index) => (
               <div key={index} className="relative">
                 <img 
-                  src={preview} 
+                  src={image.preview} 
                   alt={`preview ${index + 1}`} 
                   className="w-full h-24 object-cover rounded-md border border-gray-300" 
                 />
@@ -177,7 +199,8 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
                   onClick={() => {
                     const newPreviews = imagePreviews.filter((_, i) => i !== index);
                     setImagePreviews(newPreviews);
-                    setValue('images', newPreviews);
+                    const newUrls = newPreviews.map(img => img.url).filter(Boolean);
+                    setValue('images', newUrls);
                   }}
                   className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
                 >
@@ -187,7 +210,7 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
             ))}
           </div>
         )}
-      </div>
+        </div>
 
       {postType === 'poll' && (
         <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">

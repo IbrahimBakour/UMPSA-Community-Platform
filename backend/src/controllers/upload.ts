@@ -232,7 +232,12 @@ export const uploadPostMedia = async (req: AuthRequest, res: Response) => {
       message: "Post media uploaded successfully",
       uploadedFiles,
       errors: errors.length > 0 ? errors : undefined,
-      mediaUrls: uploadedFiles.map(file => file.path),
+      mediaUrls: uploadedFiles.map(file => {
+        // Multer gives us relative path like "uploads/posts/filename.jpg"
+        // Ensure it starts with / for the static file serving
+        const cleanPath = file.path.startsWith('/') ? file.path : `/${file.path}`;
+        return cleanPath;
+      }),
     });
   } catch (error) {
     console.error("Upload post media error:", error);

@@ -11,8 +11,28 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateReport } from '../services/reports';
+import { API_BASE_URL } from '../utils/constants';
 // import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { motion } from "framer-motion";
+
+// Helper function to get full image URL
+const getImageUrl = (path: string): string => {
+  if (!path) return '';
+  
+  // If it's already a full URL, return it
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  
+  // Normalize the path to always start with a single /
+  let cleanPath = path.replace(/\/+/g, '/');
+  if (!cleanPath.startsWith('/')) {
+    cleanPath = `/${cleanPath}`;
+  }
+  
+  // Combine with API_BASE_URL
+  return `${API_BASE_URL}${cleanPath}`;
+};
 
 interface PostCardProps {
   post: AnyPost;
@@ -109,9 +129,14 @@ const PostCard = ({ post }: PostCardProps) => {
           {post.media.map((mediaUrl, index) => (
             <img
               key={index}
-              src={mediaUrl}
-              alt="Post media"
+              src={getImageUrl(mediaUrl)}
+              alt={`Post media ${index + 1}`}
               className="w-full h-auto rounded-md"
+              onError={(e) => {
+                // Fallback if image fails to load
+                console.error('Failed to load image:', mediaUrl);
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
             />
           ))}
         </div>

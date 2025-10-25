@@ -19,9 +19,11 @@ const storage = multer.diskStorage({
     
     // Determine upload path based on file type
     if (file.fieldname === "profilePicture") {
-      uploadPath += "profiles/";
-    } else if (file.fieldname === "clubBanner" || file.fieldname === "clubProfilePicture") {
-      uploadPath += "clubs/";
+      // Check if it's a user profile or club profile based on route
+      const isClubRoute = req.originalUrl?.includes('/clubs/');
+      uploadPath += isClubRoute ? "general/" : "profiles/";
+    } else if (file.fieldname === "banner" || file.fieldname === "clubProfilePicture") {
+      uploadPath += "general/"; // Banner goes to general folder
     } else if (file.fieldname === "postMedia") {
       uploadPath += "posts/";
     } else {
