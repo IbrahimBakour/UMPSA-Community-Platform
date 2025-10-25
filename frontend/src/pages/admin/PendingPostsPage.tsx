@@ -3,7 +3,11 @@ import PostCard from '../../components/PostCard';
 import toast from 'react-hot-toast';
 
 const PendingPostsPage = () => {
-  const { data: posts, isLoading, error } = usePendingFeedPosts();
+  const { data: postsData, isLoading, error } = usePendingFeedPosts();
+  
+  // Handle the response structure
+  const posts = postsData?.posts || postsData?.feedPosts || postsData?.data || [];
+  const postsArray = Array.isArray(posts) ? posts : [];
   const approvePostMutation = useApproveFeedPost();
   const rejectPostMutation = useRejectFeedPost();
 
@@ -19,7 +23,7 @@ const PendingPostsPage = () => {
   };
 
   const handleReject = (postId: string) => {
-    rejectPostMutation.mutate(postId, {
+    rejectPostMutation.mutate({ postId }, {
       onSuccess: () => {
         toast.success('Post rejected successfully!');
       },
@@ -40,9 +44,9 @@ const PendingPostsPage = () => {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Pending Posts</h2>
-      {posts && posts.length > 0 ? (
+      {postsArray.length > 0 ? (
         <div className="space-y-4">
-          {posts.map((post) => (
+          {postsArray.map((post) => (
             <div key={post._id} className="bg-white rounded-lg shadow-md p-4">
               <PostCard post={post} />
               <div className="mt-4 flex justify-end space-x-4">

@@ -7,8 +7,12 @@ import EditClubModal from '../../components/EditClubModal';
 import { Club } from '../../types';
 
 const ClubsManagementPage = () => {
-  const { data: clubs, isLoading, error } = useClubs();
+  const { data: clubsData, isLoading, error } = useClubs();
   const deleteClubMutation = useDeleteClub();
+  
+  // Handle the response structure
+  const clubs = clubsData?.clubs || clubsData?.data || [];
+  const clubsArray = Array.isArray(clubs) ? clubs : [];
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -51,10 +55,10 @@ const ClubsManagementPage = () => {
           </tr>
         </thead>
         <tbody>
-          {clubs?.map((club) => (
+          {clubsArray.map((club) => (
             <tr key={club._id}>
               <td className="border px-4 py-2">{club.name}</td>
-              <td className="border px-4 py-2">{club.description}</td>
+              <td className="border px-4 py-2">{club.description || 'N/A'}</td>
               <td className="border px-4 py-2">
                 <button 
                   onClick={() => {
