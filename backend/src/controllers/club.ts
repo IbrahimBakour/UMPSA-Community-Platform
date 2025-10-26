@@ -11,11 +11,15 @@ interface AuthRequest extends Request {
 // Create a new club (Admin only)
 export const createClub = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description, about, contact } = req.body;
+    const { name, description, about, contact, leaderStudentId } = req.body;
     const adminId = req.user?._id;
 
     if (!name) {
       return res.status(400).json({ message: "Club name is required" });
+    }
+
+    if (!leaderStudentId) {
+      return res.status(400).json({ message: "A club leader is required. Please provide a student ID." });
     }
 
     // Check if club with same name exists
@@ -26,15 +30,16 @@ export const createClub = async (req: AuthRequest, res: Response) => {
         .json({ message: "A club with this name already exists" });
     }
 
-    // Update initial member's role if needed
-    const initialMemberId = req.body.initialMemberId;
-    if (initialMemberId) {
-      const userToUpdate = await User.findById(initialMemberId);
-      if (userToUpdate && userToUpdate.role === "student") {
-        userToUpdate.role = "club_member";
-        await userToUpdate.save();
-      }
-      // Do not change role if admin
+    // Find the user by studentId
+    const leaderUser = await User.findOne({ studentId: leaderStudentId });
+    if (!leaderUser) {
+      return res.status(404).json({ message: `User with student ID "${leaderStudentId}" not found` });
+    }
+
+    // Update leader's role if needed
+    if (leaderUser.role === "student") {
+      leaderUser.role = "club_member";
+      await leaderUser.save();
     }
 
     const club = new Club({
@@ -42,7 +47,7 @@ export const createClub = async (req: AuthRequest, res: Response) => {
       description,
       about,
       contact,
-      members: [initialMemberId], // Initial club member
+      members: [leaderUser._id], // Initial club leader
       createdBy: adminId,
     });
 
@@ -174,11 +179,18 @@ export const deleteClub = async (req: Request, res: Response) => {
 // Add member to club (Club members only)
 export const addMember = async (req: AuthRequest, res: Response) => {
   try {
-    const { memberId } = req.body;
+    // Accept studentId, memberId (legacy), or userId (from frontend)
+    const studentId = req.body.studentId;
+    const memberId = req.body.memberId || req.body.userId;
+    
     const club = await Club.findById(req.params.id);
 
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
+    }
+
+    if (!studentId && !memberId) {
+      return res.status(400).json({ message: "Student ID or User ID is required" });
     }
 
     // Check if user is a club member
@@ -188,34 +200,49 @@ export const addMember = async (req: AuthRequest, res: Response) => {
         .json({ message: "Only club members can add new members" });
     }
 
+    let userToAdd: any;
+    
+    // If studentId is provided, find user by studentId
+    if (studentId) {
+      userToAdd = await User.findOne({ studentId });
+      if (!userToAdd) {
+        return res.status(404).json({ message: `User with student ID "${studentId}" not found` });
+      }
+    } else {
+      // Otherwise, find user by memberId/userId
+      userToAdd = await User.findById(memberId);
+      if (!userToAdd) {
+        return res.status(404).json({ message: "User not found" });
+      }
+    }
+
     // Check if user is already a member
-    if (club.isMember(memberId)) {
+    if (club.isMember(userToAdd._id.toString())) {
       return res
         .status(400)
         .json({ message: "User is already a member of this club" });
     }
 
     // Update user role if needed
-    const userToUpdate = await User.findById(memberId);
-    if (userToUpdate && userToUpdate.role === "student") {
-      userToUpdate.role = "club_member";
-      await userToUpdate.save();
+    if (userToAdd.role === "student") {
+      userToAdd.role = "club_member";
+      await userToAdd.save();
     }
     // Do not change role if admin
 
-    club.members.push(memberId);
+    club.members.push(userToAdd._id);
     // Audit event
     (club as any).membershipEvents = (club as any).membershipEvents || [];
     (club as any).membershipEvents.push({
       action: "added",
-      user: memberId,
+      user: userToAdd._id,
       by: req.user?._id,
       at: new Date(),
     });
     await club.save();
 
     // Trigger notification BEFORE populating (to get raw ObjectIds)
-    await triggerClubJoinedNotification(String((club as any)._id), String(memberId), club.members.map(m => String(m)));
+    await triggerClubJoinedNotification(String((club as any)._id), String(userToAdd._id), club.members.map(m => String(m)));
 
     res.json({
       message: "Member added successfully",

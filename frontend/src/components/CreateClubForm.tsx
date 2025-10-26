@@ -8,6 +8,7 @@ import { useCreateClub } from '../services/clubs';
 const createClubSchema = z.object({
   name: z.string().min(1, 'Club name cannot be empty'),
   description: z.string().min(1, 'Club description cannot be empty'),
+  leaderStudentId: z.string().min(1, 'Leader student ID is required'),
 });
 
 type CreateClubFormInputs = z.infer<typeof createClubSchema>;
@@ -60,6 +61,23 @@ const CreateClubForm = ({ closeModal }: CreateClubFormProps) => {
           className="w-full p-2 border border-gray-300 rounded-md"
         ></textarea>
         {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="leaderStudentId" className="block text-sm font-medium text-gray-700">
+          Leader Student ID <span className="text-red-500">*</span>
+        </label>
+        <input
+          {...register('leaderStudentId')}
+          id="leaderStudentId"
+          type="text"
+          placeholder="e.g., CB22000"
+          className="w-full p-2 border border-gray-300 rounded-md"
+        />
+        <p className="text-sm text-gray-500 mt-1">
+          Enter the student ID of the club leader
+        </p>
+        {errors.leaderStudentId && <p className="text-red-500 text-sm">{errors.leaderStudentId.message}</p>}
       </div>
 
       <div className="mt-4 flex justify-end">

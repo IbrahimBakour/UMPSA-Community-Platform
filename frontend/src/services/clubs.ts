@@ -43,12 +43,12 @@ const deleteClub = async (clubId: string): Promise<{ message: string }> => {
 
 const addMember = async ({
   clubId,
-  userId,
+  studentId,
 }: {
   clubId: string;
-  userId: string;
+  studentId: string;
 }): Promise<{ message: string; member: User }> => {
-  const response = await api.post(API_ENDPOINTS.CLUB_MEMBER_ADD.replace(':id', clubId), { userId });
+  const response = await api.post(API_ENDPOINTS.CLUB_MEMBER_ADD.replace(':id', clubId), { studentId });
   return response.data;
 };
 
@@ -125,7 +125,7 @@ export const useDeleteClub = () => {
 export const useAddMember = (clubId: string) => {
   const queryClient = useQueryClient();
   return useMutation<{ message: string; member: User }, Error, string>({
-    mutationFn: (userId) => addMember({ clubId, userId }),
+    mutationFn: (studentId) => addMember({ clubId, studentId }),
     onSuccess: () => {
       toast.success("Member added successfully!");
       queryClient.invalidateQueries({ queryKey: ["club", clubId] });

@@ -33,10 +33,15 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Generate JWT token
+    // Generate JWT token with 24h expiration
+    // @ts-ignore - TypeScript type definitions issue with jsonwebtoken 9.x
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
-      expiresIn: "24h",
+      expiresIn: "24h", // 24 hours
     });
+
+    // Log token expiration for debugging
+    const expirationDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    console.log(`Token generated for user ${user.studentId}. Expires at: ${expirationDate.toISOString()}`);
 
     res.json({
       token,

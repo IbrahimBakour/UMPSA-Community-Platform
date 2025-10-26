@@ -38,6 +38,20 @@ export const authMiddleware = async (
     req.user = user;
     next();
   } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      if (error.name === 'TokenExpiredError') {
+        console.log('Token expired for user');
+        return res.status(401).json({ 
+          message: "Authentication token has expired. Please login again.",
+          expired: true 
+        });
+      } else if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ 
+          message: "Invalid authentication token. Please login again.",
+          invalid: true 
+        });
+      }
+    }
     res.status(401).json({ message: "Invalid authentication token" });
   }
 };

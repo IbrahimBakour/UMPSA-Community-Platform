@@ -4,12 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useAddMember } from '../services/clubs';
-import { useSearchUsers } from '../services/users';
-import { useState } from 'react';
-import { User } from '../types';
 
 const addMemberSchema = z.object({
-  userId: z.string().min(1, 'Please select a user'),
+  studentId: z.string().min(1, 'Student ID is required'),
 });
 
 type AddMemberFormInputs = z.infer<typeof addMemberSchema>;
@@ -21,65 +18,47 @@ interface AddMemberFormProps {
 
 const AddMemberForm = ({ clubId, closeModal }: AddMemberFormProps) => {
   const addMemberMutation = useAddMember(clubId);
-  const [searchTerm, setSearchTerm] = useState('');
-  const { data: usersData, isLoading } = useSearchUsers(searchTerm);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  
-  // Extract users array from PaginatedResponse
-  const users: User[] = Array.isArray(usersData) ? usersData : (Array.isArray(usersData?.data) ? usersData.data : []);
-
   const {
+    register,
     handleSubmit,
-    setValue,
+    reset,
     formState: { errors },
   } = useForm<AddMemberFormInputs>({
     resolver: zodResolver(addMemberSchema),
   });
 
   const onSubmit = (data: AddMemberFormInputs) => {
-    addMemberMutation.mutate(data.userId, {
+    // Send studentId to the backend
+    addMemberMutation.mutate(data.studentId, {
       onSuccess: () => {
         toast.success('Member added successfully!');
+        reset();
         closeModal();
       },
-      onError: () => {
-        toast.error('Failed to add member. Please try again.');
+      onError: (error: any) => {
+        const errorMessage = error?.response?.data?.message || 'Failed to add member. Please try again.';
+        toast.error(errorMessage);
       },
     });
-  };
-
-  const handleSelectUser = (user: User) => {
-    setSelectedUser(user);
-    setValue('userId', user._id);
-    setSearchTerm('');
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="mb-4">
+        <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">
+          Student ID <span className="text-red-500">*</span>
+        </label>
         <input
+          {...register('studentId')}
+          id="studentId"
           type="text"
-          placeholder="Search for a user..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="e.g., CB22000"
           className="w-full p-2 border border-gray-300 rounded-md"
         />
-        {isLoading && <p>Loading...</p>}
-        {users && users.length > 0 && (
-          <ul className="mt-2 border border-gray-300 rounded-md">
-            {users.map((user) => (
-              <li
-                key={user._id}
-                onClick={() => handleSelectUser(user)}
-                className="p-2 hover:bg-gray-100 cursor-pointer"
-              >
-                {user.nickname}
-              </li>
-            ))}
-          </ul>
-        )}
-        {selectedUser && <p className="mt-2">Selected user: {selectedUser.nickname}</p>}
-        {errors.userId && <p className="text-red-500 text-sm">{errors.userId.message}</p>}
+        <p className="text-sm text-gray-500 mt-1">
+          Enter the student ID of the member to add
+        </p>
+        {errors.studentId && <p className="text-red-500 text-sm">{errors.studentId.message}</p>}
       </div>
 
       <div className="mt-4 flex justify-end">

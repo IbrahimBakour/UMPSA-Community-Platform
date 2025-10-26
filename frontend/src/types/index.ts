@@ -244,7 +244,7 @@ export interface CreateClubForm {
   contact?: string;
   profilePicture?: File;
   banner?: File;
-  initialMemberId?: string;
+  leaderStudentId: string;
 }
 
 export interface CreateReportForm {
