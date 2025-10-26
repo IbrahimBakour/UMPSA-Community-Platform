@@ -145,11 +145,11 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
           }
         }
 
-        // Update club with new file path
+        // Update club with new file path (normalized to start with /)
         if (fieldName === "profilePicture") {
-          club.profilePicture = file.path;
+          club.profilePicture = file.path.startsWith('/') ? file.path : `/${file.path}`;
         } else if (fieldName === "banner") {
-          club.banner = file.path;
+          club.banner = file.path.startsWith('/') ? file.path : `/${file.path}`;
         }
 
         uploadedFiles.push({

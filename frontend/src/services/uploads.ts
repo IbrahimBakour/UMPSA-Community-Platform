@@ -15,7 +15,7 @@ export const uploadProfilePicture = async (file: File): Promise<{ message: strin
   return response.data;
 };
 
-export const uploadClubMedia = async (clubId: string, files: { profilePicture?: File; banner?: File }): Promise<{ message: string; urls: { profilePicture?: string; banner?: string } }> => {
+export const uploadClubMedia = async (clubId: string, files: { profilePicture?: File; banner?: File }): Promise<{ message: string; club?: { _id: string; name: string; profilePicture?: string; banner?: string }; uploadedFiles?: any[] }> => {
   const formData = new FormData();
   if (files.profilePicture) formData.append("profilePicture", files.profilePicture);
   if (files.banner) formData.append("banner", files.banner);

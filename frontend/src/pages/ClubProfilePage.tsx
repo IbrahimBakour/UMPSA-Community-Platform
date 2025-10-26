@@ -4,6 +4,7 @@ import PostCard from "../components/PostCard";
 import { useAuth } from "../hooks/useAuth";
 import EditClubModal from "../components/EditClubModal";
 import AddMemberModal from "../components/AddMemberModal";
+import CreateClubPostModal from "../components/CreateClubPostModal";
 import { API_BASE_URL } from "../utils/constants";
 
 // Helper function to get full image URL
@@ -97,6 +98,7 @@ const ClubProfilePage = () => {
           <div className="flex items-center">
             {club.profilePicture ? (
               <img 
+                key={club.profilePicture} 
                 src={getImageUrl(club.profilePicture)} 
                 alt={club.name} 
                 className="w-24 h-24 rounded-full mr-4 object-cover"
@@ -128,10 +130,106 @@ const ClubProfilePage = () => {
         </div>
       </div>
 
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Posts</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        {/* Members Section */}
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-bold mb-3">Members</h3>
+          {club.members && club.members.length > 0 ? (
+            <div className="space-y-2">
+              {club.members.slice(0, 5).map((member, index) => (
+                <div key={index} className="flex items-center p-2 hover:bg-gray-50 rounded">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
+                    <span className="text-sm font-bold text-indigo-600">
+                      {typeof member === 'object' && member.studentId 
+                        ? member.studentId.charAt(member.studentId.length - 1).toUpperCase()
+                        : '?'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {typeof member === 'object' && member.nickname 
+                        ? member.nickname 
+                        : typeof member === 'object' && member.studentId 
+                        ? member.studentId 
+                        : 'Unknown User'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {typeof member === 'object' && member.studentId ? member.studentId : ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {club.members.length > 5 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  +{club.members.length - 5} more members
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">No members yet</p>
+          )}
+        </div>
+
+        {/* Contact Details Section */}
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-bold mb-3">Contact Information</h3>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Club Name</p>
+              <p className="text-sm text-gray-600">{club.name}</p>
+            </div>
+            {club.description && (
+              <div>
+                <p className="text-sm font-medium text-gray-700">About</p>
+                <p className="text-sm text-gray-600">{club.description}</p>
+              </div>
+            )}
+            {club.contact && (
+              <div>
+                <p className="text-sm font-medium text-gray-700">Contact</p>
+                <p className="text-sm text-gray-600">{club.contact}</p>
+              </div>
+            )}
+            {club.about && (
+              <div>
+                <p className="text-sm font-medium text-gray-700">Additional Info</p>
+                <p className="text-sm text-gray-600">{club.about}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Club Stats */}
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-bold mb-3">Club Statistics</h3>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Total Members</p>
+              <p className="text-2xl font-bold text-indigo-600">{club.memberCount || club.members?.length || 0}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-700">Total Posts</p>
+              <p className="text-2xl font-bold text-indigo-600">{posts.length}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Posts Section */}
+      <div className="mt-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Club Posts</h2>
+          {isClubMember && <CreateClubPostModal clubId={club._id} />}
+        </div>
         {posts.length === 0 ? (
-          <p>No posts yet</p>
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <p className="text-gray-500">No posts yet. Be the first to post!</p>
+            {isClubMember && (
+              <div className="mt-4">
+                <CreateClubPostModal clubId={club._id} />
+              </div>
+            )}
+          </div>
         ) : (
           posts.map((post) => (
             <PostCard key={post._id} post={post} />

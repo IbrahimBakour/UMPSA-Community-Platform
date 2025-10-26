@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useCreateFeedPost } from '../services/posts';
+import { useCreateFeedPost, useCreateClubPost } from '../services/posts';
 import { useState } from 'react';
 import { FaPoll, FaCalendarAlt } from 'react-icons/fa';
 import { uploadFile } from '../services/uploads';
@@ -25,7 +25,7 @@ const createPostSchema = z.object({
 
 type CreatePostFormInputs = z.infer<typeof createPostSchema>;
 
-const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
+const CreatePostForm = ({ closeModal, clubId }: { closeModal: () => void; clubId?: string }) => {
   const {
     register,
     handleSubmit,
@@ -35,7 +35,11 @@ const CreatePostForm = ({ closeModal }: { closeModal: () => void }) => {
   } = useForm<CreatePostFormInputs>({
     resolver: zodResolver(createPostSchema),
   });
-  const createPostMutation = useCreateFeedPost();
+  const createFeedPostMutation = useCreateFeedPost();
+  const createClubPostMutation = useCreateClubPost(clubId || '');
+  
+  // Use club post mutation if clubId is provided, otherwise use feed post mutation
+  const createPostMutation = clubId ? createClubPostMutation : createFeedPostMutation;
   const [postType, setPostType] = useState<'text' | 'image' | 'poll' | 'event'>('text');
   const [imagePreviews, setImagePreviews] = useState<Array<{ preview: string; url: string }>>([]);
   const [isUploading, setIsUploading] = useState(false);
