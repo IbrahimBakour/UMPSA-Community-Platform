@@ -265,7 +265,7 @@ export interface UserStats {
 
 export interface UserActivity {
   user: {
-    _id: string;
+  _id: string;
     studentId: string;
     nickname?: string;
     role: string;
@@ -288,10 +288,10 @@ export interface ClubStats {
 
 export interface AdminStats {
   overview: {
-    totalUsers: number;
-    totalPosts: number;
-    totalClubs: number;
-    totalReports: number;
+  totalUsers: number;
+  totalPosts: number;
+  totalClubs: number;
+  totalReports: number;
     activeUsers: number;
     restrictedUsers: number;
   };
@@ -305,12 +305,12 @@ export interface AdminStats {
     feedPosts: number;
     clubPosts: number;
     approvedPosts: number;
-    pendingPosts: number;
+  pendingPosts: number;
     rejectedPosts: number;
     postGrowthPercentage: string;
   };
   reportStats: {
-    pendingReports: number;
+  pendingReports: number;
     reviewedReports: number;
     resolvedReports: number;
   };

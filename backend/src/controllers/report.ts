@@ -72,7 +72,25 @@ export const listReports = async (req: AuthRequest, res: Response) => {
     if (req.user?.role !== "admin") {
       return res.status(403).json({ message: "Admins only" });
     }
-    const reports = await Report.find()
+    
+    // Extract query parameters for filtering
+    const status = req.query.status as string;
+    const targetType = req.query.targetType as string;
+    
+    // Build query
+    const query: any = {};
+    
+    // Filter by status
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    
+    // Filter by targetType
+    if (targetType && targetType !== 'all') {
+      query.targetType = targetType;
+    }
+    
+    const reports = await Report.find(query)
       .populate("reportedBy", "studentId nickname")
       .populate("reviewedBy", "studentId nickname")
       .sort({ createdAt: -1 });

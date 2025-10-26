@@ -59,6 +59,11 @@ const deletePost = async (postId: string): Promise<{ message: string }> => {
   return response.data;
 };
 
+const getPostById = async (postId: string): Promise<FeedPost | ClubPost> => {
+  const response = await api.get(API_ENDPOINTS.POST_DELETE.replace(':id', postId).replace('/delete', ''));
+  return response.data;
+};
+
 const addComment = async (postId: string, content: string): Promise<{ message: string; comment: Comment }> => {
   const response = await api.post(API_ENDPOINTS.POST_COMMENT_CREATE.replace(':id', postId), {
     content,
@@ -247,6 +252,14 @@ export const useComments = (postId: string, params?: { page?: number; limit?: nu
   return useQuery<PaginatedResponse<Comment>, Error>({
     queryKey: ["comments", postId, params],
     queryFn: () => getComments(postId, params),
+    enabled: !!postId,
+  });
+};
+
+export const usePostById = (postId: string) => {
+  return useQuery<FeedPost | ClubPost, Error>({
+    queryKey: ["post", postId],
+    queryFn: () => getPostById(postId),
     enabled: !!postId,
   });
 };
