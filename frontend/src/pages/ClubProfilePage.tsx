@@ -207,7 +207,7 @@ const ClubProfilePage = () => {
               <p className="text-sm font-medium text-gray-700">Total Members</p>
               <p className="text-2xl font-bold text-indigo-600">{club.memberCount || club.members?.length || 0}</p>
             </div>
-            <div>
+      <div>
               <p className="text-sm font-medium text-gray-700">Total Posts</p>
               <p className="text-2xl font-bold text-indigo-600">{posts.length}</p>
             </div>
@@ -232,7 +232,7 @@ const ClubProfilePage = () => {
           </div>
         ) : (
           posts.map((post) => (
-            <PostCard key={post._id} post={post} />
+          <PostCard key={post._id} post={post} />
           ))
         )}
       </div>

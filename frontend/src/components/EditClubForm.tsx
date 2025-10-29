@@ -82,17 +82,17 @@ const EditClubForm = ({ club, closeModal }: EditClubFormProps) => {
       };
       
       updateClubMutation.mutate(updateData, {
-        onSuccess: () => {
-          toast.success('Club updated successfully!');
-          reset();
+      onSuccess: () => {
+        toast.success('Club updated successfully!');
+        reset();
           setProfilePictureFile(null);
           setProfilePicturePreview(null);
-          closeModal();
-        },
-        onError: () => {
-          toast.error('Failed to update club. Please try again.');
-        },
-      });
+        closeModal();
+      },
+      onError: () => {
+        toast.error('Failed to update club. Please try again.');
+      },
+    });
     } catch (error) {
       toast.error('Failed to upload profile picture. Please try again.');
     } finally {

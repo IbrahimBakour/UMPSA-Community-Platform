@@ -45,12 +45,12 @@ const getPendingFeedPosts = async (params?: {
 };
 
 const approveFeedPost = async (postId: string): Promise<{ message: string; post: FeedPost }> => {
-  const response = await api.put(API_ENDPOINTS.FEED_POST_APPROVE.replace(':id', postId));
+  const response = await api.post(API_ENDPOINTS.FEED_POST_APPROVE.replace(':id', postId));
   return response.data;
 };
 
 const rejectFeedPost = async (postId: string, reason?: string): Promise<{ message: string; reason: string }> => {
-  const response = await api.put(API_ENDPOINTS.FEED_POST_REJECT.replace(':id', postId), { reason });
+  const response = await api.post(API_ENDPOINTS.FEED_POST_REJECT.replace(':id', postId), { reason });
   return response.data;
 };
 

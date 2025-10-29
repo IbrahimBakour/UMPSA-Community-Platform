@@ -1,11 +1,21 @@
 import api from "./api";
 import { AdminStats, AdminAnalytics, SystemHealth, UserActivity, PaginatedResponse } from "../types";
 import { API_ENDPOINTS } from "../utils/constants";
+import { useQuery } from "@tanstack/react-query";
 
 // Get admin dashboard statistics
 export const getDashboardStats = async (): Promise<AdminStats> => {
   const response = await api.get(API_ENDPOINTS.ADMIN_DASHBOARD);
   return response.data;
+};
+
+// React Query hooks
+export const useDashboardStats = () => {
+  return useQuery<AdminStats, Error>({
+    queryKey: ["admin", "dashboard", "stats"],
+    queryFn: getDashboardStats,
+    refetchInterval: 60000, // Refetch every minute
+  });
 };
 
 // Get admin analytics

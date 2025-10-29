@@ -1,5 +1,5 @@
 import { usePendingFeedPosts, useApproveFeedPost, useRejectFeedPost } from '../../services/posts';
-import PostCard from '../../components/PostCard';
+import PostPreview from '../../components/PostPreview';
 import toast from 'react-hot-toast';
 
 const PendingPostsPage = () => {
@@ -48,7 +48,7 @@ const PendingPostsPage = () => {
         <div className="space-y-4">
           {postsArray.map((post) => (
             <div key={post._id} className="bg-white rounded-lg shadow-md p-4">
-              <PostCard post={post} />
+              <PostPreview post={post} />
               <div className="mt-4 flex justify-end space-x-4">
                 <button 
                   onClick={() => handleApprove(post._id)} 

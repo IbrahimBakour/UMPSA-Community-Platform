@@ -35,10 +35,10 @@ const AssignClubForm = ({ userId, closeModal }: AssignClubFormProps) => {
   const onSubmit = async (data: AssignClubFormInputs) => {
     try {
       await api.post(`/api/clubs/${data.clubId}/members`, { userId });
-      toast.success('User assigned to club successfully!');
-      closeModal();
+        toast.success('User assigned to club successfully!');
+        closeModal();
     } catch (error) {
-      toast.error('Failed to assign user to club. Please try again.');
+        toast.error('Failed to assign user to club. Please try again.');
     }
   };
 

@@ -10,6 +10,7 @@ import AdminPanel from "./pages/AdminPanel";
 import MainLayout from "./components/layout/MainLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AdminRoute from "./routes/AdminRoute";
+import DashboardPage from "./pages/admin/DashboardPage";
 import PendingPostsPage from "./pages/admin/PendingPostsPage";
 import ClubsManagementPage from "./pages/admin/ClubsManagementPage";
 import UsersManagementPage from "./pages/admin/UsersManagementPage";
@@ -141,6 +142,25 @@ function App() {
         </Route>
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPanel />}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route
+              path="dashboard"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="in"
+                  exit="out"
+                  variants={pageVariants}
+                  transition={{
+                    type: "tween",
+                    ease: "anticipate",
+                    duration: 0.5,
+                  }}
+                >
+                  <DashboardPage />
+                </motion.div>
+              }
+            />
             <Route
               path="pending-posts"
               element={

@@ -8,7 +8,6 @@ import {
   FlagIcon,
   ChartBarIcon,
   UsersIcon,
-  CogIcon,
   HomeIcon,
   CalendarIcon,
 } from '@heroicons/react/24/outline';
@@ -53,12 +52,6 @@ const Sidebar: React.FC = () => {
       href: '/admin/users',
       icon: UsersIcon,
       current: location.pathname.startsWith('/admin/users'),
-    },
-    {
-      name: 'System Settings',
-      href: '/admin/settings',
-      icon: CogIcon,
-      current: location.pathname.startsWith('/admin/settings'),
     },
   ];
 
