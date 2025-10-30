@@ -36,10 +36,10 @@ export const changePassword = async (passwordData: {
 };
 
 // Admin-only function for importing users
-export const importUsers = async (file: File): Promise<{ message: string; imported: number }> => {
+export const importUsers = async (file: File): Promise<{ message: string; errors?: string[]; details?: { totalProcessed: number; successful: number; failed: number } }> => {
   const formData = new FormData();
-  formData.append('file', file);
-  const response = await api.post<{ message: string; imported: number }>(API_ENDPOINTS.IMPORT_USERS, formData, {
+  formData.append('users', file); // Backend expects "users" as field name
+  const response = await api.post<{ message: string; errors?: string[]; details?: { totalProcessed: number; successful: number; failed: number } }>(API_ENDPOINTS.IMPORT_USERS, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
   return response.data;
