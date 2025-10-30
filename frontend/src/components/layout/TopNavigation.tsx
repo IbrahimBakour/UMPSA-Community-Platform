@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Avatar, Badge } from '../ui';
+import { Avatar } from '../ui';
+import NotificationDropdown from '../NotificationDropdown';
 import { 
-  BellIcon, 
   CogIcon, 
   UserIcon, 
   ArrowRightOnRectangleIcon,
@@ -65,16 +65,7 @@ const TopNavigation: React.FC = () => {
           {/* Right side - User menu */}
           <div className="flex items-center space-x-4">
             {/* Notifications */}
-            <button className="relative p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-lg">
-              <BellIcon className="w-5 h-5" />
-              <Badge 
-                variant="danger" 
-                size="sm" 
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-xs"
-              >
-                3
-              </Badge>
-            </button>
+            <NotificationDropdown />
 
             {/* Profile Dropdown */}
             <div className="relative">
