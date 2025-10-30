@@ -148,7 +148,7 @@ const Sidebar: React.FC = () => {
           </div>
         )}
 
-        {/* Recent Activity */}
+        {/* Recent Activity
         <div className="p-4 border-b border-gray-200 flex-1">
           {!isCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
@@ -179,47 +179,33 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
 
-        {/* Popular Clubs */}
-        <div className="p-4">
-          {!isCollapsed && (
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Popular Clubs
-            </h3>
-          )}
-          <div className="space-y-2">
-            {popularClubs.map((club, index) => (
-              <div
-                key={index}
-                className={`flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 ${
-                  isCollapsed ? 'justify-center' : ''
-                }`}
-              >
-                {!isCollapsed && (
-                  <>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {club.name}
-                      </p>
-                      <p className="text-xs text-gray-500">{club.members} members</p>
-                    </div>
-                    {club.joined ? (
-                      <Badge variant="success" size="sm">
-                        Joined
-                      </Badge>
-                    ) : (
-                      <Button size="sm" variant="outline">
-                        Join
-                      </Button>
-                    )}
-                  </>
-                )}
-                {isCollapsed && (
-                  <UserGroupIcon className="w-5 h-5 text-gray-400" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+
+        //         {!isCollapsed && (
+        //           <>
+        //             <div className="flex-1 min-w-0">
+        //               <p className="text-sm font-medium text-gray-900 truncate">
+        //                 {club.name}
+        //               </p>
+        //               <p className="text-xs text-gray-500">{club.members} members</p>
+        //             </div>
+        //             {club.joined ? (
+        //               <Badge variant="success" size="sm">
+        //                 Joined
+        //               </Badge>
+        //             ) : (
+        //               <Button size="sm" variant="outline">
+        //                 Join
+        //               </Button>
+        //             )}
+        //           </>
+        //         )}
+        //         {isCollapsed && (
+        //           <UserGroupIcon className="w-5 h-5 text-gray-400" />
+        //         )}
+        //       </div>
+        //     ))}
+        //   </div>
+        // </div> */}
       </div>
     </div>
   );
