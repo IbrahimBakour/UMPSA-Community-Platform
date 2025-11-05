@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import { login as loginService } from "../services/auth";
 import toast from "react-hot-toast";
 import type { User } from "../types";
+import { motion } from "framer-motion";
 
 const loginSchema = z.object({
   studentId: z.string().min(1, "Student ID is required"),
@@ -51,16 +52,32 @@ const LoginPage = () => {
       </div>
 
       {/* Login Form Card */}
-      <div className="relative w-full max-w-md p-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-elevation hover:shadow-raised transition-all duration-300 space-y-8">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative w-full max-w-md p-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-elevation hover:shadow-raised transition-all duration-300 space-y-8"
+      >
         {/* Logo and Title */}
-        <div className="text-center space-y-2">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+          className="text-center space-y-2"
+        >
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-500 bg-clip-text text-transparent">
             Welcome Back
           </h1>
           <p className="text-surface-600">Sign in to your UMPSA account</p>
-        </div>
+        </motion.div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <motion.form
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-6"
+        >
           <div className="space-y-4">
             <div>
               <label
@@ -122,8 +139,8 @@ const LoginPage = () => {
           >
             Sign In
           </button>
-        </form>
-      </div>
+        </motion.form>
+      </motion.div>
     </div>
   );
 };

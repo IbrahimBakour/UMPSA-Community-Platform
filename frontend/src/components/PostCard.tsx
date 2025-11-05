@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AnyPost } from "../types";
 import CommentList from "./CommentList";
 import CommentInput from "./CommentInput";
@@ -7,29 +8,29 @@ import { useDeletePost } from "../services/posts";
 import { useState } from "react";
 import ConfirmationModal from "./ConfirmationModal";
 import toast from "react-hot-toast";
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useCreateReport } from '../services/reports';
-import { API_BASE_URL } from '../utils/constants';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useCreateReport } from "../services/reports";
+import { API_BASE_URL } from "../utils/constants";
 // import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { motion } from "framer-motion";
 
 // Helper function to get full image URL
 const getImageUrl = (path: string): string => {
-  if (!path) return '';
-  
+  if (!path) return "";
+
   // If it's already a full URL, return it
-  if (path.startsWith('http://') || path.startsWith('https://')) {
+  if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
   }
-  
+
   // Normalize the path to always start with a single /
-  let cleanPath = path.replace(/\/+/g, '/');
-  if (!cleanPath.startsWith('/')) {
+  let cleanPath = path.replace(/\/+/g, "/");
+  if (!cleanPath.startsWith("/")) {
     cleanPath = `/${cleanPath}`;
   }
-  
+
   // Combine with API_BASE_URL
   return `${API_BASE_URL}${cleanPath}`;
 };
@@ -39,7 +40,7 @@ interface PostCardProps {
 }
 
 const reportPostSchema = z.object({
-  reason: z.string().min(1, 'Reason cannot be empty'),
+  reason: z.string().min(1, "Reason cannot be empty"),
 });
 
 type ReportPostFormInputs = z.infer<typeof reportPostSchema>;
@@ -50,8 +51,13 @@ const PostCard = ({ post }: PostCardProps) => {
   const createReportMutation = useCreateReport();
   const [isConfirmationOpen, setConfirmationOpen] = useState(false);
   const [isReportModalOpen, setReportModalOpen] = useState(false);
-  
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ReportPostFormInputs>({
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ReportPostFormInputs>({
     resolver: zodResolver(reportPostSchema),
   });
 
@@ -68,82 +74,112 @@ const PostCard = ({ post }: PostCardProps) => {
   };
 
   const handleReportSubmit = (data: ReportPostFormInputs) => {
-    createReportMutation.mutate({
-      targetType: 'post',
-      targetId: post._id,
-      reason: data.reason,
-    }, {
-      onSuccess: () => {
-        toast.success("Post reported successfully!");
-        setReportModalOpen(false);
-        reset();
+    createReportMutation.mutate(
+      {
+        targetType: "post",
+        targetId: post._id,
+        reason: data.reason,
       },
-      onError: () => {
-        toast.error("Failed to report post. Please try again.");
-      },
-    });
+      {
+        onSuccess: () => {
+          toast.success("Post reported successfully!");
+          setReportModalOpen(false);
+          reset();
+        },
+        onError: () => {
+          toast.error("Failed to report post. Please try again.");
+        },
+      }
+    );
   };
+
+  // Author can be either a populated object or an ID string
+  const authorObj =
+    (post as any).author && typeof (post as any).author === "object"
+      ? (post as any).author
+      : null;
+  const authorName =
+    authorObj?.nickname || authorObj?.studentId || "Unknown User";
+  const authorPic = authorObj?.profilePicture;
 
   return (
     <motion.div
-      whileHover={{
-        scale: 1.02,
-        boxShadow:
-          "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-      }}
-      className="bg-white rounded-lg shadow-md p-4 mb-4"
+      whileHover={{ scale: 1.01 }}
+      className="bg-white rounded-xl shadow-md p-4 mb-4 hover:shadow-lg transition-shadow duration-200"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          {/* <Avatar>
-            <AvatarImage src={post.author.profilePicture} alt={post.author.nickname} />
-            <AvatarFallback>{post.author.nickname.charAt(0)}</AvatarFallback>
-          </Avatar> */}
-          <div className="ml-4">
-            <p className="font-bold"></p>
-            <p className="text-sm text-gray-500">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+            {authorPic ? (
+              <img
+                src={getImageUrl(authorPic)}
+                alt={authorName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-gray-600">
+                {authorName.charAt(0)}
+              </div>
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-surface-900">
+              {authorName}
+            </p>
+            <p className="text-xs text-gray-500">
               {new Date(post.createdAt).toLocaleString()}
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <button
             onClick={() => setReportModalOpen(true)}
-            className="text-orange-500 hover:text-orange-700 text-sm"
+            className="text-sm text-gray-500 hover:text-orange-600"
           >
             Report
           </button>
           {isAdmin && (
             <button
               onClick={() => setConfirmationOpen(true)}
-              className="text-red-500 hover:text-red-700 text-sm"
+              className="text-sm text-gray-500 hover:text-red-600"
             >
               Delete
             </button>
           )}
         </div>
       </div>
-      <p className="text-lg">{post.content}</p>
+
+      <div className="text-base leading-relaxed text-surface-800 mb-3">
+        {post.content}
+      </div>
+
       {post.media && post.media.length > 0 && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
           {post.media.map((mediaUrl, index) => (
-            <img
+            <div
               key={index}
-              src={getImageUrl(mediaUrl)}
-              alt={`Post media ${index + 1}`}
-              className="w-full h-auto rounded-md"
-              onError={(e) => {
-                // Fallback if image fails to load
-                console.error('Failed to load image:', mediaUrl);
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
+              className={`overflow-hidden rounded-md ${
+                post.media?.length === 1 ? "h-80" : "h-48"
+              }`}
+            >
+              <img
+                src={getImageUrl(mediaUrl)}
+                alt={`Post media ${index + 1}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  console.error("Failed to load image:", mediaUrl);
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            </div>
           ))}
         </div>
       )}
+
       {post.poll && (
         <div className="mt-4">
-          <h4 className="font-bold">{post.poll.question}</h4>
+          <h4 className="font-semibold">{post.poll.question}</h4>
           <div className="mt-2 space-y-2">
             {post.poll.options.map((option, index) => (
               <div key={index} className="flex items-center justify-between">
@@ -156,9 +192,10 @@ const PostCard = ({ post }: PostCardProps) => {
           </div>
         </div>
       )}
+
       {post.calendarEvent && (
         <div className="mt-4">
-          <h4 className="font-bold">{post.calendarEvent.title}</h4>
+          <h4 className="font-semibold">{post.calendarEvent.title}</h4>
           <p className="text-gray-600">
             {new Date(post.calendarEvent.date).toLocaleDateString()}
           </p>
@@ -167,9 +204,15 @@ const PostCard = ({ post }: PostCardProps) => {
           </button>
         </div>
       )}
-      <ReactionButtons post={post} />
-      <CommentList comments={post.comments} />
-      <CommentInput postId={post._id} postType={post.postType} />
+
+      <div className="mt-4">
+        <ReactionButtons post={post} />
+      </div>
+
+      <div className="mt-4">
+        <CommentList comments={post.comments} />
+        <CommentInput postId={post._id} postType={post.postType} />
+      </div>
       <ConfirmationModal
         isOpen={isConfirmationOpen}
         onClose={() => setConfirmationOpen(false)}
@@ -177,7 +220,7 @@ const PostCard = ({ post }: PostCardProps) => {
         title="Delete Post"
         message="Are you sure you want to delete this post? This action cannot be undone."
       />
-      
+
       {/* Report Post Modal */}
       {isReportModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -185,17 +228,24 @@ const PostCard = ({ post }: PostCardProps) => {
             <h2 className="text-xl font-bold mb-4">Report Post</h2>
             <form onSubmit={handleSubmit(handleReportSubmit)}>
               <div className="mb-4">
-                <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="reason"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Reason for reporting
                 </label>
                 <textarea
-                  {...register('reason')}
+                  {...register("reason")}
                   id="reason"
                   className="w-full p-2 border border-gray-300 rounded-md"
                   rows={4}
                   placeholder="Please describe why you are reporting this post"
                 ></textarea>
-                {errors.reason && <p className="text-red-500 text-sm mt-1">{errors.reason.message}</p>}
+                {errors.reason && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.reason.message}
+                  </p>
+                )}
               </div>
               <div className="flex justify-end space-x-2">
                 <button
@@ -213,7 +263,9 @@ const PostCard = ({ post }: PostCardProps) => {
                   disabled={createReportMutation.isPending}
                   className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50"
                 >
-                  {createReportMutation.isPending ? 'Reporting...' : 'Submit Report'}
+                  {createReportMutation.isPending
+                    ? "Reporting..."
+                    : "Submit Report"}
                 </button>
               </div>
             </form>

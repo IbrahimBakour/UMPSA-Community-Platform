@@ -3,6 +3,7 @@ import ClubCard from "../components/ClubCard";
 import CreateClubModal from "../components/CreateClubModal";
 import { useAuth } from "../hooks/useAuth";
 import React from "react";
+import { motion } from "framer-motion";
 
 // Lightweight skeleton for club cards
 const ClubSkeleton: React.FC = () => (
@@ -69,8 +70,15 @@ const ClubsPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {clubsArray.map((club) => (
-            <ClubCard key={club._id} club={club} />
+          {clubsArray.map((club, index) => (
+            <motion.div
+              key={club._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <ClubCard club={club} />
+            </motion.div>
           ))}
         </div>
       )}

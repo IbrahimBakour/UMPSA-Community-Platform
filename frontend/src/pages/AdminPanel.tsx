@@ -1,55 +1,74 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import TopNavigation from '../components/layout/TopNavigation';
-import Sidebar from '../components/layout/Sidebar';
+import { Link, Outlet, useLocation } from "react-router-dom";
+import TopNavigation from "../components/layout/TopNavigation";
+import Sidebar from "../components/layout/Sidebar";
+import { motion } from "framer-motion";
 
 const AdminPanel = () => {
   const location = useLocation();
-  
+
   const navItems = [
-    { name: 'Dashboard', href: '/admin/dashboard' },
-    { name: 'Pending Posts', href: '/admin/pending-posts' },
-    { name: 'Clubs', href: '/admin/clubs' },
-    { name: 'Users', href: '/admin/users' },
+    { name: "Dashboard", href: "/admin/dashboard" },
+    { name: "Pending Posts", href: "/admin/pending-posts" },
+    { name: "Clubs", href: "/admin/clubs" },
+    { name: "Users", href: "/admin/users" },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-50">
       {/* Top Navigation */}
       <TopNavigation />
-      
+
       <div className="flex">
         {/* Sidebar */}
         <Sidebar />
-        
+
         {/* Main Content */}
         <main className="flex-1 min-h-screen">
           <div className="container mx-auto p-6">
-            <h1 className="text-3xl font-bold mb-6">Admin Panel</h1>
-            
-            {/* Navigation Tabs */}
-            <div className="border-b border-gray-200 mb-6">
-              <nav className="flex space-x-8">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      location.pathname === item.href || 
-                      (item.href === '/admin/dashboard' && location.pathname === '/admin')
-                        ? 'border-indigo-500 text-indigo-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-3xl font-bold">Admin Panel</h1>
+                <p className="text-sm text-gray-500">
+                  Manage site content and users
+                </p>
+              </div>
+            </div>
+
+            {/* Navigation Tabs (pill style) */}
+            <div className="mb-6">
+              <nav className="flex items-center gap-3 overflow-x-auto">
+                {navItems.map((item) => {
+                  const isActive =
+                    location.pathname === item.href ||
+                    (item.href === "/admin/dashboard" &&
+                      location.pathname === "/admin");
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={`px-3 py-2 text-sm font-medium rounded-full transition-colors whitespace-nowrap ${
+                        isActive
+                          ? "bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
               </nav>
             </div>
 
             {/* Content */}
-            <div>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white rounded-lg shadow-md p-6"
+            >
               <Outlet />
-            </div>
+            </motion.div>
           </div>
         </main>
       </div>

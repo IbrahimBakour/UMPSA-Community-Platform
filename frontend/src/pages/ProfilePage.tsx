@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useUpdateUser } from "../services/users";
 import { uploadFile } from "../services/uploads";
 import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 
 const profileSchema = z.object({
   nickname: z.string().min(1, "Nickname cannot be empty"),
@@ -69,7 +70,12 @@ const ProfilePage = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="bg-white rounded-lg shadow-md p-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white rounded-lg shadow-md p-4"
+      >
         <div className="flex items-center mb-4">
           <img
             src={user?.profilePicture}
@@ -82,8 +88,12 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="mb-4">
+        <motion.form
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          onSubmit={handleSubmit(onSubmit)}
+        >          <div className="mb-4">
             <label
               htmlFor="nickname"
               className="block text-sm font-medium text-gray-700"
@@ -142,8 +152,8 @@ const ProfilePage = () => {
           >
             {updateUserMutation.isPending ? "Updating..." : "Update Profile"}
           </button>
-        </form>
-      </div>
+        </motion.form>
+      </motion.div>
     </div>
   );
 };

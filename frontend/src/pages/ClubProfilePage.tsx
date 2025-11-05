@@ -7,6 +7,7 @@ import EditClubModal from "../components/EditClubModal";
 import AddMemberModal from "../components/AddMemberModal";
 import CreateClubPostModal from "../components/CreateClubPostModal";
 import { API_BASE_URL } from "../utils/constants";
+import { motion } from "framer-motion";
 
 // Helper function to get full image URL
 const getImageUrl = (path?: string): string => {
@@ -118,7 +119,12 @@ const ClubProfilePage = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="bg-white rounded-lg shadow-md p-6 mb-4 border border-surface-100">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white rounded-lg shadow-md p-6 mb-4 border border-surface-100"
+      >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center">
             {club.profilePicture ? (
@@ -159,11 +165,30 @@ const ClubProfilePage = () => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1,
+            },
+          },
+        }}
+      >
         {/* Members Section */}
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+          className="bg-white rounded-lg shadow-md p-4"
+        >
           <h3 className="text-lg font-bold mb-3">Members</h3>
           {membersArray && membersArray.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
@@ -204,10 +229,16 @@ const ClubProfilePage = () => {
           ) : (
             <p className="text-gray-500 text-sm">No members yet</p>
           )}
-        </div>
+        </motion.div>
 
         {/* Contact Details Section */}
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+          className="bg-white rounded-lg shadow-md p-4"
+        >
           <h3 className="text-lg font-bold mb-3">Contact Information</h3>
           <div className="space-y-3">
             <div>
@@ -235,10 +266,16 @@ const ClubProfilePage = () => {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Club Stats */}
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+          className="bg-white rounded-lg shadow-md p-4"
+        >
           <h3 className="text-lg font-bold mb-3">Club Statistics</h3>
           <div className="space-y-3">
             <div>
@@ -254,8 +291,8 @@ const ClubProfilePage = () => {
               </p>
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Posts Section */}
       <div className="mt-4">
@@ -273,7 +310,16 @@ const ClubProfilePage = () => {
             )}
           </div>
         ) : (
-          postsArray.map((post) => <PostCard key={post._id} post={post} />)
+          postsArray.map((post, index) => (
+            <motion.div
+              key={post._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <PostCard post={post} />
+            </motion.div>
+          ))
         )}
       </div>
     </div>

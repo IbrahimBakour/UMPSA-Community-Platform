@@ -2,6 +2,7 @@ import React from "react";
 import PostCard from "../components/PostCard";
 import CreatePostModal from "../components/CreatePostModal";
 import { useFeedPosts } from "../services/posts";
+import { motion } from "framer-motion";
 
 // Simple visual skeleton for posts (keeps layout and appearance consistent)
 const PostSkeleton: React.FC = () => (
@@ -100,7 +101,16 @@ const FeedPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            postsArray.map((post) => <PostCard key={post._id} post={post} />)
+            postsArray.map((post, index) => (
+              <motion.div
+                key={post._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <PostCard post={post} />
+              </motion.div>
+            ))
           )}
         </div>
       </div>

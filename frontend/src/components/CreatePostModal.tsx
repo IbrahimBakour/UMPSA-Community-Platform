@@ -1,8 +1,7 @@
-
-import { useState } from 'react';
-import CreatePostForm from './CreatePostForm';
-import { useAuth } from '../hooks/useAuth';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import CreatePostForm from "./CreatePostForm";
+import { useAuth } from "../hooks/useAuth";
+import { motion, AnimatePresence } from "framer-motion";
 
 const CreatePostModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,16 +10,33 @@ const CreatePostModal = () => {
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
 
-  const isRestricted = user?.status === 'restricted';
+  const isRestricted = user?.status === "restricted";
 
   return (
     <div>
       <button
         onClick={openModal}
-        className="w-full bg-white p-4 text-left text-gray-500 rounded-lg shadow-md mb-4 hover:bg-gray-50"
+        className="w-full bg-white p-3 text-left text-gray-500 rounded-lg shadow-md mb-4 hover:bg-gray-50 flex items-center gap-3"
         disabled={isRestricted}
       >
-        {isRestricted ? "You are restricted from creating posts" : "What's on your mind?"}
+        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+          {user?.profilePicture ? (
+            <img
+              src={user.profilePicture}
+              alt={user.nickname}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-gray-600">
+              {user?.nickname?.charAt(0) ?? user?.studentId?.charAt(0) ?? "?"}
+            </div>
+          )}
+        </div>
+        <div className="flex-1 text-sm text-gray-600">
+          {isRestricted
+            ? "You are restricted from creating posts"
+            : "What's on your mind?"}
+        </div>
       </button>
 
       <AnimatePresence>
@@ -39,9 +55,15 @@ const CreatePostModal = () => {
               className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg"
             >
               {isRestricted && (
-                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                <div
+                  className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4"
+                  role="alert"
+                >
                   <p className="font-bold">Restricted</p>
-                  <p>You are restricted from creating posts. Please contact an administrator for more information.</p>
+                  <p>
+                    You are restricted from creating posts. Please contact an
+                    administrator for more information.
+                  </p>
                 </div>
               )}
               <h2 className="text-xl font-bold mb-4">Create Post</h2>
