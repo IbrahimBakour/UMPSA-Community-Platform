@@ -81,8 +81,8 @@ const ClubProfilePage = () => {
       <div className="container mx-auto p-4">
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            <p className="mt-4 text-gray-600">Loading club...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            <p className="mt-4 text-surface-600">Loading club...</p>
           </div>
         </div>
       </div>
@@ -92,15 +92,15 @@ const ClubProfilePage = () => {
   if (clubError || postsError) {
     return (
       <div className="container mx-auto p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-          <p className="text-red-600">
+        <div className="bg-state-error/10 border border-state-error/20 rounded-lg p-4 text-center">
+          <p className="text-state-error">
             Failed to load club data. Please try again.
           </p>
           {clubError && (
-            <p className="text-red-500 text-sm mt-2">{clubError.message}</p>
+            <p className="text-state-error/80 text-sm mt-2">{clubError.message}</p>
           )}
           {postsError && (
-            <p className="text-red-500 text-sm mt-2">{postsError.message}</p>
+            <p className="text-state-error/80 text-sm mt-2">{postsError.message}</p>
           )}
         </div>
       </div>
@@ -110,8 +110,8 @@ const ClubProfilePage = () => {
   if (!club) {
     return (
       <div className="container mx-auto p-4">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-          <p className="text-yellow-800">Club not found</p>
+        <div className="bg-state-warning/10 border border-state-warning/20 rounded-lg p-4 text-center">
+          <p className="text-state-warning">Club not found</p>
         </div>
       </div>
     );
@@ -126,21 +126,21 @@ const ClubProfilePage = () => {
         className="bg-white rounded-lg shadow-md p-6 mb-4 border border-surface-100"
       >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center">
+          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
             {club.profilePicture ? (
               <img
                 key={club.profilePicture}
                 src={getImageUrl(club.profilePicture)}
                 alt={club.name}
-                className="w-28 h-28 rounded-full mr-4 object-cover"
+                className="w-28 h-28 rounded-full mr-0 sm:mr-4 mb-4 sm:mb-0 object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
                     "/default-club-avatar.png";
                 }}
               />
             ) : (
-              <div className="w-28 h-28 rounded-full mr-4 bg-indigo-100 flex items-center justify-center">
-                <span className="text-3xl font-bold text-indigo-600">
+              <div className="w-28 h-28 rounded-full mr-4 bg-primary-100 flex items-center justify-center">
+                <span className="text-3xl font-bold text-primary-600">
                   {club.name.charAt(0).toUpperCase()}
                 </span>
               </div>
@@ -148,10 +148,10 @@ const ClubProfilePage = () => {
             <div className="ml-2">
               <h1 className="text-3xl font-bold">{club.name}</h1>
               {club.description && (
-                <p className="text-gray-600 mt-1">{club.description}</p>
+                <p className="text-surface-600 mt-1">{club.description}</p>
               )}
               {club.memberCount !== undefined && (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-surface-500 mt-2">
                   {club.memberCount}{" "}
                   {club.memberCount === 1 ? "member" : "members"}
                 </p>
@@ -208,14 +208,14 @@ const ClubProfilePage = () => {
                 return (
                   <div
                     key={index}
-                    className="flex items-center p-2 hover:bg-gray-50 rounded"
+                    className="flex items-center p-2 hover:bg-surface-50 rounded"
                   >
-                    <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center mr-3 text-sm font-semibold text-indigo-700">
+                    <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center mr-3 text-sm font-semibold text-primary-700">
                       {initial}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{nickname}</p>
-                      <p className="text-xs text-gray-500 truncate">{idText}</p>
+                      <p className="text-xs text-surface-500 truncate">{idText}</p>
                     </div>
                   </div>
                 );

@@ -109,7 +109,7 @@ const PostCard = ({ post }: PostCardProps) => {
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-100 flex-shrink-0">
             {authorPic ? (
               <img
                 src={getImageUrl(authorPic)}
@@ -117,7 +117,7 @@ const PostCard = ({ post }: PostCardProps) => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-gray-600">
+              <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-surface-600">
                 {authorName.charAt(0)}
               </div>
             )}
@@ -126,7 +126,7 @@ const PostCard = ({ post }: PostCardProps) => {
             <p className="text-sm font-semibold text-surface-900">
               {authorName}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-surface-500">
               {new Date(post.createdAt).toLocaleString()}
             </p>
           </div>
@@ -134,14 +134,14 @@ const PostCard = ({ post }: PostCardProps) => {
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setReportModalOpen(true)}
-            className="text-sm text-gray-500 hover:text-orange-600"
+            className="text-sm text-surface-500 hover:text-accent-600"
           >
             Report
           </button>
           {isAdmin && (
             <button
               onClick={() => setConfirmationOpen(true)}
-              className="text-sm text-gray-500 hover:text-red-600"
+              className="text-sm text-surface-500 hover:text-state-error"
             >
               Delete
             </button>

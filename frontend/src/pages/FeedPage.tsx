@@ -8,11 +8,11 @@ import { motion } from "framer-motion";
 const PostSkeleton: React.FC = () => (
   <div className="animate-pulse bg-white rounded-lg shadow-sm p-4">
     <div className="flex items-start gap-3">
-      <div className="w-12 h-12 rounded-full bg-gray-200" />
+      <div className="w-12 h-12 rounded-full bg-surface-200" />
       <div className="flex-1">
-        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-        <div className="h-3 bg-gray-200 rounded w-1/2 mb-2" />
-        <div className="h-40 bg-gray-200 rounded" />
+        <div className="h-4 bg-surface-200 rounded w-3/4 mb-2" />
+        <div className="h-3 bg-surface-200 rounded w-1/2 mb-2" />
+        <div className="h-40 bg-surface-200 rounded" />
       </div>
     </div>
   </div>
@@ -37,8 +37,8 @@ const FeedPage: React.FC = () => {
   if (error) {
     return (
       <div className="container mx-auto p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-          <p className="text-red-600">
+        <div className="bg-state-error/10 border border-state-error/20 rounded-lg p-4 text-center">
+          <p className="text-state-error">
             Failed to load posts. Please try again.
           </p>
         </div>
@@ -52,7 +52,7 @@ const FeedPage: React.FC = () => {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">Feed</h1>
-          <p className="text-gray-600">
+          <p className="text-surface-600">
             Stay updated with the latest from your community
           </p>
         </div>
@@ -75,9 +75,9 @@ const FeedPage: React.FC = () => {
             </>
           ) : postsArray.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
-              <div className="mx-auto mb-4 w-32 h-32 flex items-center justify-center bg-gray-50 rounded-full">
+              <div className="mx-auto mb-4 w-32 h-32 flex items-center justify-center bg-surface-50 rounded-full">
                 <svg
-                  className="w-12 h-12 text-gray-300"
+                  className="w-12 h-12 text-surface-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -90,10 +90,10 @@ const FeedPage: React.FC = () => {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-surface-900 mb-2">
                 No posts yet
               </h3>
-              <p className="text-gray-600">
+              <p className="text-surface-600">
                 Be the first to share something with the community!
               </p>
               <div className="mt-4">

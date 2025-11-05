@@ -36,7 +36,7 @@ const AdminPanel = () => {
 
             {/* Navigation Tabs (pill style) */}
             <div className="mb-6">
-              <nav className="flex items-center gap-3 overflow-x-auto">
+              <nav className="flex items-center gap-3 overflow-x-auto pb-2">
                 {navItems.map((item) => {
                   const isActive =
                     location.pathname === item.href ||

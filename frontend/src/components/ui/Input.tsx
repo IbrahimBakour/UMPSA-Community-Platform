@@ -3,13 +3,13 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../utils/cn';
 
 const inputVariants = cva(
-  'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed',
+  'w-full px-3 py-2 border border-surface-300 rounded-lg text-sm placeholder-surface-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed',
   {
     variants: {
       variant: {
         default: 'bg-white hover:border-primary-300',
-        filled: 'bg-gray-50 border-gray-200 hover:border-primary-300',
-        error: 'border-red-300 focus:ring-red-500 focus:border-red-500',
+        filled: 'bg-surface-50 border-surface-200 hover:border-primary-300',
+        error: 'border-state-error focus:ring-state-error focus:border-state-error',
       },
       size: {
         sm: 'px-2 py-1 text-xs',
@@ -45,7 +45,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-surface-700 mb-1"
           >
             {label}
           </label>
@@ -53,7 +53,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <div className="relative">
           {leftIcon && (
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-400">{leftIcon}</span>
+              <span className="text-surface-400">{leftIcon}</span>
             </div>
           )}
           <input
@@ -71,17 +71,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           />
           {rightIcon && (
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-400">{rightIcon}</span>
+              <span className="text-surface-400">{rightIcon}</span>
             </div>
           )}
         </div>
         {error && (
-          <p id={errorId} className="text-sm text-red-600 mt-1">
+          <p id={errorId} className="text-sm text-state-error mt-1">
             {error}
           </p>
         )}
         {help && !error && (
-          <p id={helpId} className="text-sm text-gray-500 mt-1">
+          <p id={helpId} className="text-sm text-surface-500 mt-1">
             {help}
           </p>
         )}

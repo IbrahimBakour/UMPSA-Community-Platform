@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 
 // Lightweight skeleton for club cards
 const ClubSkeleton: React.FC = () => (
-  <div className="animate-pulse bg-white rounded-lg shadow-sm p-4 h-40" />
+  <div className="animate-pulse bg-surface-100 rounded-lg shadow-sm p-4 h-40" />
 );
 
 const ClubsPage = () => {
@@ -33,8 +33,8 @@ const ClubsPage = () => {
   if (error) {
     return (
       <div className="container mx-auto p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-          <p className="text-red-600">
+        <div className="bg-state-error/10 border border-state-error/20 rounded-lg p-4 text-center">
+          <p className="text-state-error">
             Failed to load clubs. Please try again.
           </p>
         </div>
@@ -47,14 +47,14 @@ const ClubsPage = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Clubs</h1>
-          <p className="text-gray-600">Discover and join campus clubs</p>
+          <p className="text-surface-600">Discover and join campus clubs</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
+          <div className="w-full sm:w-auto">
             <input
               type="search"
               placeholder="Search clubs..."
-              className="px-3 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="px-3 py-2 border border-surface-200 rounded-lg w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
           </div>
           {isAdmin && (
@@ -66,7 +66,7 @@ const ClubsPage = () => {
       </div>
       {clubsArray.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No clubs available yet.</p>
+          <p className="text-surface-500 text-lg">No clubs available yet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

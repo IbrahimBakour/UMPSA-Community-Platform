@@ -3,14 +3,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../utils/cn';
 
 const cardVariants = cva(
-  'bg-white rounded-xl shadow-soft border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-raised',
+  'bg-white rounded-xl shadow-soft border border-surface-100 overflow-hidden transition-all duration-300 hover:shadow-raised',
   {
     variants: {
       variant: {
         default: '',
         elevated: 'shadow-medium',
-        flat: 'shadow-none border-gray-200',
-        outlined: 'shadow-none border-2 border-gray-200',
+        flat: 'shadow-none border-surface-200',
+        outlined: 'shadow-none border-2 border-surface-200',
       },
       padding: {
         none: '',
@@ -49,7 +49,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
     return (
       <div
         ref={ref}
-        className={cn('px-6 py-4 border-b border-gray-100 bg-gray-50', className)}
+        className={cn('px-6 py-4 border-b border-surface-100 bg-surface-50', className)}
         {...props}
       />
     );
@@ -63,7 +63,7 @@ const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTML
     return (
       <h3
         ref={ref}
-        className={cn('text-lg font-semibold text-gray-900', className)}
+        className={cn('text-lg font-semibold text-surface-900', className)}
         {...props}
       />
     );
@@ -77,7 +77,7 @@ const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
     return (
       <p
         ref={ref}
-        className={cn('text-sm text-gray-600 mt-1', className)}
+        className={cn('text-sm text-surface-600 mt-1', className)}
         {...props}
       />
     );
@@ -105,7 +105,7 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
     return (
       <div
         ref={ref}
-        className={cn('px-6 py-4 border-t border-gray-100 bg-gray-50', className)}
+        className={cn('px-6 py-4 border-t border-surface-100 bg-surface-50', className)}
         {...props}
       />
     );
