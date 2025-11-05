@@ -1,12 +1,90 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Custom base styles */
+@layer base {
   body {
-  font-family: 'Inter', system-ui, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply font-sans antialiased;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+}
+
+/* Base variables */
+:root {
+  --primary-navy: #1b365d;
+  --primary-teal: #009ca6;
+  --primary-gold: #ffb81c;
+}
+
+/* Base styles */
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply bg-surface-50 text-surface-900;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-semibold text-surface-900;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-surface-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-surface-300 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-surface-400;
+}
+
+/* Utility classes */
+.glass-effect {
+  @apply backdrop-blur-md bg-white/70 border border-white/20;
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary-navy), var(--primary-teal));
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, var(--primary-teal), var(--primary-gold));
+}
+
+.transition-custom {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.hover-card {
+  @apply transition-all duration-300;
+}
+
+.hover-card:hover {
+  @apply transform -translate-y-1 shadow-raised;
+}
+
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+}
+
+.btn-base {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-custom focus-ring;
+}
+
+.interactive {
+  @apply cursor-pointer hover:scale-105 active:scale-95 transition-custom;
 }
