@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useClub, useClubPosts } from "../services/clubs";
 import PostCard from "../components/PostCard";
+import { AnyPost } from "../types";
 import { useAuth } from "../hooks/useAuth";
 import EditClubModal from "../components/EditClubModal";
 import AddMemberModal from "../components/AddMemberModal";
@@ -9,19 +10,19 @@ import { API_BASE_URL } from "../utils/constants";
 
 // Helper function to get full image URL
 const getImageUrl = (path?: string): string => {
-  if (!path) return '';
-  
+  if (!path) return "";
+
   // If it's already a full URL, return it
-  if (path.startsWith('http://') || path.startsWith('https://')) {
+  if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
   }
-  
+
   // Normalize the path to always start with a single /
-  let cleanPath = path.replace(/\/+/g, '/');
-  if (!cleanPath.startsWith('/')) {
+  let cleanPath = path.replace(/\/+/g, "/");
+  if (!cleanPath.startsWith("/")) {
     cleanPath = `/${cleanPath}`;
   }
-  
+
   // Combine with API_BASE_URL
   return `${API_BASE_URL}${cleanPath}`;
 };
@@ -41,19 +42,37 @@ const ClubProfilePage = () => {
   const { user } = useAuth();
 
   // Debug logging
-  console.log('Club data:', club);
-  console.log('Club error:', clubError);
-  console.log('Posts data:', postsData);
-  console.log('Posts error:', postsError);
+  console.log("Club data:", club);
+  console.log("Club error:", clubError);
+  console.log("Posts data:", postsData);
+  console.log("Posts error:", postsError);
 
-  // Extract posts array from PaginatedResponse
-  const posts: any[] = Array.isArray(postsData) ? postsData : (Array.isArray(postsData?.data) ? postsData.data : (postsData?.posts ? postsData.posts : []));
-  
-  // Fix member check - members is an array of strings (User IDs)
-  const isClubMember = club?.members?.some((memberId) => {
-    // Handle both string IDs and populated user objects
-    const memberIdStr = typeof memberId === 'string' ? memberId : (memberId as any)._id?.toString();
-    return memberIdStr === user?._id;
+  // Extract posts array from possible response shapes
+  const pd = postsData as Record<string, unknown> | undefined;
+  const postsRaw: unknown[] = Array.isArray(postsData)
+    ? postsData
+    : pd && Array.isArray(pd.data as unknown)
+    ? (pd.data as unknown[])
+    : pd && Array.isArray(pd.posts as unknown)
+    ? (pd.posts as unknown[])
+    : [];
+  const postsArray: AnyPost[] = Array.isArray(postsRaw)
+    ? (postsRaw as AnyPost[])
+    : [];
+
+  // Fix member check - members may be strings (User IDs) or populated user objects
+  const userIdStr = user?._id ? String(user._id) : undefined;
+  type MemberShape =
+    | string
+    | { nickname?: string; studentId?: string; _id?: string; id?: string };
+  const membersArray: MemberShape[] = Array.isArray(club?.members)
+    ? (club!.members as MemberShape[])
+    : [];
+  const isClubMember = membersArray.some((member) => {
+    if (typeof member === "string") return member === userIdStr;
+    const mObj = member as Exclude<MemberShape, string>;
+    const mid = mObj._id ?? mObj.id;
+    return mid ? String(mid) === userIdStr : false;
   });
 
   if (isLoadingClub || isLoadingPosts) {
@@ -73,9 +92,15 @@ const ClubProfilePage = () => {
     return (
       <div className="container mx-auto p-4">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-          <p className="text-red-600">Failed to load club data. Please try again.</p>
-          {clubError && <p className="text-red-500 text-sm mt-2">{clubError.message}</p>}
-          {postsError && <p className="text-red-500 text-sm mt-2">{postsError.message}</p>}
+          <p className="text-red-600">
+            Failed to load club data. Please try again.
+          </p>
+          {clubError && (
+            <p className="text-red-500 text-sm mt-2">{clubError.message}</p>
+          )}
+          {postsError && (
+            <p className="text-red-500 text-sm mt-2">{postsError.message}</p>
+          )}
         </div>
       </div>
     );
@@ -93,30 +118,36 @@ const ClubProfilePage = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-4 border border-surface-100">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center">
             {club.profilePicture ? (
-              <img 
-                key={club.profilePicture} 
-                src={getImageUrl(club.profilePicture)} 
-                alt={club.name} 
-                className="w-24 h-24 rounded-full mr-4 object-cover"
+              <img
+                key={club.profilePicture}
+                src={getImageUrl(club.profilePicture)}
+                alt={club.name}
+                className="w-28 h-28 rounded-full mr-4 object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/default-club-avatar.png';
+                  (e.target as HTMLImageElement).src =
+                    "/default-club-avatar.png";
                 }}
               />
             ) : (
-              <div className="w-24 h-24 rounded-full mr-4 bg-indigo-100 flex items-center justify-center">
-                <span className="text-3xl font-bold text-indigo-600">{club.name.charAt(0).toUpperCase()}</span>
+              <div className="w-28 h-28 rounded-full mr-4 bg-indigo-100 flex items-center justify-center">
+                <span className="text-3xl font-bold text-indigo-600">
+                  {club.name.charAt(0).toUpperCase()}
+                </span>
               </div>
             )}
-            <div className="ml-4">
+            <div className="ml-2">
               <h1 className="text-3xl font-bold">{club.name}</h1>
-              {club.description && <p className="text-gray-600 mt-1">{club.description}</p>}
+              {club.description && (
+                <p className="text-gray-600 mt-1">{club.description}</p>
+              )}
               {club.memberCount !== undefined && (
                 <p className="text-sm text-gray-500 mt-2">
-                  {club.memberCount} {club.memberCount === 1 ? 'member' : 'members'}
+                  {club.memberCount}{" "}
+                  {club.memberCount === 1 ? "member" : "members"}
                 </p>
               )}
             </div>
@@ -134,35 +165,40 @@ const ClubProfilePage = () => {
         {/* Members Section */}
         <div className="bg-white rounded-lg shadow-md p-4">
           <h3 className="text-lg font-bold mb-3">Members</h3>
-          {club.members && club.members.length > 0 ? (
-            <div className="space-y-2">
-              {club.members.slice(0, 5).map((member, index) => (
-                <div key={index} className="flex items-center p-2 hover:bg-gray-50 rounded">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
-                    <span className="text-sm font-bold text-indigo-600">
-                      {typeof member === 'object' && member.studentId 
-                        ? member.studentId.charAt(member.studentId.length - 1).toUpperCase()
-                        : '?'}
-                    </span>
+          {membersArray && membersArray.length > 0 ? (
+            <div className="grid grid-cols-2 gap-2">
+              {membersArray.slice(0, 8).map((member, index) => {
+                const mem = member as Exclude<MemberShape, string>;
+                const nickname =
+                  typeof member === "object"
+                    ? mem.nickname ?? mem.studentId ?? "User"
+                    : typeof member === "string"
+                    ? member
+                    : "User";
+                const initial = nickname
+                  ? nickname.charAt(0).toUpperCase()
+                  : "?";
+                const idText =
+                  typeof member === "object" ? mem.studentId ?? "" : "";
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center p-2 hover:bg-gray-50 rounded"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center mr-3 text-sm font-semibold text-indigo-700">
+                      {initial}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{nickname}</p>
+                      <p className="text-xs text-gray-500 truncate">{idText}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {typeof member === 'object' && member.nickname 
-                        ? member.nickname 
-                        : typeof member === 'object' && member.studentId 
-                        ? member.studentId 
-                        : 'Unknown User'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {typeof member === 'object' && member.studentId ? member.studentId : ''}
-                    </p>
-                  </div>
+                );
+              })}
+              {membersArray.length > 8 && (
+                <div className="flex items-center justify-center p-2 text-sm text-gray-500">
+                  +{membersArray.length - 8} more
                 </div>
-              ))}
-              {club.members.length > 5 && (
-                <p className="text-sm text-gray-500 mt-2">
-                  +{club.members.length - 5} more members
-                </p>
               )}
             </div>
           ) : (
@@ -192,7 +228,9 @@ const ClubProfilePage = () => {
             )}
             {club.about && (
               <div>
-                <p className="text-sm font-medium text-gray-700">Additional Info</p>
+                <p className="text-sm font-medium text-gray-700">
+                  Additional Info
+                </p>
                 <p className="text-sm text-gray-600">{club.about}</p>
               </div>
             )}
@@ -205,11 +243,15 @@ const ClubProfilePage = () => {
           <div className="space-y-3">
             <div>
               <p className="text-sm font-medium text-gray-700">Total Members</p>
-              <p className="text-2xl font-bold text-indigo-600">{club.memberCount || club.members?.length || 0}</p>
+              <p className="text-2xl font-bold text-indigo-600">
+                {club.memberCount || club.members?.length || 0}
+              </p>
             </div>
-      <div>
+            <div>
               <p className="text-sm font-medium text-gray-700">Total Posts</p>
-              <p className="text-2xl font-bold text-indigo-600">{posts.length}</p>
+              <p className="text-2xl font-bold text-indigo-600">
+                {postsArray.length}
+              </p>
             </div>
           </div>
         </div>
@@ -221,7 +263,7 @@ const ClubProfilePage = () => {
           <h2 className="text-2xl font-bold">Club Posts</h2>
           {isClubMember && <CreateClubPostModal clubId={club._id} />}
         </div>
-        {posts.length === 0 ? (
+        {postsArray.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <p className="text-gray-500">No posts yet. Be the first to post!</p>
             {isClubMember && (
@@ -231,9 +273,7 @@ const ClubProfilePage = () => {
             )}
           </div>
         ) : (
-          posts.map((post) => (
-          <PostCard key={post._id} post={post} />
-          ))
+          postsArray.map((post) => <PostCard key={post._id} post={post} />)
         )}
       </div>
     </div>
