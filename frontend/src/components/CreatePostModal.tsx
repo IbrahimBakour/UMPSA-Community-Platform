@@ -2,6 +2,7 @@ import { useState } from "react";
 import CreatePostForm from "./CreatePostForm";
 import { useAuth } from "../hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
+import { getMediaUrl } from "../utils/helpers";
 
 const CreatePostModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,7 +23,7 @@ const CreatePostModal = () => {
         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
           {user?.profilePicture ? (
             <img
-              src={user.profilePicture}
+              src={getMediaUrl(user.profilePicture)}
               alt={user.nickname}
               className="w-full h-full object-cover"
             />

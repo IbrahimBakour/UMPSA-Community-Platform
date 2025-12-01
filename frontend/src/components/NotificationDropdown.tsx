@@ -47,6 +47,8 @@ const NotificationDropdown = () => {
   };
   
   const handleDelete = (e: React.MouseEvent, notificationId: string) => {
+    // Prevent navigation when delete is clicked inside a Link
+    e.preventDefault();
     e.stopPropagation();
     deleteMutation.mutate(notificationId);
   };

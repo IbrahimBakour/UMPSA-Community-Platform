@@ -9,10 +9,10 @@ interface ReactionButtonsProps {
 }
 
 const reactionMeta = {
-  like: { icon: FaThumbsUp, color: "text-blue-600", title: "Like" },
-  love: { icon: FaHeart, color: "text-red-600", title: "Love" },
-  laugh: { icon: FaSmile, color: "text-yellow-600", title: "Haha" },
-  dislike: { icon: FaThumbsDown, color: "text-gray-600", title: "Dislike" },
+  like: { icon: FaThumbsUp, title: "Like" },
+  love: { icon: FaHeart, title: "Love" },
+  laugh: { icon: FaSmile, title: "Haha" },
+  dislike: { icon: FaThumbsDown, title: "Dislike" },
 } as const;
 
 const ReactionButtons = ({ post }: ReactionButtonsProps) => {
@@ -41,6 +41,20 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
 
   const totalReactions = post.interactions ? post.interactions.length : 0;
 
+  const activeClassMap: Record<keyof typeof reactionMeta, string> = {
+    like: "bg-blue-100 text-blue-600",
+    love: "bg-red-100 text-red-600",
+    laugh: "bg-yellow-100 text-yellow-600",
+    dislike: "bg-gray-200 text-gray-700",
+  };
+
+  const inactiveClassMap: Record<keyof typeof reactionMeta, string> = {
+    like: "text-blue-600 hover:bg-blue-50",
+    love: "text-red-600 hover:bg-red-50",
+    laugh: "text-yellow-500 hover:bg-yellow-50",
+    dislike: "text-gray-600 hover:bg-gray-100",
+  };
+
   return (
     <div className="flex items-center justify-between mt-4">
       <div className="flex items-center gap-3">
@@ -50,13 +64,6 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
             const Icon = Meta.icon;
             const active = userHasReacted(key);
             const count = getReactionCount(key);
-
-            const activeClassMap: Record<keyof typeof reactionMeta, string> = {
-              like: "bg-blue-100 text-blue-600",
-              love: "bg-red-100 text-red-600",
-              laugh: "bg-yellow-100 text-yellow-600",
-              dislike: "bg-gray-100 text-gray-600",
-            };
 
             return (
               <motion.button
@@ -70,9 +77,7 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
                 aria-pressed={active}
                 title={`${Meta.title} — ${count}`}
                 className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all ${
-                  active
-                    ? activeClassMap[key]
-                    : "text-gray-600 hover:bg-gray-100"
+                  active ? activeClassMap[key] : inactiveClassMap[key]
                 } disabled:opacity-60`}
               >
                 <Icon />
