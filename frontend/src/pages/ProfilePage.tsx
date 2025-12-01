@@ -7,6 +7,7 @@ import { useUpdateUser } from "../services/users";
 import { uploadFile } from "../services/uploads";
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { getMediaUrl } from "../utils/helpers";
 
 const profileSchema = z.object({
   nickname: z.string().min(1, "Nickname cannot be empty"),
@@ -16,11 +17,11 @@ const profileSchema = z.object({
 type ProfileFormInputs = z.infer<typeof profileSchema>;
 
 const ProfilePage = () => {
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const updateUserMutation = useUpdateUser();
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | undefined>(
-    user?.profilePicture
+    getMediaUrl(user?.profilePicture)
   );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -41,7 +42,7 @@ const ProfilePage = () => {
     updateUserMutation.mutate(data, {
       onSuccess: (updatedUser) => {
         toast.success("Profile updated successfully!");
-        setUser(updatedUser);
+        updateUser(updatedUser);
       },
       onError: () => {
         toast.error("Failed to update profile. Please try again.");
@@ -59,7 +60,7 @@ const ProfilePage = () => {
     try {
       const uploadedFileUrl = await uploadFile(file);
       setValue("profilePicture", uploadedFileUrl);
-      setPreview(uploadedFileUrl);
+      setPreview(getMediaUrl(uploadedFileUrl));
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Failed to upload profile picture. Please try again.");
@@ -78,7 +79,7 @@ const ProfilePage = () => {
       >
         <div className="flex items-center mb-4">
           <img
-            src={user?.profilePicture}
+            src={getMediaUrl(user?.profilePicture)}
             alt={user?.nickname}
             className="w-24 h-24 rounded-full mr-4"
           />

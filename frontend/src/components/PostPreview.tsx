@@ -5,6 +5,12 @@ interface PostPreviewProps {
   post: AnyPost;
 }
 
+type PopulatedAuthor = {
+  nickname?: string;
+  studentId?: string;
+  profilePicture?: string;
+};
+
 // Helper function to get full image URL
 const getImageUrl = (path: string): string => {
   if (!path) return '';
@@ -26,7 +32,9 @@ const getImageUrl = (path: string): string => {
 
 const PostPreview = ({ post }: PostPreviewProps) => {
   // Get author information (handle both populated and non-populated cases)
-  const author = typeof post.author === 'object' ? post.author : null;
+  const rawAuthor = (post as any).author as string | PopulatedAuthor | undefined;
+  const author: PopulatedAuthor | null =
+    rawAuthor && typeof rawAuthor === "object" ? rawAuthor : null;
   const authorName = author?.nickname || 'Unknown User';
   const authorId = author?.studentId || '';
   const profilePicture = author?.profilePicture;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../ui';
+import { getMediaUrl } from '../../utils/helpers';
 import NotificationDropdown from '../NotificationDropdown';
 import { 
   CogIcon, 
@@ -74,7 +75,7 @@ const TopNavigation: React.FC = () => {
                 className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <Avatar
-                  src={user?.profilePicture}
+                  src={getMediaUrl(user?.profilePicture)}
                   alt={user?.nickname || user?.studentId}
                   fallback={user?.nickname || user?.studentId}
                   size="sm"

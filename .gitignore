@@ -68,6 +68,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-
-**/instructions.txt

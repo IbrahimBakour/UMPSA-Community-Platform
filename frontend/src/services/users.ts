@@ -156,7 +156,8 @@ export const useUpdateUser = () => {
   return useMutation<User, Error, Partial<User>>({
     mutationFn: async (userData) => {
       const response = await api.put(API_ENDPOINTS.USER_PROFILE, userData);
-      return response.data;
+      // Backend returns { message, user }, so unwrap the user object
+      return response.data.user ?? response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
