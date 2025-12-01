@@ -45,14 +45,14 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
     like: "bg-blue-100 text-blue-600",
     love: "bg-red-100 text-red-600",
     laugh: "bg-yellow-100 text-yellow-600",
-    dislike: "bg-gray-200 text-gray-700",
+    dislike: "bg-gray-200 text-black-700",
   };
 
   const inactiveClassMap: Record<keyof typeof reactionMeta, string> = {
     like: "text-blue-600 hover:bg-blue-50",
     love: "text-red-600 hover:bg-red-50",
     laugh: "text-yellow-500 hover:bg-yellow-50",
-    dislike: "text-gray-600 hover:bg-gray-100",
+    dislike: "text-gray-600 hover:bg-black-100",
   };
 
   return (

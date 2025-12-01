@@ -103,10 +103,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const authorPic = authorObj?.profilePicture;
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.01 }}
-      className="bg-white rounded-xl shadow-md p-4 mb-4 hover:shadow-lg transition-shadow duration-200"
-    >
+    <div className="bg-white rounded-xl shadow-md p-4 mb-4 hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-100 flex-shrink-0">
@@ -155,25 +152,37 @@ const PostCard = ({ post }: PostCardProps) => {
 
       {post.media && post.media.length > 0 && (
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {post.media.map((mediaUrl, index) => (
-            <div
-              key={index}
-              className={`overflow-hidden rounded-md ${
-                post.media?.length === 1 ? "h-80" : "h-48"
-              }`}
-            >
-              <img
-                src={getImageUrl(mediaUrl)}
-                alt={`Post media ${index + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback if image fails to load
-                  console.error("Failed to load image:", mediaUrl);
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            </div>
-          ))}
+          {post.media.map((mediaUrl, index) => {
+            const fullUrl = getImageUrl(mediaUrl);
+            const isVideo = /\.mp4$/i.test(fullUrl);
+            return (
+              <div
+                key={index}
+                className={`overflow-hidden rounded-md ${
+                  post.media?.length === 1 ? "h-80" : "h-48"
+                }`}
+              >
+                {isVideo ? (
+                  <video
+                    src={fullUrl}
+                    className="w-full h-full object-cover"
+                    controls
+                  />
+                ) : (
+                  <img
+                    src={fullUrl}
+                    alt={`Post media ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      console.error("Failed to load image:", mediaUrl);
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -272,7 +281,7 @@ const PostCard = ({ post }: PostCardProps) => {
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 

@@ -41,7 +41,7 @@ const CreatePostForm = ({ closeModal, clubId }: { closeModal: () => void; clubId
   // Use club post mutation if clubId is provided, otherwise use feed post mutation
   const createPostMutation = clubId ? createClubPostMutation : createFeedPostMutation;
   const [postType, setPostType] = useState<'text' | 'image' | 'poll' | 'event'>('text');
-  const [imagePreviews, setImagePreviews] = useState<Array<{ preview: string; url: string }>>([]);
+  const [imagePreviews, setImagePreviews] = useState<Array<{ preview: string; url: string; type: 'image' | 'video' }>>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
 
@@ -129,28 +129,31 @@ const CreatePostForm = ({ closeModal, clubId }: { closeModal: () => void; clubId
     setIsUploading(true);
     
     // Create preview URLs immediately
-    const newPreviews = files.map(file => ({
-      preview: URL.createObjectURL(file),
-      url: '', // Will be set after upload
-    }));
+    const newPreviews: { preview: string; url: string; type: 'image' | 'video' }[] =
+      files.map(file => ({
+        preview: URL.createObjectURL(file),
+        url: '', // Will be set after upload
+        type: file.type.startsWith('video/') ? 'video' : 'image',
+      }));
     setImagePreviews(prev => [...prev, ...newPreviews]);
 
     try {
       // Upload files and get URLs
       const uploadedUrls = await Promise.all(files.map(uploadFile));
-      
-      // Update previews with actual URLs
-      setImagePreviews(prev => {
-        const updated = [...prev];
-        const startIndex = updated.length - files.length;
-        uploadedUrls.forEach((url, index) => {
-          updated[startIndex + index] = { ...updated[startIndex + index], url };
-        });
-        return updated;
-      });
-      
+
+      // Merge previews with uploaded URLs (preserve existing type)
+      const newPreviewsWithUrls = newPreviews.map((preview, index) => ({
+        ...preview,
+        url: uploadedUrls[index] || '',
+      }));
+
+      const updatedPreviews = [...imagePreviews, ...newPreviewsWithUrls];
+      setImagePreviews(updatedPreviews);
+
       // Update form with uploaded URLs
-      const allUrls = [...imagePreviews.map(img => img.url), ...uploadedUrls].filter(Boolean);
+      const allUrls = updatedPreviews
+        .map(img => img.url)
+        .filter((url): url is string => Boolean(url));
       setValue('images', allUrls);
     } catch (error) {
       toast.error('Failed to upload images. Please try again.');
@@ -172,14 +175,14 @@ const CreatePostForm = ({ closeModal, clubId }: { closeModal: () => void; clubId
         <p className="text-red-500 text-sm">{errors.content.message}</p>
       )}
 
-      {/* Images section - available for all post types */}
+      {/* Media section - images and videos */}
         <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Add Images (Optional)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Add Images / Videos (Optional)</label>
         <input 
           type="file" 
           multiple 
           onChange={handleImageChange} 
-          accept="image/*" 
+          accept="image/*,video/mp4" 
           disabled={isUploading}
           className="w-full text-sm text-gray-500
             file:mr-4 file:py-2 file:px-4
@@ -188,16 +191,24 @@ const CreatePostForm = ({ closeModal, clubId }: { closeModal: () => void; clubId
             file:bg-indigo-50 file:text-indigo-700
             hover:file:bg-indigo-100"
         />
-        {isUploading && <p className="text-sm text-gray-600 mt-2">Uploading images...</p>}
+        {isUploading && <p className="text-sm text-gray-600 mt-2">Uploading media...</p>}
         {imagePreviews.length > 0 && (
           <div className="mt-3 grid grid-cols-3 gap-2">
             {imagePreviews.map((image, index) => (
               <div key={index} className="relative">
-                <img 
-                  src={image.preview} 
-                  alt={`preview ${index + 1}`} 
-                  className="w-full h-24 object-cover rounded-md border border-gray-300" 
-                />
+                {image.type === 'video' ? (
+                  <video
+                    src={image.preview}
+                    className="w-full h-24 object-cover rounded-md border border-gray-300"
+                    controls
+                  />
+                ) : (
+                  <img 
+                    src={image.preview} 
+                    alt={`preview ${index + 1}`} 
+                    className="w-full h-24 object-cover rounded-md border border-gray-300" 
+                  />
+                )}
                 <button
                   type="button"
                   onClick={() => {

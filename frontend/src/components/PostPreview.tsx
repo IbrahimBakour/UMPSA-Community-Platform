@@ -74,17 +74,28 @@ const PostPreview = ({ post }: PostPreviewProps) => {
       {/* Media */}
       {post.media && post.media.length > 0 && (
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {post.media.slice(0, 4).map((mediaUrl, index) => (
-            <img
-              key={index}
-              src={getImageUrl(mediaUrl)}
-              alt={`Media ${index + 1}`}
-              className="w-full h-32 object-cover rounded-md"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          ))}
+          {post.media.slice(0, 4).map((mediaUrl, index) => {
+            const fullUrl = getImageUrl(mediaUrl);
+            const isVideo = /\.mp4$/i.test(fullUrl);
+            return isVideo ? (
+              <video
+                key={index}
+                src={fullUrl}
+                className="w-full h-32 object-cover rounded-md"
+                controls
+              />
+            ) : (
+              <img
+                key={index}
+                src={fullUrl}
+                alt={`Media ${index + 1}`}
+                className="w-full h-32 object-cover rounded-md"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            );
+          })}
           {post.media.length > 4 && (
             <div className="w-full h-32 bg-gray-100 rounded-md flex items-center justify-center">
               <span className="text-gray-500 text-sm">+{post.media.length - 4} more</span>
