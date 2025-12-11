@@ -1,10 +1,14 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import CreatePostForm from "./CreatePostForm";
 import { useAuth } from "../hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { getMediaUrl } from "../utils/helpers";
 
-const CreatePostModal = () => {
+type CreatePostModalProps = {
+  renderTrigger?: (open: () => void) => React.ReactNode;
+};
+
+const CreatePostModal = ({ renderTrigger }: CreatePostModalProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
 
@@ -15,30 +19,34 @@ const CreatePostModal = () => {
 
   return (
     <div>
-      <button
-        onClick={openModal}
-        className="w-full bg-white p-3 text-left text-gray-500 rounded-lg shadow-md mb-4 hover:bg-gray-50 flex items-center gap-3"
-        disabled={isRestricted}
-      >
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
-          {user?.profilePicture ? (
-            <img
-              src={getMediaUrl(user.profilePicture)}
-              alt={user.nickname}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-gray-600">
-              {user?.nickname?.charAt(0) ?? user?.studentId?.charAt(0) ?? "?"}
-            </div>
-          )}
-        </div>
-        <div className="flex-1 text-sm text-gray-600">
-          {isRestricted
-            ? "You are restricted from creating posts"
-            : "What's on your mind?"}
-        </div>
-      </button>
+      {renderTrigger ? (
+        renderTrigger(openModal)
+      ) : (
+        <button
+          onClick={openModal}
+          className="w-full bg-white p-3 text-left text-gray-500 rounded-lg shadow-md mb-4 hover:bg-gray-50 flex items-center gap-3"
+          disabled={isRestricted}
+        >
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+            {user?.profilePicture ? (
+              <img
+                src={getMediaUrl(user.profilePicture)}
+                alt={user.nickname}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-gray-600">
+                {user?.nickname?.charAt(0) ?? user?.studentId?.charAt(0) ?? "?"}
+              </div>
+            )}
+          </div>
+          <div className="flex-1 text-sm text-gray-600">
+            {isRestricted
+              ? "You are restricted from creating posts"
+              : "What's on your mind?"}
+          </div>
+        </button>
+      )}
 
       <AnimatePresence>
         {isOpen && (

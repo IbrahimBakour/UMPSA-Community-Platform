@@ -14,7 +14,6 @@ import { z } from "zod";
 import { useCreateReport } from "../services/reports";
 import { API_BASE_URL } from "../utils/constants";
 // import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { motion } from "framer-motion";
 
 // Helper function to get full image URL
 const getImageUrl = (path: string): string => {

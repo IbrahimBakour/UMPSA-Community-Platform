@@ -1,76 +1,79 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Button, Badge } from '../ui';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+// import { Button, Badge } from "../ui";
+import CreatePostModal from "../CreatePostModal";
 import {
   PlusIcon,
   UserGroupIcon,
   FlagIcon,
   ChartBarIcon,
   UsersIcon,
-  HomeIcon,
-  CalendarIcon,
-} from '@heroicons/react/24/outline';
+  // HomeIcon,
+  // CalendarIcon,
+} from "@heroicons/react/24/outline";
 
 const Sidebar: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin";
 
   const quickActions = [
     {
-      name: 'Create Post',
-      href: '/feed/create',
+      name: "Create Post",
+      href: "/feed/create",
       icon: PlusIcon,
-      current: location.pathname === '/feed/create',
+      current: location.pathname === "/feed/create",
     },
     {
-      name: 'Join Club',
-      href: '/clubs/join',
+      name: "Join Club",
+      href: "/clubs",
       icon: UserGroupIcon,
-      current: location.pathname === '/clubs/join',
+      current: location.pathname === "/clubs",
     },
     {
-      name: 'Report Issue',
-      href: '/reports/create',
+      name: "Report Issue",
+      href: "/reports",
       icon: FlagIcon,
-      current: location.pathname === '/reports/create',
+      current: location.pathname === "/reports",
     },
   ];
 
   const adminActions = [
     {
-      name: 'Dashboard',
-      href: '/admin/dashboard',
+      name: "Dashboard",
+      href: "/admin/dashboard",
       icon: ChartBarIcon,
-      current: location.pathname.startsWith('/admin/dashboard'),
+      current: location.pathname.startsWith("/admin/dashboard"),
     },
     {
-      name: 'User Management',
-      href: '/admin/users',
+      name: "User Management",
+      href: "/admin/users",
       icon: UsersIcon,
-      current: location.pathname.startsWith('/admin/users'),
+      current: location.pathname.startsWith("/admin/users"),
     },
   ];
 
-  const recentActivity = [
-    { name: 'New post in Tech Club', time: '2m ago', type: 'post' },
-    { name: 'Poll: Best programming language?', time: '1h ago', type: 'poll' },
-    { name: 'Event: Coding Workshop', time: '3h ago', type: 'event' },
-  ];
+  // const recentActivity = [
+  //   { name: "New post in Tech Club", time: "2m ago", type: "post" },
+  //   { name: "Poll: Best programming language?", time: "1h ago", type: "poll" },
+  //   { name: "Event: Coding Workshop", time: "3h ago", type: "event" },
+  // ];
 
-  const popularClubs = [
-    { name: 'Tech Club', members: 156, joined: false },
-    { name: 'Sports Club', members: 89, joined: true },
-    { name: 'Art Club', members: 67, joined: false },
-  ];
+  // const popularClubs = [
+  //   { name: "Tech Club", members: 156, joined: false },
+  //   { name: "Sports Club", members: 89, joined: true },
+  //   { name: "Art Club", members: 67, joined: false },
+  // ];
 
   return (
-    <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${
-      isCollapsed ? 'w-16' : 'w-64'
-    }`}>
+    <div
+      className={`bg-white border-r border-gray-200 transition-all duration-300 ${
+        isCollapsed ? "w-16" : "w-64"
+      }`}
+    >
       <div className="flex flex-col h-full">
         {/* Collapse Toggle */}
         <div className="p-4 border-b border-gray-200">
@@ -80,7 +83,7 @@ const Sidebar: React.FC = () => {
           >
             <svg
               className={`w-5 h-5 transition-transform duration-200 ${
-                isCollapsed ? 'rotate-180' : ''
+                isCollapsed ? "rotate-180" : ""
               }`}
               fill="none"
               stroke="currentColor"
@@ -104,20 +107,44 @@ const Sidebar: React.FC = () => {
             </h3>
           )}
           <div className="space-y-2">
-            {quickActions.map((action) => (
-              <Link
-                key={action.name}
-                to={action.href}
-                className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                  action.current
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <action.icon className="w-5 h-5 mr-3" />
-                {!isCollapsed && action.name}
-              </Link>
-            ))}
+            {quickActions.map((action) => {
+              if (action.name === "Create Post") {
+                return (
+                  <div key={action.name}>
+                    <CreatePostModal
+                      renderTrigger={(open) => (
+                        <button
+                          onClick={open}
+                          className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                            action.current
+                              ? "bg-primary-50 text-primary-600"
+                              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          }`}
+                        >
+                          <action.icon className="w-5 h-5 mr-3" />
+                          {!isCollapsed && action.name}
+                        </button>
+                      )}
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={action.name}
+                  to={action.href}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                    action.current
+                      ? "bg-primary-50 text-primary-600"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <action.icon className="w-5 h-5 mr-3" />
+                  {!isCollapsed && action.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -136,8 +163,8 @@ const Sidebar: React.FC = () => {
                   to={action.href}
                   className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
                     action.current
-                      ? 'bg-secondary-50 text-secondary-600'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      ? "bg-secondary-50 text-secondary-600"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   }`}
                 >
                   <action.icon className="w-5 h-5 mr-3" />

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNotifications, useNotificationStats, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification } from '../services/notifications';
-import { BellIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Notification } from '../types';
 import { Link } from 'react-router-dom';
