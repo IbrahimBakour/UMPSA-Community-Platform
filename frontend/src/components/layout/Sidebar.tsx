@@ -108,6 +108,16 @@ const Sidebar: React.FC = () => {
           )}
           <div className="space-y-2">
             {quickActions.map((action) => {
+              // shared styles for collapsed vs expanded
+              const collapsedBtnClasses =
+                "w-full flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100";
+              const expandedBtnClasses =
+                "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200";
+
+              const activeClasses = action.current
+                ? "bg-primary-50 text-primary-600"
+                : "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
+
               if (action.name === "Create Post") {
                 return (
                   <div key={action.name}>
@@ -115,13 +125,17 @@ const Sidebar: React.FC = () => {
                       renderTrigger={(open) => (
                         <button
                           onClick={open}
-                          className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                            action.current
-                              ? "bg-primary-50 text-primary-600"
-                              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                          }`}
+                          className={`${
+                            isCollapsed
+                              ? collapsedBtnClasses
+                              : expandedBtnClasses
+                          } ${activeClasses}`}
                         >
-                          <action.icon className="w-5 h-5 mr-3" />
+                          <action.icon
+                            className={`${
+                              isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                            }`}
+                          />
                           {!isCollapsed && action.name}
                         </button>
                       )}
@@ -134,13 +148,17 @@ const Sidebar: React.FC = () => {
                 <Link
                   key={action.name}
                   to={action.href}
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                  className={`${
+                    isCollapsed ? collapsedBtnClasses : expandedBtnClasses
+                  } ${
                     action.current
                       ? "bg-primary-50 text-primary-600"
                       : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   }`}
                 >
-                  <action.icon className="w-5 h-5 mr-3" />
+                  <action.icon
+                    className={`${isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"}`}
+                  />
                   {!isCollapsed && action.name}
                 </Link>
               );
@@ -157,20 +175,30 @@ const Sidebar: React.FC = () => {
               </h3>
             )}
             <div className="space-y-2">
-              {adminActions.map((action) => (
-                <Link
-                  key={action.name}
-                  to={action.href}
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    action.current
-                      ? "bg-secondary-50 text-secondary-600"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  <action.icon className="w-5 h-5 mr-3" />
-                  {!isCollapsed && action.name}
-                </Link>
-              ))}
+              {adminActions.map((action) => {
+                const collapsedBtnClasses =
+                  "w-full flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100";
+                const expandedBtnClasses =
+                  "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200";
+                const active = action.current
+                  ? "bg-secondary-50 text-secondary-600"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
+
+                return (
+                  <Link
+                    key={action.name}
+                    to={action.href}
+                    className={`${
+                      isCollapsed ? collapsedBtnClasses : expandedBtnClasses
+                    } ${active}`}
+                  >
+                    <action.icon
+                      className={`${isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"}`}
+                    />
+                    {!isCollapsed && action.name}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
