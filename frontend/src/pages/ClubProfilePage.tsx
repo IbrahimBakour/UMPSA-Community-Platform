@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useParams } from "react-router-dom";
 import { useClub, useClubPosts } from "../services/clubs";
 import PostCard from "../components/PostCard";
@@ -69,6 +70,7 @@ const ClubProfilePage = () => {
   const membersArray: MemberShape[] = Array.isArray(club?.members)
     ? (club!.members as MemberShape[])
     : [];
+
   const isClubMember = membersArray.some((member) => {
     if (typeof member === "string") return member === userIdStr;
     const mObj = member as Exclude<MemberShape, string>;
@@ -97,10 +99,14 @@ const ClubProfilePage = () => {
             Failed to load club data. Please try again.
           </p>
           {clubError && (
-            <p className="text-state-error/80 text-sm mt-2">{clubError.message}</p>
+            <p className="text-state-error/80 text-sm mt-2">
+              {clubError.message}
+            </p>
           )}
           {postsError && (
-            <p className="text-state-error/80 text-sm mt-2">{postsError.message}</p>
+            <p className="text-state-error/80 text-sm mt-2">
+              {postsError.message}
+            </p>
           )}
         </div>
       </div>
@@ -158,7 +164,7 @@ const ClubProfilePage = () => {
               )}
             </div>
           </div>
-          {isClubMember && (
+          {user && (
             <div className="flex gap-2">
               <EditClubModal club={club} />
               <AddMemberModal clubId={club._id} />
@@ -215,7 +221,9 @@ const ClubProfilePage = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{nickname}</p>
-                      <p className="text-xs text-surface-500 truncate">{idText}</p>
+                      <p className="text-xs text-surface-500 truncate">
+                        {idText}
+                      </p>
                     </div>
                   </div>
                 );
@@ -298,16 +306,11 @@ const ClubProfilePage = () => {
       <div className="mt-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Club Posts</h2>
-          {isClubMember && <CreateClubPostModal clubId={club._id} />}
+          {user && <CreateClubPostModal clubId={club._id} />}
         </div>
         {postsArray.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <p className="text-gray-500">No posts yet. Be the first to post!</p>
-            {isClubMember && (
-              <div className="mt-4">
-                <CreateClubPostModal clubId={club._id} />
-              </div>
-            )}
           </div>
         ) : (
           postsArray.map((post, index) => (

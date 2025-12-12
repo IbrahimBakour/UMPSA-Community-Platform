@@ -1,4 +1,11 @@
-import { createContext, useState, ReactNode, useEffect, useContext } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import {
+  createContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useContext,
+} from "react";
 import { User } from "../types";
 import { USER_ROLES } from "../utils/constants";
 
@@ -15,7 +22,6 @@ interface AuthContextType {
   setUser: (user: User | null) => void;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
@@ -23,7 +29,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -38,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initAuth = () => {
       const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
-      
+
       if (storedToken && storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
@@ -100,7 +106,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={authContextValue}>
-      {isInitialized ? children : (
+      {isInitialized ? (
+        children
+      ) : (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
