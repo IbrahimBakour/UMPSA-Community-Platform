@@ -14,6 +14,8 @@ import { z } from "zod";
 import { useCreateReport } from "../services/reports";
 import { API_BASE_URL } from "../utils/constants";
 import { Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { votePoll } from "../services/polls";
 // import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 // Helper function to get full image URL
@@ -49,8 +51,28 @@ const PostCard = ({ post }: PostCardProps) => {
   const { isAdmin, user: authUser } = useAuth();
   const deletePostMutation = useDeletePost();
   const createReportMutation = useCreateReport();
+  const queryClient = useQueryClient();
   const [isConfirmationOpen, setConfirmationOpen] = useState(false);
   const [isReportModalOpen, setReportModalOpen] = useState(false);
+
+  const votePollMutation = useMutation({
+    mutationFn: ({
+      postId,
+      optionIndexes,
+    }: {
+      postId: string;
+      optionIndexes: number[];
+    }) => votePoll(postId, optionIndexes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["feedPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["clubPosts"] });
+      toast.success("Vote recorded successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to vote. Please try again.");
+    },
+  });
 
   const {
     register,
@@ -231,18 +253,96 @@ const PostCard = ({ post }: PostCardProps) => {
       )}
 
       {post.poll && (
-        <div className="mt-4">
-          <h4 className="font-semibold">{post.poll.question}</h4>
-          <div className="mt-2 space-y-2">
-            {post.poll.options.map((option, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span>{option.text}</span>
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                  Vote
-                </button>
-              </div>
-            ))}
+        <div className="mt-4 border border-indigo-200 rounded-lg p-4 bg-indigo-50">
+          <h4 className="font-semibold text-indigo-900 mb-3">
+            {post.poll.question}
+          </h4>
+          <div className="space-y-2">
+            {post.poll.options.map((option, index) => {
+              const totalVotes = post.poll!.totalVotes || 0;
+              const percentage =
+                totalVotes > 0
+                  ? Math.round((option.votes / totalVotes) * 100)
+                  : 0;
+              const currentUserId = authUser?._id || authUser?.id || "";
+              const hasVotedThisOption = option.voters.includes(currentUserId);
+              const isPollEnded =
+                post.poll!.endDate && new Date(post.poll!.endDate) < new Date();
+              const isActive = post.poll!.isActive && !isPollEnded;
+
+              // Button text logic:
+              // - For multiple votes: show "Unvote" if already voted on this option, else "Vote"
+              // - For single vote: always show "Vote" (backend handles switching)
+              const buttonText = votePollMutation.isPending
+                ? "Voting..."
+                : post.poll?.allowMultipleVotes && hasVotedThisOption
+                ? "Unvote"
+                : "Vote";
+
+              return (
+                <div key={index} className="relative">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-sm font-medium text-gray-900">
+                        {option.text}
+                      </span>
+                      {hasVotedThisOption && (
+                        <span className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full">
+                          Your vote
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-600">
+                        {option.votes} {option.votes === 1 ? "vote" : "votes"} (
+                        {percentage}%)
+                      </span>
+                      {isActive && (
+                        <button
+                          onClick={() => {
+                            if (!authUser) {
+                              toast.error("Please login to vote");
+                              return;
+                            }
+                            votePollMutation.mutate({
+                              postId: post._id,
+                              optionIndexes: [index],
+                            });
+                          }}
+                          disabled={votePollMutation.isPending}
+                          className={`px-3 py-1 text-white text-sm rounded-md transition-colors ${
+                            hasVotedThisOption && post.poll?.allowMultipleVotes
+                              ? "bg-red-600 hover:bg-red-700"
+                              : "bg-indigo-600 hover:bg-indigo-700"
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {buttonText}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          {post.poll.endDate && (
+            <p className="text-xs text-gray-600 mt-3">
+              {new Date(post.poll.endDate) > new Date()
+                ? `Ends on ${new Date(post.poll.endDate).toLocaleDateString()}`
+                : "Poll ended"}
+            </p>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            Total votes: {post.poll.totalVotes || 0}
+            {post.poll.allowMultipleVotes && " • Multiple votes allowed"}
+          </p>
         </div>
       )}
 

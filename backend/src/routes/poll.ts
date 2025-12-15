@@ -1,7 +1,6 @@
 import express from "express";
 import { authMiddleware } from "../middlewares/auth";
 import {
-  validateAndCreatePollData,
   votePoll,
   getPollResults,
   updatePoll,

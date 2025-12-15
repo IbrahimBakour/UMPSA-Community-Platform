@@ -38,9 +38,9 @@ export const validateAndCreatePollData = (pollData: any) => {
 
   // Create poll options with initial vote counts
   const pollOptions = options.map((option: any) => ({
-    text: typeof option === 'string' ? option.trim() : option.text?.trim(),
+    text: typeof option === "string" ? option.trim() : option.text?.trim(),
     votes: 0,
-    voters: []
+    voters: [],
   }));
 
   return {
@@ -61,8 +61,8 @@ export const votePoll = async (req: AuthRequest, res: Response) => {
     const { optionIndexes } = req.body; // Array of option indices
 
     if (!Array.isArray(optionIndexes) || optionIndexes.length === 0) {
-      return res.status(400).json({ 
-        message: "At least one option must be selected" 
+      return res.status(400).json({
+        message: "At least one option must be selected",
       });
     }
 
@@ -72,53 +72,101 @@ export const votePoll = async (req: AuthRequest, res: Response) => {
     }
 
     // Check if poll is still active
-    if (!(post.poll as any)?.isActive || ((post.poll as any)?.endDate && new Date() > (post.poll as any).endDate)) {
+    if (
+      !(post.poll as any)?.isActive ||
+      ((post.poll as any)?.endDate && new Date() > (post.poll as any).endDate)
+    ) {
       return res.status(400).json({ message: "Poll is no longer active" });
     }
 
     // Validate option indexes
     for (const index of optionIndexes) {
       if (index < 0 || index >= post.poll.options.length) {
-        return res.status(400).json({ 
-          message: "Invalid option index" 
+        return res.status(400).json({
+          message: "Invalid option index",
         });
       }
     }
 
     // Check if single vote poll and multiple options selected
     if (!(post.poll as any).allowMultipleVotes && optionIndexes.length > 1) {
-      return res.status(400).json({ 
-        message: "Multiple votes not allowed for this poll" 
+      return res.status(400).json({
+        message: "Multiple votes not allowed for this poll",
       });
     }
 
-    // Check if user has already voted
     const userId = String((req.user as any)?._id || "");
-    const hasVoted = (post.poll.options as any[]).some((option: any) => 
-      Array.isArray(option.voters) && option.voters.includes(userId)
-    );
 
-    if (hasVoted) {
-      return res.status(400).json({ message: "You have already voted in this poll" });
-    }
+    // Handle vote toggling
+    let votesAdded = 0;
+    let votesRemoved = 0;
+    let actionMessage = "";
 
-    // Record votes
     for (const index of optionIndexes) {
-      (post.poll.options[index] as any).votes += 1;
-      (post.poll.options[index] as any).voters = Array.isArray((post.poll.options[index] as any).voters)
-        ? (post.poll.options[index] as any).voters
-        : [];
-      (post.poll.options[index] as any).voters.push(userId);
+      const option = post.poll.options[index] as any;
+
+      // Ensure voters array exists
+      if (!Array.isArray(option.voters)) {
+        option.voters = [];
+      }
+
+      // Check if user has already voted for this option
+      const hasVotedThisOption = option.voters.includes(userId);
+
+      if (hasVotedThisOption) {
+        // UNVOTE: Remove the user's vote
+        option.voters = option.voters.filter((id: string) => id !== userId);
+        option.votes = Math.max(0, (option.votes || 0) - 1);
+        votesRemoved++;
+      } else {
+        // VOTE: Add the user's vote
+        // For single vote polls, first remove any existing votes
+        if (!(post.poll as any).allowMultipleVotes) {
+          for (const opt of post.poll.options as any[]) {
+            if (Array.isArray(opt.voters) && opt.voters.includes(userId)) {
+              opt.voters = opt.voters.filter((id: string) => id !== userId);
+              opt.votes = Math.max(0, (opt.votes || 0) - 1);
+              votesRemoved++;
+            }
+          }
+        }
+
+        option.voters.push(userId);
+        option.votes = (option.votes || 0) + 1;
+        votesAdded++;
+      }
     }
 
-    (post.poll as any).totalVotes = ((post.poll as any).totalVotes || 0) + optionIndexes.length;
+    // Update total votes
+    (post.poll as any).totalVotes = Math.max(
+      0,
+      ((post.poll as any).totalVotes || 0) + votesAdded - votesRemoved
+    );
     await post.save();
 
-    // Trigger notification for poll votes
-    await triggerPollVotedNotification(String((post as any)._id), String((post as any).author), userId);
+    // Determine action message
+    if (votesRemoved > 0 && votesAdded === 0) {
+      actionMessage = "Vote removed successfully";
+    } else if (votesAdded > 0 && votesRemoved === 0) {
+      actionMessage = "Vote recorded successfully";
+      // Trigger notification only for new votes
+      await triggerPollVotedNotification(
+        String((post as any)._id),
+        String((post as any).author),
+        userId
+      );
+    } else {
+      actionMessage = "Vote updated successfully";
+      // Trigger notification for vote changes
+      await triggerPollVotedNotification(
+        String((post as any)._id),
+        String((post as any).author),
+        userId
+      );
+    }
 
     res.json({
-      message: "Vote recorded successfully",
+      message: actionMessage,
       poll: post.poll,
     });
   } catch (error) {
@@ -132,35 +180,51 @@ export const getPollResults = async (req: AuthRequest, res: Response) => {
   try {
     const { postId } = req.params;
 
-    const post = await Post.findById(postId).populate("author", "studentId nickname");
+    const post = await Post.findById(postId).populate(
+      "author",
+      "studentId nickname"
+    );
     if (!post || !post.poll) {
       return res.status(404).json({ message: "Poll not found" });
     }
 
     // Check if poll has ended
-    const isPollEnded = (post.poll as any).endDate && new Date() > (post.poll as any).endDate;
-    
+    const isPollEnded =
+      (post.poll as any).endDate && new Date() > (post.poll as any).endDate;
+
     // Calculate percentages
     const pollResults: any = {
       ...(post.poll as any),
       isPollEnded,
-      optionsWithPercentages: (post.poll.options as any[]).map((option: any) => ({
-        ...option,
-        percentage: ((post.poll as any).totalVotes || 0) > 0 
-          ? ((option.votes / (post.poll as any).totalVotes) * 100).toFixed(1)
-          : "0.0"
-      })),
-      hasUserVoted: req.user ? (post.poll.options as any[]).some((option: any) => 
-        Array.isArray(option.voters) && option.voters.includes(String((req.user as any)!._id))
-      ) : false,
-      userVotes: req.user ? (post.poll.options as any[])
-        .map((option: any, index: number) => ({
-          optionIndex: index,
-          voted: Array.isArray(option.voters) && option.voters.includes(String((req.user as any)!._id))
-        }))
-        .filter(vote => vote.voted)
-        .map(vote => vote.optionIndex)
-      : []
+      optionsWithPercentages: (post.poll.options as any[]).map(
+        (option: any) => ({
+          ...option,
+          percentage:
+            ((post.poll as any).totalVotes || 0) > 0
+              ? ((option.votes / (post.poll as any).totalVotes) * 100).toFixed(
+                  1
+                )
+              : "0.0",
+        })
+      ),
+      hasUserVoted: req.user
+        ? (post.poll.options as any[]).some(
+            (option: any) =>
+              Array.isArray(option.voters) &&
+              option.voters.includes(String((req.user as any)!._id))
+          )
+        : false,
+      userVotes: req.user
+        ? (post.poll.options as any[])
+            .map((option: any, index: number) => ({
+              optionIndex: index,
+              voted:
+                Array.isArray(option.voters) &&
+                option.voters.includes(String((req.user as any)!._id)),
+            }))
+            .filter((vote) => vote.voted)
+            .map((vote) => vote.optionIndex)
+        : [],
     };
 
     res.json({
@@ -171,7 +235,7 @@ export const getPollResults = async (req: AuthRequest, res: Response) => {
         author: post.author,
         postType: post.postType,
         createdAt: post.createdAt,
-      }
+      },
     });
   } catch (error) {
     console.error("Get poll results error:", error);
@@ -183,7 +247,8 @@ export const getPollResults = async (req: AuthRequest, res: Response) => {
 export const updatePoll = async (req: AuthRequest, res: Response) => {
   try {
     const { postId } = req.params;
-    const { question, options, allowMultipleVotes, endDate, isActive } = req.body;
+    const { question, options, allowMultipleVotes, endDate, isActive } =
+      req.body;
 
     const post = await Post.findById(postId);
     if (!post || !post.poll) {
@@ -191,44 +256,54 @@ export const updatePoll = async (req: AuthRequest, res: Response) => {
     }
 
     // Check if user can modify this post
-    if (String((post as any).author) !== String((req.user as any)?._id || "") && req.user?.role !== "admin") {
-      return res.status(403).json({ message: "Not authorized to modify this poll" });
+    if (
+      String((post as any).author) !== String((req.user as any)?._id || "") &&
+      req.user?.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to modify this poll" });
     }
 
     // Check if poll has votes (can't modify options if votes exist)
     if (((post.poll as any).totalVotes || 0) > 0 && options) {
-      return res.status(400).json({ 
-        message: "Cannot modify poll options after votes have been cast" 
+      return res.status(400).json({
+        message: "Cannot modify poll options after votes have been cast",
       });
     }
 
     // Update poll fields
     if (question) (post.poll as any).question = question.trim();
-    if (allowMultipleVotes !== undefined) (post.poll as any).allowMultipleVotes = allowMultipleVotes;
+    if (allowMultipleVotes !== undefined)
+      (post.poll as any).allowMultipleVotes = allowMultipleVotes;
     if (isActive !== undefined) (post.poll as any).isActive = isActive;
-    
+
     if (endDate) {
       const pollEndDate = new Date(endDate);
       if (pollEndDate <= new Date()) {
-        return res.status(400).json({ 
-          message: "End date must be in the future" 
+        return res.status(400).json({
+          message: "End date must be in the future",
         });
       }
       (post.poll as any).endDate = pollEndDate;
     }
 
     // Update options (only if no votes exist)
-    if (options && Array.isArray(options) && ((post.poll as any).totalVotes || 0) === 0) {
+    if (
+      options &&
+      Array.isArray(options) &&
+      ((post.poll as any).totalVotes || 0) === 0
+    ) {
       if (options.length < 2 || options.length > 10) {
-        return res.status(400).json({ 
-          message: "Poll must have between 2 and 10 options" 
+        return res.status(400).json({
+          message: "Poll must have between 2 and 10 options",
         });
       }
 
       (post.poll as any).options = options.map((option: string) => ({
         text: option.trim(),
         votes: 0,
-        voters: []
+        voters: [],
       }));
     }
 
@@ -255,8 +330,13 @@ export const deletePoll = async (req: AuthRequest, res: Response) => {
     }
 
     // Check if user can modify this post
-    if (String((post as any).author) !== String((req.user as any)?._id || "") && req.user?.role !== "admin") {
-      return res.status(403).json({ message: "Not authorized to delete this poll" });
+    if (
+      String((post as any).author) !== String((req.user as any)?._id || "") &&
+      req.user?.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this poll" });
     }
 
     (post as any).poll = undefined;
@@ -271,20 +351,28 @@ export const deletePoll = async (req: AuthRequest, res: Response) => {
 
 // Get all polls with pagination and filters
 export const getAllPolls = async (
-  req: AuthRequest & { query: PaginationQuery & { 
-    status?: string; 
-    authorId?: string; 
-    search?: string;
-    sortBy?: string;
-    sortOrder?: string;
-  }},
+  req: AuthRequest & {
+    query: PaginationQuery & {
+      status?: string;
+      authorId?: string;
+      search?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    };
+  },
   res: Response
 ) => {
   try {
     const page = parseInt(req.query.page || "1");
     const limit = parseInt(req.query.limit || "10");
     const skip = (page - 1) * limit;
-    const { status, authorId, search, sortBy = "createdAt", sortOrder = "desc" } = req.query;
+    const {
+      status,
+      authorId,
+      search,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
 
     // Build query
     const query: any = { poll: { $exists: true } };
@@ -292,9 +380,11 @@ export const getAllPolls = async (
     // Filter by status
     if (status === "active") {
       query["poll.isActive"] = true;
-      query["$or"] = [{
-        "poll.endDate": { $exists: false } }, 
-        { "poll.endDate": { $gt: new Date() as any } }
+      query["$or"] = [
+        {
+          "poll.endDate": { $exists: false },
+        },
+        { "poll.endDate": { $gt: new Date() as any } },
       ] as any[] | undefined;
     } else if (status === "ended") {
       query["poll.endDate"] = { $lte: new Date() as any };
@@ -331,7 +421,7 @@ export const getAllPolls = async (
     ]);
 
     // Format polls with additional info
-    const formattedPolls = polls.map(post => ({
+    const formattedPolls = polls.map((post) => ({
       _id: post._id,
       content: post.content,
       author: post.author,
@@ -339,10 +429,16 @@ export const getAllPolls = async (
       postType: post.postType,
       poll: {
         ...(post.poll as any),
-        isPollEnded: (post.poll as any)?.endDate && new Date() > (post.poll as any).endDate,
-        hasUserVoted: req.user ? ((post.poll as any)?.options || []).some((option: any) => 
-          Array.isArray(option.voters) && option.voters.includes(String((req.user as any)!._id))
-        ) : false,
+        isPollEnded:
+          (post.poll as any)?.endDate &&
+          new Date() > (post.poll as any).endDate,
+        hasUserVoted: req.user
+          ? ((post.poll as any)?.options || []).some(
+              (option: any) =>
+                Array.isArray(option.voters) &&
+                option.voters.includes(String((req.user as any)!._id))
+            )
+          : false,
       },
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
@@ -376,36 +472,49 @@ export const getPollAnalytics = async (req: AuthRequest, res: Response) => {
     startDate.setDate(startDate.getDate() - days);
 
     // Basic poll statistics
-    const [totalPolls, activePolls, endedPolls, totalVotes] = await Promise.all([
-      Post.countDocuments({ poll: { $exists: true } }),
-      Post.countDocuments({ poll: { isActive: true, endDate: { $or: [{ $exists: false }, { $gt: new Date() as any }] as any[] | undefined } } as any }),
-      Post.countDocuments({ poll: { endDate: { $lte: new Date() as any } as any } }),
-      Post.aggregate([
-        { $match: { poll: { $exists: true } } as any },
-        { $group: { _id: null, total: { $sum: "$poll.totalVotes" } } as any }
-      ] as any)
-    ]);
+    const [totalPolls, activePolls, endedPolls, totalVotes] = await Promise.all(
+      [
+        Post.countDocuments({ poll: { $exists: true } }),
+        Post.countDocuments({
+          poll: {
+            isActive: true,
+            endDate: {
+              $or: [{ $exists: false }, { $gt: new Date() as any }] as
+                | any[]
+                | undefined,
+            },
+          } as any,
+        }),
+        Post.countDocuments({
+          poll: { endDate: { $lte: new Date() as any } as any },
+        }),
+        Post.aggregate([
+          { $match: { poll: { $exists: true } } as any },
+          { $group: { _id: null, total: { $sum: "$poll.totalVotes" } } as any },
+        ] as any),
+      ]
+    );
 
     // Poll creation trends
     const creationTrends = await Post.aggregate([
       {
         $match: {
           poll: { $exists: true },
-          createdAt: { $gte: startDate }
-        } as any
+          createdAt: { $gte: startDate },
+        } as any,
       },
       {
         $group: {
           _id: {
             year: { $year: "$createdAt" },
             month: { $month: "$createdAt" },
-            day: { $dayOfMonth: "$createdAt" }
+            day: { $dayOfMonth: "$createdAt" },
           },
           count: { $sum: 1 },
-          totalVotes: { $sum: "$poll.totalVotes" }
-        }
+          totalVotes: { $sum: "$poll.totalVotes" },
+        },
       },
-      { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
+      { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
     ]);
 
     // Most popular polls
@@ -416,8 +525,8 @@ export const getPollAnalytics = async (req: AuthRequest, res: Response) => {
           from: "users",
           localField: "author",
           foreignField: "_id",
-          as: "author"
-        }
+          as: "author",
+        },
       },
       { $unwind: "$author" },
       {
@@ -429,14 +538,14 @@ export const getPollAnalytics = async (req: AuthRequest, res: Response) => {
           optionsCount: { $size: "$poll.options" },
           author: {
             studentId: 1,
-            nickname: 1
+            nickname: 1,
           },
           createdAt: 1,
-          postType: 1
-        }
+          postType: 1,
+        },
       },
       { $sort: { totalVotes: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ]);
 
     // Vote distribution by post type
@@ -447,9 +556,9 @@ export const getPollAnalytics = async (req: AuthRequest, res: Response) => {
           _id: "$postType",
           pollCount: { $sum: 1 },
           totalVotes: { $sum: "$poll.totalVotes" },
-          avgVotesPerPoll: { $avg: "$poll.totalVotes" }
-        }
-      }
+          avgVotesPerPoll: { $avg: "$poll.totalVotes" },
+        },
+      },
     ]);
 
     // Recent poll activity
@@ -457,16 +566,16 @@ export const getPollAnalytics = async (req: AuthRequest, res: Response) => {
       {
         $match: {
           poll: { $exists: true },
-          createdAt: { $gte: startDate }
-        }
+          createdAt: { $gte: startDate },
+        },
       },
       {
         $lookup: {
           from: "users",
           localField: "author",
           foreignField: "_id",
-          as: "author"
-        }
+          as: "author",
+        },
       },
       { $unwind: "$author" },
       {
@@ -476,36 +585,36 @@ export const getPollAnalytics = async (req: AuthRequest, res: Response) => {
           totalVotes: "$poll.totalVotes",
           author: {
             studentId: 1,
-            nickname: 1
+            nickname: 1,
           },
           createdAt: 1,
-          postType: 1
-        }
+          postType: 1,
+        },
       },
       { $sort: { createdAt: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ]);
 
     res.json({
       period: {
         days,
         startDate,
-        endDate: new Date()
+        endDate: new Date(),
       },
       overview: {
         totalPolls,
         activePolls,
         endedPolls,
-        totalVotes: totalVotes[0]?.total || 0
+        totalVotes: totalVotes[0]?.total || 0,
       },
       trends: {
         creationTrends,
-        voteDistribution
+        voteDistribution,
       },
       popular: {
         mostPopularPolls: popularPolls,
-        recentActivity
-      }
+        recentActivity,
+      },
     });
   } catch (error) {
     console.error("Get poll analytics error:", error);
@@ -530,16 +639,16 @@ export const getUserPollHistory = async (
       {
         $match: {
           poll: { $exists: true },
-          "poll.options.voters": userId
-        }
+          "poll.options.voters": userId,
+        },
       },
       {
         $lookup: {
           from: "users",
           localField: "author",
           foreignField: "_id",
-          as: "author"
-        }
+          as: "author",
+        },
       },
       { $unwind: "$author" },
       {
@@ -554,14 +663,14 @@ export const getUserPollHistory = async (
                   $cond: [
                     { $isArray: "$$option.voters" },
                     { $in: [userId, "$$option.voters"] },
-                    false
-                  ]
+                    false,
+                  ],
                 },
-                votes: "$$option.votes"
-              }
-            }
-          }
-        }
+                votes: "$$option.votes",
+              },
+            },
+          },
+        },
       },
       {
         $project: {
@@ -573,25 +682,25 @@ export const getUserPollHistory = async (
             allowMultipleVotes: 1,
             endDate: 1,
             isActive: 1,
-            createdAt: 1
+            createdAt: 1,
           },
           userVotes: 1,
           author: {
             studentId: 1,
-            nickname: 1
+            nickname: 1,
           },
           postType: 1,
-          createdAt: 1
-        }
+          createdAt: 1,
+        },
       },
       { $sort: { createdAt: -1 } },
       { $skip: skip },
-      { $limit: limit }
+      { $limit: limit },
     ]);
 
     const total = await Post.countDocuments({
       poll: { $exists: true },
-      "poll.options.voters": userId
+      "poll.options.voters": userId,
     });
 
     res.json({
@@ -601,8 +710,8 @@ export const getUserPollHistory = async (
         currentPage: page,
         totalPolls: total,
         hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1
-      }
+        hasPrev: page > 1,
+      },
     });
   } catch (error) {
     console.error("Get user poll history error:", error);

@@ -40,14 +40,13 @@ const PostPreview = ({ post }: PostPreviewProps) => {
   const author: PopulatedAuthor | null =
     rawAuthor && typeof rawAuthor === "object" ? rawAuthor : null;
   const authorName = author?.nickname || "Unknown User";
-  const authorId = author?.studentId || "";
   const profilePicture = author?.profilePicture;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
+    <div className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow duration-200">
       {/* Author Info */}
       <div className="flex items-center mb-3">
-        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-3">
+        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden mr-3 flex-shrink-0">
           {profilePicture ? (
             <img
               src={getImageUrl(profilePicture)}
@@ -63,47 +62,61 @@ const PostPreview = ({ post }: PostPreviewProps) => {
             </span>
           )}
         </div>
-        <div>
-          <p className="font-semibold text-gray-900">{authorName}</p>
-          <p className="text-sm text-gray-500">{authorId || "N/A"}</p>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-surface-900">{authorName}</p>
+          <p className="text-xs text-surface-500">
+            {new Date(post.createdAt).toLocaleString()}
+          </p>
         </div>
-        <span className="ml-auto text-xs text-gray-400">
-          {new Date(post.createdAt).toLocaleDateString()}
-        </span>
       </div>
 
       {/* Post Content */}
-      <div className="text-gray-800 whitespace-pre-wrap">{post.content}</div>
+      <div className="text-base leading-relaxed text-surface-800 mb-3">
+        {post.content}
+      </div>
 
       {/* Media */}
       {post.media && post.media.length > 0 && (
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {post.media.slice(0, 4).map((mediaUrl, index) => {
+        <div className="mt-3 grid grid-cols-1 gap-3">
+          {post.media.slice(0, 3).map((mediaUrl, index) => {
             const fullUrl = getImageUrl(mediaUrl);
             const isVideo = /\.mp4$/i.test(fullUrl);
-            return isVideo ? (
-              <video
+            const isSingle = post.media?.length === 1;
+            const aspectRatio = isSingle ? "4 / 3" : "4 / 3";
+            const maxHeight = isSingle ? "420px" : "340px";
+
+            return (
+              <div
                 key={index}
-                src={fullUrl}
-                className="w-full h-32 object-cover rounded-md"
-                controls
-              />
-            ) : (
-              <img
-                key={index}
-                src={fullUrl}
-                alt={`Media ${index + 1}`}
-                className="w-full h-32 object-cover rounded-md"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
+                className="relative w-full overflow-hidden rounded-md bg-surface-100"
+                style={{ aspectRatio, maxHeight }}
+              >
+                {isVideo ? (
+                  <video
+                    src={fullUrl}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    controls
+                  />
+                ) : (
+                  <img
+                    src={fullUrl}
+                    alt={`Media ${index + 1}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                )}
+              </div>
             );
           })}
-          {post.media.length > 4 && (
-            <div className="w-full h-32 bg-gray-100 rounded-md flex items-center justify-center">
-              <span className="text-gray-500 text-sm">
-                +{post.media.length - 4} more
+          {post.media.length > 3 && (
+            <div
+              className="relative w-full overflow-hidden rounded-md bg-gray-100 flex items-center justify-center"
+              style={{ aspectRatio: "4 / 3", maxHeight: "340px" }}
+            >
+              <span className="text-gray-500 text-sm font-medium">
+                +{post.media.length - 3} more
               </span>
             </div>
           )}
