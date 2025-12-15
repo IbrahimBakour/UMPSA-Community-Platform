@@ -84,7 +84,7 @@ export const getUserById = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ message: "Admins only" });
     }
 
-    const user = await User.findById(req.params.id).select("-password");
+    const user = await User.findById(req.params.userId).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -94,6 +94,32 @@ export const getUserById = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error("Get user by ID error:", error);
     res.status(500).json({ message: "Error fetching user" });
+  }
+};
+
+// Get public user profile (any authenticated user)
+export const getPublicUserProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      _id: user._id,
+      studentId: user.studentId,
+      nickname: user.nickname,
+      role: user.role,
+      status: user.status,
+      restriction: user.restriction,
+      profilePicture: user.profilePicture,
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error("Get public user profile error:", error);
+    res.status(500).json({ message: "Error fetching user profile" });
   }
 };
 
@@ -316,15 +342,10 @@ export const getUserStats = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Get user activity (Admin only)
+// Get user activity (any authenticated user)
 export const getUserActivity = async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
-
-    // Allow users to view their own activity, or admins to view any user's activity
-    if (req.user?._id?.toString() !== userId && req.user?.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
 
     const user = await User.findById(userId);
     if (!user) {

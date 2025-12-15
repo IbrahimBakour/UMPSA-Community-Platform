@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateReport } from "../services/reports";
 import { API_BASE_URL } from "../utils/constants";
+import { Link } from "react-router-dom";
 // import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 // Helper function to get full image URL
@@ -45,7 +46,7 @@ const reportPostSchema = z.object({
 type ReportPostFormInputs = z.infer<typeof reportPostSchema>;
 
 const PostCard = ({ post }: PostCardProps) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user: authUser } = useAuth();
   const deletePostMutation = useDeletePost();
   const createReportMutation = useCreateReport();
   const [isConfirmationOpen, setConfirmationOpen] = useState(false);
@@ -100,13 +101,39 @@ const PostCard = ({ post }: PostCardProps) => {
   const authorName =
     authorObj?.nickname || authorObj?.studentId || "Unknown User";
   const authorPic = authorObj?.profilePicture;
+  const authorId =
+    authorObj?._id ||
+    authorObj?.id ||
+    (typeof (post as any).author === "string"
+      ? (post as any).author
+      : undefined);
+
+  const profileHref = authorId
+    ? authorId === (authUser?.id || authUser?._id)
+      ? "/users/me"
+      : `/users/${authorId}`
+    : undefined;
 
   return (
     <div className="bg-white rounded-xl shadow-md p-4 mb-4 hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-100 flex-shrink-0">
-            {authorPic ? (
+            {profileHref ? (
+              <Link to={profileHref} aria-label={`View ${authorName} profile`}>
+                {authorPic ? (
+                  <img
+                    src={getImageUrl(authorPic)}
+                    alt={authorName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-surface-600">
+                    {authorName.charAt(0)}
+                  </div>
+                )}
+              </Link>
+            ) : authorPic ? (
               <img
                 src={getImageUrl(authorPic)}
                 alt={authorName}
@@ -119,9 +146,18 @@ const PostCard = ({ post }: PostCardProps) => {
             )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-surface-900">
-              {authorName}
-            </p>
+            {profileHref ? (
+              <Link
+                to={profileHref}
+                className="text-sm font-semibold text-surface-900 hover:text-accent-600"
+              >
+                {authorName}
+              </Link>
+            ) : (
+              <p className="text-sm font-semibold text-surface-900">
+                {authorName}
+              </p>
+            )}
             <p className="text-xs text-surface-500">
               {new Date(post.createdAt).toLocaleString()}
             </p>

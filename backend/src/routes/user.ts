@@ -3,6 +3,7 @@ import { authMiddleware, adminMiddleware } from "../middlewares/auth";
 import {
   getAllUsers,
   getUserById,
+  getPublicUserProfile,
   updateUserRole,
   updateUserStatus,
   updateUserProfile,
@@ -34,6 +35,9 @@ router.get("/me", (req: any, res) => {
 // User profile management
 router.put("/me", updateUserProfile);
 router.put("/me/password", changePassword);
+
+// Public profile for any authenticated user
+router.get("/:userId/profile", getPublicUserProfile);
 
 // User activity (allows users to view their own activity)
 router.get("/:userId/activity", getUserActivity);

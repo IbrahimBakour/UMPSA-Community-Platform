@@ -1,9 +1,8 @@
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from './api';
-import { User, PaginatedResponse, UserStats, UserActivity } from '../types';
-import { API_ENDPOINTS } from '../utils/constants';
-import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "./api";
+import { User, PaginatedResponse, UserStats, UserActivity } from "../types";
+import { API_ENDPOINTS } from "../utils/constants";
+import toast from "react-hot-toast";
 
 const getAllUsers = async (params?: {
   page?: number;
@@ -17,7 +16,16 @@ const getAllUsers = async (params?: {
 };
 
 const getUserById = async (userId: string): Promise<User> => {
-  const response = await api.get(`${API_ENDPOINTS.USERS}/${userId}`);
+  const response = await api.get(
+    API_ENDPOINTS.USER_PUBLIC_PROFILE.replace(":userId", userId)
+  );
+  return response.data;
+};
+
+const getPublicUserProfile = async (userId: string): Promise<User> => {
+  const response = await api.get(
+    API_ENDPOINTS.USER_PUBLIC_PROFILE.replace(":userId", userId)
+  );
   return response.data;
 };
 
@@ -28,7 +36,9 @@ const updateUserRole = async ({
   userId: string;
   role: string;
 }): Promise<{ message: string; user: User }> => {
-  const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/role`, { role });
+  const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/role`, {
+    role,
+  });
   return response.data;
 };
 
@@ -39,7 +49,9 @@ const updateUserStatus = async ({
   userId: string;
   status: string;
 }): Promise<{ message: string; user: User }> => {
-  const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/status`, { status });
+  const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/status`, {
+    status,
+  });
   return response.data;
 };
 
@@ -48,12 +60,17 @@ const getUserStats = async (): Promise<UserStats> => {
   return response.data;
 };
 
-const getUserActivity = async (userId: string, params?: {
-  page?: number;
-  limit?: number;
-  days?: number;
-}): Promise<PaginatedResponse<UserActivity>> => {
-  const response = await api.get(`${API_ENDPOINTS.USERS}/${userId}/activity`, { params });
+const getUserActivity = async (
+  userId: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    days?: number;
+  }
+): Promise<PaginatedResponse<UserActivity>> => {
+  const response = await api.get(`${API_ENDPOINTS.USERS}/${userId}/activity`, {
+    params,
+  });
   return response.data;
 };
 
@@ -70,14 +87,14 @@ export const useAllUsers = (params?: {
   status?: string;
 }) => {
   return useQuery<PaginatedResponse<User>, Error>({
-    queryKey: ['users', params],
+    queryKey: ["users", params],
     queryFn: () => getAllUsers(params),
   });
 };
 
 export const useUserById = (userId: string) => {
   return useQuery<User, Error>({
-    queryKey: ['user', userId],
+    queryKey: ["user", userId],
     queryFn: () => getUserById(userId),
     enabled: !!userId,
   });
@@ -85,12 +102,16 @@ export const useUserById = (userId: string) => {
 
 export const useUpdateUserRole = () => {
   const queryClient = useQueryClient();
-  return useMutation<{ message: string; user: User }, Error, { userId: string; role: string }>({
+  return useMutation<
+    { message: string; user: User },
+    Error,
+    { userId: string; role: string }
+  >({
     mutationFn: updateUserRole,
     onSuccess: (_, variables) => {
       toast.success(`User role updated to ${variables.role}!`);
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["user", variables.userId] });
     },
     onError: () => {
       toast.error("Failed to update user role. Please try again.");
@@ -100,12 +121,16 @@ export const useUpdateUserRole = () => {
 
 export const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
-  return useMutation<{ message: string; user: User }, Error, { userId: string; status: string }>({
+  return useMutation<
+    { message: string; user: User },
+    Error,
+    { userId: string; status: string }
+  >({
     mutationFn: updateUserStatus,
     onSuccess: (_, variables) => {
       toast.success(`User status updated to ${variables.status}!`);
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["user", variables.userId] });
     },
     onError: () => {
       toast.error("Failed to update user status. Please try again.");
@@ -115,18 +140,21 @@ export const useUpdateUserStatus = () => {
 
 export const useUserStats = () => {
   return useQuery<UserStats, Error>({
-    queryKey: ['userStats'],
+    queryKey: ["userStats"],
     queryFn: () => getUserStats(),
   });
 };
 
-export const useUserActivity = (userId: string, params?: {
-  page?: number;
-  limit?: number;
-  days?: number;
-}) => {
+export const useUserActivity = (
+  userId: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    days?: number;
+  }
+) => {
   return useQuery<PaginatedResponse<UserActivity>, Error>({
-    queryKey: ['userActivity', userId, params],
+    queryKey: ["userActivity", userId, params],
     queryFn: () => getUserActivity(userId, params),
     enabled: !!userId,
   });
@@ -138,7 +166,7 @@ export const useDeleteUser = () => {
     mutationFn: deleteUser,
     onSuccess: () => {
       toast.success("User deleted successfully!");
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: () => {
       toast.error("Failed to delete user. Please try again.");
@@ -160,19 +188,25 @@ export const useUpdateUser = () => {
       return response.data.user ?? response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 };
 export const usePromoteUser = () => {
   const queryClient = useQueryClient();
-  return useMutation<{ message: string; user: User }, Error, { userId: string; role: string }>({
+  return useMutation<
+    { message: string; user: User },
+    Error,
+    { userId: string; role: string }
+  >({
     mutationFn: async ({ userId, role }) => {
-      const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/role`, { role });
+      const response = await api.put(`${API_ENDPOINTS.USERS}/${userId}/role`, {
+        role,
+      });
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 };

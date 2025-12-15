@@ -138,6 +138,24 @@ function App() {
                 </motion.div>
               }
             />
+            <Route
+              path="/users/:userId"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="in"
+                  exit="out"
+                  variants={pageVariants}
+                  transition={{
+                    type: "tween",
+                    ease: "anticipate",
+                    duration: 0.5,
+                  }}
+                >
+                  <ProfilePage />
+                </motion.div>
+              }
+            />
             {/* Legacy profile route - redirect to new route */}
             <Route
               path="/profile"
