@@ -71,12 +71,17 @@ const ReactionButtons = ({ post }: ReactionButtonsProps) => {
                 whileHover={{ scale: 1.1, rotate: active ? 0 : -5 }}
                 whileTap={{ scale: 0.9 }}
                 animate={{ scale: active ? 1.1 : 1, rotate: active ? 5 : 0 }}
-                transition={{ duration: 0.3, type: "spring", stiffness: 400, damping: 10 }}
+                transition={{
+                  duration: 0.3,
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 10,
+                }}
                 onClick={() => handleReaction(key)}
                 disabled={isDisabled}
                 aria-pressed={active}
                 title={`${Meta.title} — ${count}`}
-                className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all border border-current ${
                   active ? activeClassMap[key] : inactiveClassMap[key]
                 } disabled:opacity-60`}
               >

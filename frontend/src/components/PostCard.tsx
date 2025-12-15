@@ -211,47 +211,6 @@ const PostCard = ({ post }: PostCardProps) => {
         {post.content}
       </div>
 
-      {post.media && post.media.length > 0 && (
-        <div className="mt-3 grid grid-cols-1 gap-3">
-          {post.media.map((mediaUrl, index) => {
-            const fullUrl = getImageUrl(mediaUrl);
-            const isVideo = /\.mp4$/i.test(fullUrl);
-            const isSingle = post.media?.length === 1;
-
-            // Full-width media with consistent aspect ratios; single gets a bit more height
-            const aspectRatio = isSingle ? "4 / 3" : "4 / 3";
-            const maxHeight = isSingle ? "420px" : "340px";
-
-            return (
-              <div
-                key={index}
-                className="relative w-full overflow-hidden rounded-md bg-surface-100"
-                style={{ aspectRatio, maxHeight }}
-              >
-                {isVideo ? (
-                  <video
-                    src={fullUrl}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    controls
-                  />
-                ) : (
-                  <img
-                    src={fullUrl}
-                    alt={`Post media ${index + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback if image fails to load
-                      console.error("Failed to load image:", mediaUrl);
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {post.poll && (
         <div className="mt-4 border border-indigo-200 rounded-lg p-4 bg-indigo-50">
           <h4 className="font-semibold text-indigo-900 mb-3">
@@ -346,6 +305,47 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
       )}
 
+      {post.media && post.media.length > 0 && (
+        <div className="mt-3 grid grid-cols-1 gap-3">
+          {post.media.map((mediaUrl, index) => {
+            const fullUrl = getImageUrl(mediaUrl);
+            const isVideo = /\.mp4$/i.test(fullUrl);
+            const isSingle = post.media?.length === 1;
+
+            // Full-width media with consistent aspect ratios; single gets a bit more height
+            const aspectRatio = isSingle ? "4 / 3" : "4 / 3";
+            const maxHeight = isSingle ? "420px" : "340px";
+
+            return (
+              <div
+                key={index}
+                className="relative w-full overflow-hidden rounded-md bg-surface-100"
+                style={{ aspectRatio, maxHeight }}
+              >
+                {isVideo ? (
+                  <video
+                    src={fullUrl}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    controls
+                  />
+                ) : (
+                  <img
+                    src={fullUrl}
+                    alt={`Post media ${index + 1}`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      console.error("Failed to load image:", mediaUrl);
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {post.calendarEvent && (
         <div className="mt-4">
           <h4 className="font-semibold">{post.calendarEvent.title}</h4>
@@ -358,11 +358,11 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
       )}
 
-      <div className="mt-4">
+      <div className="mt-4 border-t border-b border-surface-200 py-3">
         <ReactionButtons post={post} />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 border border-surface-200 rounded-lg p-4 bg-surface-50">
         <CommentList comments={post.comments} />
         <CommentInput postId={post._id} postType={post.postType} />
       </div>
