@@ -1,12 +1,13 @@
 // User Types
 export interface User {
   _id: string;
+  id?: string; // Some endpoints return 'id' instead of '_id'
   studentId: string;
   password?: string; // Only present in some contexts
-  role: 'student' | 'club_member' | 'admin';
-  status: 'active' | 'restricted';
+  role: "student" | "club_member" | "admin";
+  status: "active" | "restricted";
   restriction?: {
-    type: 'temporary' | 'permanent';
+    type: "temporary" | "permanent";
     until?: Date;
   };
   nickname?: string;
@@ -21,7 +22,7 @@ export interface AuthResponse {
     id?: string;
     _id?: string;
     studentId: string;
-    role: 'student' | 'club_member' | 'admin';
+    role: "student" | "club_member" | "admin";
     nickname?: string;
     profilePicture?: string;
   };
@@ -30,7 +31,7 @@ export interface AuthResponse {
 // Post Types
 export interface IReaction {
   user: string; // User ID
-  type: 'like' | 'love' | 'dislike' | 'laugh';
+  type: "like" | "love" | "dislike" | "laugh";
 }
 
 export interface Comment {
@@ -67,34 +68,34 @@ export interface Post {
   content: string;
   media?: string[]; // Array of file URLs
   author: string; // User ID
-  postType: 'feed' | 'club';
+  postType: "feed" | "club";
   club?: string; // Club ID (for club posts)
   poll?: IPoll;
   calendarEvent?: ICalendarEvent;
   link?: string;
   interactions: IReaction[];
   comments: Comment[];
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface FeedPost extends Post {
-  postType: 'feed';
-  status: 'pending' | 'approved' | 'rejected';
+  postType: "feed";
+  status: "pending" | "approved" | "rejected";
 }
 
 export interface ClubPost extends Post {
-  postType: 'club';
+  postType: "club";
   club: string; // Club ID
-  status: 'approved'; // Club posts are always approved
+  status: "approved"; // Club posts are always approved
 }
 
 export type AnyPost = FeedPost | ClubPost;
 
 // Club Types
 export interface IMembershipEvent {
-  action: 'added' | 'removed';
+  action: "added" | "removed";
   user: string; // User ID
   by: string; // User ID
   at: Date;
@@ -117,8 +118,8 @@ export interface Club {
 }
 
 // Report Types
-export type ReportTargetType = 'user' | 'post' | 'club';
-export type ReportStatus = 'pending' | 'reviewed' | 'resolved';
+export type ReportTargetType = "user" | "post" | "club";
+export type ReportStatus = "pending" | "reviewed" | "resolved";
 
 export interface Report {
   _id: string;
@@ -135,22 +136,22 @@ export interface Report {
 
 // Notification Types
 export type NotificationType =
-  | 'post_approved'
-  | 'post_rejected'
-  | 'post_liked'
-  | 'post_commented'
-  | 'poll_voted'
-  | 'club_invited'
-  | 'club_joined'
-  | 'club_left'
-  | 'report_submitted'
-  | 'report_resolved'
-  | 'user_restricted'
-  | 'user_unrestricted'
-  | 'admin_action'
-  | 'system_announcement';
+  | "post_approved"
+  | "post_rejected"
+  | "post_liked"
+  | "post_commented"
+  | "poll_voted"
+  | "club_invited"
+  | "club_joined"
+  | "club_left"
+  | "report_submitted"
+  | "report_resolved"
+  | "user_restricted"
+  | "user_unrestricted"
+  | "admin_action"
+  | "system_announcement";
 
-export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type NotificationPriority = "low" | "medium" | "high" | "urgent";
 
 export interface Notification {
   _id: string;
@@ -176,18 +177,20 @@ export interface Notification {
 
 // API Response Types
 export interface PaginatedResponse<T> {
-  [key: string]: T[] | {
-    totalPages: number;
-    currentPage: number;
-    totalUsers?: number;
-    totalPosts?: number;
-    totalClubs?: number;
-    totalNotifications?: number;
-    totalPolls?: number;
-    totalReports?: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
+  [key: string]:
+    | T[]
+    | {
+        totalPages: number;
+        currentPage: number;
+        totalUsers?: number;
+        totalPosts?: number;
+        totalClubs?: number;
+        totalNotifications?: number;
+        totalPolls?: number;
+        totalReports?: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+      };
   pagination: {
     totalPages: number;
     currentPage: number;
@@ -265,7 +268,7 @@ export interface UserStats {
 
 export interface UserActivity {
   user: {
-  _id: string;
+    _id: string;
     studentId: string;
     nickname?: string;
     role: string;
@@ -288,10 +291,10 @@ export interface ClubStats {
 
 export interface AdminStats {
   overview: {
-  totalUsers: number;
-  totalPosts: number;
-  totalClubs: number;
-  totalReports: number;
+    totalUsers: number;
+    totalPosts: number;
+    totalClubs: number;
+    totalReports: number;
     activeUsers: number;
     restrictedUsers: number;
   };
@@ -305,12 +308,12 @@ export interface AdminStats {
     feedPosts: number;
     clubPosts: number;
     approvedPosts: number;
-  pendingPosts: number;
+    pendingPosts: number;
     rejectedPosts: number;
     postGrowthPercentage: string;
   };
   reportStats: {
-  pendingReports: number;
+    pendingReports: number;
     reviewedReports: number;
     resolvedReports: number;
   };
@@ -329,7 +332,7 @@ export interface AdminStats {
 export interface DashboardStats extends AdminStats {}
 
 export interface SystemHealth {
-  status: 'healthy' | 'degraded' | 'error';
+  status: "healthy" | "degraded" | "error";
   timestamp: Date;
   responseTime: number;
   database: {

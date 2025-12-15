@@ -33,7 +33,7 @@ export const getAllUsers = async (
     const skip = (page - 1) * limit;
 
     const query: any = {};
-    
+
     // Search by studentId or nickname
     if (search) {
       query.$or = [
@@ -41,12 +41,12 @@ export const getAllUsers = async (
         { nickname: { $regex: search, $options: "i" } },
       ];
     }
-    
+
     // Filter by role
     if (role && ["student", "club_member", "admin"].includes(role)) {
       query.role = role;
     }
-    
+
     // Filter by status
     if (status && ["active", "restricted"].includes(status)) {
       query.status = status;
@@ -85,7 +85,7 @@ export const getUserById = async (req: AuthRequest, res: Response) => {
     }
 
     const user = await User.findById(req.params.id).select("-password");
-    
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -108,8 +108,8 @@ export const updateUserRole = async (req: AuthRequest, res: Response) => {
     const { role } = req.body;
 
     if (!["student", "club_member", "admin"].includes(role)) {
-      return res.status(400).json({ 
-        message: "Invalid role. Must be: student, club_member, or admin" 
+      return res.status(400).json({
+        message: "Invalid role. Must be: student, club_member, or admin",
       });
     }
 
@@ -122,8 +122,8 @@ export const updateUserRole = async (req: AuthRequest, res: Response) => {
     if (user.role === "admin" && role !== "admin") {
       const adminCount = await User.countDocuments({ role: "admin" });
       if (adminCount <= 1) {
-        return res.status(400).json({ 
-          message: "Cannot demote the last admin" 
+        return res.status(400).json({
+          message: "Cannot demote the last admin",
         });
       }
     }
@@ -158,8 +158,8 @@ export const updateUserStatus = async (req: AuthRequest, res: Response) => {
     const { status, restriction } = req.body;
 
     if (!["active", "restricted"].includes(status)) {
-      return res.status(400).json({ 
-        message: "Invalid status. Must be: active or restricted" 
+      return res.status(400).json({
+        message: "Invalid status. Must be: active or restricted",
       });
     }
 
@@ -169,7 +169,7 @@ export const updateUserStatus = async (req: AuthRequest, res: Response) => {
     }
 
     user.status = status as "active" | "restricted";
-    
+
     if (status === "restricted" && restriction) {
       user.restriction = {
         type: restriction.type,
@@ -240,14 +240,14 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
     const userId = req.user?._id;
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ 
-        message: "Current password and new password are required" 
+      return res.status(400).json({
+        message: "Current password and new password are required",
       });
     }
 
     if (newPassword.length < 6) {
-      return res.status(400).json({ 
-        message: "New password must be at least 6 characters long" 
+      return res.status(400).json({
+        message: "New password must be at least 6 characters long",
       });
     }
 
@@ -257,7 +257,10 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
     }
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
     if (!isCurrentPasswordValid) {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
@@ -265,7 +268,7 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
     // Hash new password
     const saltRounds = 10;
     const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
-    
+
     user.password = hashedNewPassword;
     await user.save();
 
@@ -283,7 +286,14 @@ export const getUserStats = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ message: "Admins only" });
     }
 
-    const [totalUsers, activeUsers, restrictedUsers, students, clubMembers, admins] = await Promise.all([
+    const [
+      totalUsers,
+      activeUsers,
+      restrictedUsers,
+      students,
+      clubMembers,
+      admins,
+    ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ status: "active" }),
       User.countDocuments({ status: "restricted" }),
@@ -309,11 +319,12 @@ export const getUserStats = async (req: AuthRequest, res: Response) => {
 // Get user activity (Admin only)
 export const getUserActivity = async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ message: "Admins only" });
-    }
-
     const { userId } = req.params;
+
+    // Allow users to view their own activity, or admins to view any user's activity
+    if (req.user?._id?.toString() !== userId && req.user?.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
 
     const user = await User.findById(userId);
     if (!user) {
@@ -365,8 +376,8 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
     if (user.role === "admin") {
       const adminCount = await User.countDocuments({ role: "admin" });
       if (adminCount <= 1) {
-        return res.status(400).json({ 
-          message: "Cannot delete the last admin" 
+        return res.status(400).json({
+          message: "Cannot delete the last admin",
         });
       }
     }
@@ -377,10 +388,7 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
       Post.deleteMany({ author: userId }),
       Report.deleteMany({ reportedBy: userId }),
       // Remove user from clubs
-      Club.updateMany(
-        { members: userId },
-        { $pull: { members: userId } }
-      ),
+      Club.updateMany({ members: userId }, { $pull: { members: userId } }),
     ]);
 
     res.json({ message: "User deleted successfully" });

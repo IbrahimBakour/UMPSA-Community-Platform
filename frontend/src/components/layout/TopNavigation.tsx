@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Avatar } from '../ui';
-import { getMediaUrl } from '../../utils/helpers';
-import NotificationDropdown from '../NotificationDropdown';
-import { 
-  CogIcon, 
-  UserIcon, 
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { Avatar } from "../ui";
+import { getMediaUrl } from "../../utils/helpers";
+import NotificationDropdown from "../NotificationDropdown";
+import {
+  CogIcon,
+  UserIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 const TopNavigation: React.FC = () => {
   const { user, logout } = useAuth();
@@ -19,9 +19,13 @@ const TopNavigation: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Feed', href: '/feed', current: location.pathname === '/feed' },
-    { name: 'Clubs', href: '/clubs', current: location.pathname === '/clubs' },
-    { name: 'Reports', href: '/reports', current: location.pathname === '/reports' },
+    { name: "Feed", href: "/feed", current: location.pathname === "/feed" },
+    { name: "Clubs", href: "/clubs", current: location.pathname === "/clubs" },
+    {
+      name: "Reports",
+      href: "/reports",
+      current: location.pathname === "/reports",
+    },
   ];
 
   const handleLogout = () => {
@@ -40,7 +44,9 @@ const TopNavigation: React.FC = () => {
                 <span className="text-white font-bold text-sm">U</span>
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900">UMPSA Community</h1>
+                <h1 className="text-xl font-bold text-gray-900">
+                  UMPSA Community
+                </h1>
                 <p className="text-xs text-gray-500">Platform</p>
               </div>
             </Link>
@@ -54,8 +60,8 @@ const TopNavigation: React.FC = () => {
                 to={item.href}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                   item.current
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-100'
+                    ? "text-primary-600 bg-primary-50"
+                    : "text-gray-700 hover:text-primary-600 hover:bg-gray-100"
                 }`}
               >
                 {item.name}
@@ -85,7 +91,7 @@ const TopNavigation: React.FC = () => {
                     {user?.nickname || user?.studentId}
                   </p>
                   <p className="text-xs text-gray-500 capitalize">
-                    {user?.role?.replace('_', ' ')}
+                    {user?.role?.replace("_", " ")}
                   </p>
                 </div>
               </button>
@@ -94,7 +100,7 @@ const TopNavigation: React.FC = () => {
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-medium border border-gray-200 py-1 z-50">
                   <Link
-                    to="/profile"
+                    to="/users/me"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsProfileOpen(false)}
                   >
@@ -145,8 +151,8 @@ const TopNavigation: React.FC = () => {
                   to={item.href}
                   className={`block px-3 py-2 rounded-md text-base font-medium ${
                     item.current
-                      ? 'text-primary-600 bg-primary-50'
-                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-100'
+                      ? "text-primary-600 bg-primary-50"
+                      : "text-gray-700 hover:text-primary-600 hover:bg-gray-100"
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

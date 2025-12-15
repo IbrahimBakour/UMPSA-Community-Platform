@@ -27,12 +27,16 @@ router.get("/me", (req: any, res) => {
     profilePicture: user.profilePicture,
     status: user.status,
     restriction: user.restriction,
+    createdAt: user.createdAt,
   });
 });
 
 // User profile management
 router.put("/me", updateUserProfile);
 router.put("/me/password", changePassword);
+
+// User activity (allows users to view their own activity)
+router.get("/:userId/activity", getUserActivity);
 
 // Admin-only user management routes
 router.use(adminMiddleware);
@@ -41,7 +45,6 @@ router.use(adminMiddleware);
 router.get("/", getAllUsers);
 router.get("/stats", getUserStats);
 router.get("/:userId", getUserById);
-router.get("/:userId/activity", getUserActivity);
 
 // User management
 router.put("/:userId/role", updateUserRole);
@@ -49,5 +52,3 @@ router.put("/:userId/status", updateUserStatus);
 router.delete("/:userId", deleteUser);
 
 export default router;
-
-

@@ -8,7 +8,6 @@ import { useUpdateClub } from "../services/clubs";
 import { Club } from "../types";
 import { useState, useEffect } from "react";
 import { uploadClubMedia } from "../services/uploads";
-import { API_BASE_URL } from "../utils/constants";
 
 const editClubSchema = z.object({
   name: z.string().min(1, "Club name cannot be empty"),
