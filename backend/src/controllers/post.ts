@@ -4,7 +4,11 @@ import Post from "../models/Post";
 import Club from "../models/Club";
 import { IUser } from "../models/User";
 import { validateAndCreatePollData } from "./poll";
-import { triggerPostLikedNotification, triggerPostCommentedNotification, triggerPollVotedNotification } from "../services/notificationTriggers";
+import {
+  triggerPostLikedNotification,
+  triggerPostCommentedNotification,
+  triggerPollVotedNotification,
+} from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -18,13 +22,7 @@ interface PaginationQuery {
 // Create a new club post
 export const createClubPost = async (req: AuthRequest, res: Response) => {
   try {
-    const {
-      content,
-      media,
-      poll,
-      calendarEvent,
-      link,
-    } = req.body;
+    const { content, media, poll, calendarEvent, link } = req.body;
     const { clubId } = req.params;
     const userId = req.user?._id;
 
@@ -59,8 +57,8 @@ export const createClubPost = async (req: AuthRequest, res: Response) => {
       try {
         postData.poll = validateAndCreatePollData(poll);
       } catch (error) {
-        return res.status(400).json({ 
-          message: error instanceof Error ? error.message : "Invalid poll data" 
+        return res.status(400).json({
+          message: error instanceof Error ? error.message : "Invalid poll data",
         });
       }
     }
@@ -117,7 +115,7 @@ export const getClubPosts = async (
       postType: "club",
       status: "approved",
     };
-    
+
     const [posts, total] = await Promise.all([
       Post.find(query)
         .skip(skip)
@@ -126,7 +124,14 @@ export const getClubPosts = async (
         .populate([
           { path: "author", select: "studentId nickname profilePicture" },
           { path: "club", select: "name" },
-          { path: "interactions.user", select: "studentId nickname profilePicture" },
+          {
+            path: "comments.author",
+            select: "studentId nickname profilePicture",
+          },
+          {
+            path: "interactions.user",
+            select: "studentId nickname profilePicture",
+          },
         ]),
       Post.countDocuments(query),
     ]);
@@ -134,9 +139,9 @@ export const getClubPosts = async (
     res.json({
       posts,
       pagination: {
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      totalPosts: total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        totalPosts: total,
         hasNext: page < Math.ceil(total / limit),
         hasPrev: page > 1,
       },
@@ -157,7 +162,10 @@ export const getPost = async (req: AuthRequest, res: Response) => {
       { path: "author", select: "studentId nickname profilePicture" },
       { path: "club", select: "name" },
       { path: "comments.author", select: "studentId nickname profilePicture" },
-      { path: "interactions.user", select: "studentId nickname profilePicture" },
+      {
+        path: "interactions.user",
+        select: "studentId nickname profilePicture",
+      },
     ]);
 
     if (!post) {
@@ -307,12 +315,16 @@ export const addReaction = async (req: AuthRequest, res: Response) => {
     } else {
       // Add or update reaction
       await post.addReaction(userId?.toString() || "", reactionType);
-      
+
       // Trigger notification for likes
       if (reactionType === "like" || reactionType === "love") {
-        await triggerPostLikedNotification(String((post as any)._id), String((post as any).author), userId?.toString() || "");
+        await triggerPostLikedNotification(
+          String((post as any)._id),
+          String((post as any).author),
+          userId?.toString() || ""
+        );
       }
-      
+
       res.json({
         message: "Reaction added",
         reactionType,
@@ -332,7 +344,10 @@ export const getPostReactions = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
 
     const post = await Post.findById(id).populate([
-      { path: "interactions.user", select: "studentId nickname profilePicture" },
+      {
+        path: "interactions.user",
+        select: "studentId nickname profilePicture",
+      },
     ]);
 
     if (!post) {
@@ -379,7 +394,11 @@ export const addComment = async (req: AuthRequest, res: Response) => {
     };
 
     // Trigger notification BEFORE populating (to get the raw ObjectId)
-    await triggerPostCommentedNotification(String((post as any)._id), String((post as any).author), userId?.toString() || "");
+    await triggerPostCommentedNotification(
+      String((post as any)._id),
+      String((post as any).author),
+      userId?.toString() || ""
+    );
 
     const updatedPost = await Post.findByIdAndUpdate(
       id,

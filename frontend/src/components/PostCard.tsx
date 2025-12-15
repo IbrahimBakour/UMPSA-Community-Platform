@@ -108,6 +108,10 @@ const PostCard = ({ post }: PostCardProps) => {
       ? (post as any).author
       : undefined);
 
+  const currentUserId = authUser?._id || authUser?.id;
+  const isAuthor = currentUserId && authorId && currentUserId === authorId;
+  const canDelete = isAdmin || (post.postType === "club" && isAuthor);
+
   const profileHref = authorId
     ? authorId === (authUser?.id || authUser?._id)
       ? "/users/me"
@@ -170,7 +174,7 @@ const PostCard = ({ post }: PostCardProps) => {
           >
             Report
           </button>
-          {isAdmin && (
+          {canDelete && (
             <button
               onClick={() => setConfirmationOpen(true)}
               className="text-sm text-surface-500 hover:text-state-error"
@@ -186,28 +190,33 @@ const PostCard = ({ post }: PostCardProps) => {
       </div>
 
       {post.media && post.media.length > 0 && (
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-1 gap-3">
           {post.media.map((mediaUrl, index) => {
             const fullUrl = getImageUrl(mediaUrl);
             const isVideo = /\.mp4$/i.test(fullUrl);
+            const isSingle = post.media?.length === 1;
+
+            // Full-width media with consistent aspect ratios; single gets a bit more height
+            const aspectRatio = isSingle ? "4 / 3" : "4 / 3";
+            const maxHeight = isSingle ? "420px" : "340px";
+
             return (
               <div
                 key={index}
-                className={`overflow-hidden rounded-md ${
-                  post.media?.length === 1 ? "h-80" : "h-48"
-                }`}
+                className="relative w-full overflow-hidden rounded-md bg-surface-100"
+                style={{ aspectRatio, maxHeight }}
               >
                 {isVideo ? (
                   <video
                     src={fullUrl}
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover"
                     controls
                   />
                 ) : (
                   <img
                     src={fullUrl}
                     alt={`Post media ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover"
                     onError={(e) => {
                       // Fallback if image fails to load
                       console.error("Failed to load image:", mediaUrl);

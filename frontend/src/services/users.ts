@@ -22,12 +22,12 @@ const getUserById = async (userId: string): Promise<User> => {
   return response.data;
 };
 
-const getPublicUserProfile = async (userId: string): Promise<User> => {
-  const response = await api.get(
-    API_ENDPOINTS.USER_PUBLIC_PROFILE.replace(":userId", userId)
-  );
-  return response.data;
-};
+// const getPublicUserProfile = async (userId: string): Promise<User> => {
+//   const response = await api.get(
+//     API_ENDPOINTS.USER_PUBLIC_PROFILE.replace(":userId", userId)
+//   );
+//   return response.data;
+// };
 
 const updateUserRole = async ({
   userId,

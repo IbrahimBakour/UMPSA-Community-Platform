@@ -3,7 +3,10 @@ import mongoose from "mongoose";
 import Post from "../models/Post";
 import { IUser } from "../models/User";
 import { validateAndCreatePollData } from "./poll";
-import { triggerPostApprovedNotification, triggerPostRejectedNotification } from "../services/notificationTriggers";
+import {
+  triggerPostApprovedNotification,
+  triggerPostRejectedNotification,
+} from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -37,7 +40,14 @@ export const getFeedPosts = async (
         .sort({ createdAt: -1 })
         .populate([
           { path: "author", select: "studentId nickname profilePicture" },
-          { path: "interactions.user", select: "studentId nickname profilePicture" },
+          {
+            path: "interactions.user",
+            select: "studentId nickname profilePicture",
+          },
+          {
+            path: "comments.author",
+            select: "studentId nickname profilePicture",
+          },
         ]),
       Post.countDocuments(query),
     ]);
@@ -61,13 +71,7 @@ export const getFeedPosts = async (
 // Create a new feed post
 export const createFeedPost = async (req: AuthRequest, res: Response) => {
   try {
-    const {
-      content,
-      media,
-      poll,
-      calendarEvent,
-      link,
-    } = req.body;
+    const { content, media, poll, calendarEvent, link } = req.body;
     const userId = req.user?._id;
     const userRole = req.user?.role;
 
@@ -96,8 +100,8 @@ export const createFeedPost = async (req: AuthRequest, res: Response) => {
       try {
         postData.poll = validateAndCreatePollData(poll);
       } catch (error) {
-        return res.status(400).json({ 
-          message: error instanceof Error ? error.message : "Invalid poll data" 
+        return res.status(400).json({
+          message: error instanceof Error ? error.message : "Invalid poll data",
         });
       }
     }
@@ -120,9 +124,10 @@ export const createFeedPost = async (req: AuthRequest, res: Response) => {
       { path: "author", select: "studentId nickname profilePicture" },
     ]);
 
-    const message = status === "approved" 
-      ? "Post created and published successfully" 
-      : "Post created and submitted for review";
+    const message =
+      status === "approved"
+        ? "Post created and published successfully"
+        : "Post created and submitted for review";
 
     res.status(201).json({
       message,
@@ -198,7 +203,11 @@ export const approveFeedPost = async (req: AuthRequest, res: Response) => {
     await post.save();
 
     // Trigger notification BEFORE populating (to get the raw ObjectId)
-    await triggerPostApprovedNotification(String((post as any)._id), String((post as any).author), String((req.user as any)!._id));
+    await triggerPostApprovedNotification(
+      String((post as any)._id),
+      String((post as any).author),
+      String((req.user as any)!._id)
+    );
 
     await post.populate([
       { path: "author", select: "studentId nickname profilePicture" },
@@ -236,7 +245,12 @@ export const rejectFeedPost = async (req: AuthRequest, res: Response) => {
     await post.save();
 
     // Trigger notification BEFORE populating (to get the raw ObjectId)
-    await triggerPostRejectedNotification(String((post as any)._id), String((post as any).author), String((req.user as any)!._id), reason);
+    await triggerPostRejectedNotification(
+      String((post as any)._id),
+      String((post as any).author),
+      String((req.user as any)!._id),
+      reason
+    );
 
     res.json({
       message: "Post rejected successfully",
@@ -286,7 +300,10 @@ export const getFeedPost = async (req: AuthRequest, res: Response) => {
       status: "approved",
     }).populate([
       { path: "author", select: "studentId nickname profilePicture" },
-      { path: "interactions.user", select: "studentId nickname profilePicture" },
+      {
+        path: "interactions.user",
+        select: "studentId nickname profilePicture",
+      },
       { path: "comments.author", select: "studentId nickname profilePicture" },
     ]);
 
@@ -306,12 +323,13 @@ export const getFeedPost = async (req: AuthRequest, res: Response) => {
 // Get feed post statistics (admin only)
 export const getFeedStats = async (req: AuthRequest, res: Response) => {
   try {
-    const [totalPosts, approvedPosts, pendingPosts, rejectedPosts] = await Promise.all([
-      Post.countDocuments({ postType: "feed" }),
-      Post.countDocuments({ postType: "feed", status: "approved" }),
-      Post.countDocuments({ postType: "feed", status: "pending" }),
-      Post.countDocuments({ postType: "feed", status: "rejected" }),
-    ]);
+    const [totalPosts, approvedPosts, pendingPosts, rejectedPosts] =
+      await Promise.all([
+        Post.countDocuments({ postType: "feed" }),
+        Post.countDocuments({ postType: "feed", status: "approved" }),
+        Post.countDocuments({ postType: "feed", status: "pending" }),
+        Post.countDocuments({ postType: "feed", status: "rejected" }),
+      ]);
 
     res.json({
       totalPosts,

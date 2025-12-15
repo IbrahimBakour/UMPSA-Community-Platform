@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useClub, useClubPosts } from "../services/clubs";
 import PostCard from "../components/PostCard";
 import { AnyPost } from "../types";
@@ -66,7 +66,13 @@ const ClubProfilePage = () => {
   const userIdStr = user?._id ? String(user._id) : undefined;
   type MemberShape =
     | string
-    | { nickname?: string; studentId?: string; _id?: string; id?: string };
+    | {
+        nickname?: string;
+        studentId?: string;
+        profilePicture?: string;
+        _id?: string;
+        id?: string;
+      };
   const membersArray: MemberShape[] = Array.isArray(club?.members)
     ? (club!.members as MemberShape[])
     : [];
@@ -77,6 +83,8 @@ const ClubProfilePage = () => {
     const mid = mObj._id ?? mObj.id;
     return mid ? String(mid) === userIdStr : false;
   });
+
+  const canManage = !!user && (user.role === "admin" || user.id);
 
   if (isLoadingClub || isLoadingPosts) {
     return (
@@ -164,12 +172,14 @@ const ClubProfilePage = () => {
               )}
             </div>
           </div>
-          {user && (
-            <div className="flex gap-2">
-              <EditClubModal club={club} />
-              <AddMemberModal clubId={club._id} />
-            </div>
-          )}
+          <div className="flex gap-2">
+            {canManage && (
+              <>
+                <EditClubModal club={club} />
+                <AddMemberModal clubId={club._id} />
+              </>
+            )}
+          </div>
         </div>
       </motion.div>
 
@@ -199,25 +209,37 @@ const ClubProfilePage = () => {
           {membersArray && membersArray.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
               {membersArray.slice(0, 8).map((member, index) => {
-                const mem = member as Exclude<MemberShape, string>;
+                const mem =
+                  typeof member === "object" && member !== null
+                    ? (member as Exclude<MemberShape, string>)
+                    : undefined;
+                const memberId =
+                  mem?._id ??
+                  mem?.id ??
+                  (typeof member === "string" ? member : undefined);
                 const nickname =
-                  typeof member === "object"
-                    ? mem.nickname ?? mem.studentId ?? "User"
-                    : typeof member === "string"
-                    ? member
-                    : "User";
+                  mem?.nickname ??
+                  mem?.studentId ??
+                  (typeof member === "string" ? member : "User");
                 const initial = nickname
                   ? nickname.charAt(0).toUpperCase()
                   : "?";
-                const idText =
-                  typeof member === "object" ? mem.studentId ?? "" : "";
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center p-2 hover:bg-surface-50 rounded"
-                  >
-                    <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center mr-3 text-sm font-semibold text-primary-700">
-                      {initial}
+                const idText = mem?.studentId ?? "";
+                const profilePicture = mem?.profilePicture
+                  ? getImageUrl(mem.profilePicture)
+                  : undefined;
+                const content = (
+                  <>
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center mr-3 text-sm font-semibold text-primary-700">
+                      {profilePicture ? (
+                        <img
+                          src={profilePicture}
+                          alt={nickname}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        initial
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{nickname}</p>
@@ -225,6 +247,23 @@ const ClubProfilePage = () => {
                         {idText}
                       </p>
                     </div>
+                  </>
+                );
+
+                return memberId ? (
+                  <Link
+                    key={index}
+                    to={`/users/${memberId}`}
+                    className="flex items-center p-2 hover:bg-surface-50 rounded"
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div
+                    key={index}
+                    className="flex items-center p-2 hover:bg-surface-50 rounded"
+                  >
+                    {content}
                   </div>
                 );
               })}
@@ -306,23 +345,29 @@ const ClubProfilePage = () => {
       <div className="mt-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Club Posts</h2>
-          {user && <CreateClubPostModal clubId={club._id} />}
+          {canManage && <CreateClubPostModal clubId={club._id} />}
         </div>
         {postsArray.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-500">No posts yet. Be the first to post!</p>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <p className="text-gray-500">
+                No posts yet. Be the first to post!
+              </p>
+            </div>
           </div>
         ) : (
-          postsArray.map((post, index) => (
-            <motion.div
-              key={post._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <PostCard post={post} />
-            </motion.div>
-          ))
+          <div className="max-w-3xl mx-auto space-y-4">
+            {postsArray.map((post, index) => (
+              <motion.div
+                key={post._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <PostCard post={post} />
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
     </div>
