@@ -37,9 +37,15 @@ export const createClubPost = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Club not found" });
     }
 
-    if (!club.isMember(userId?.toString() || "")) {
+    const isAdmin = req.user?.role === "admin";
+    const isClubLeader =
+      (club as any).clubLeader?.toString() === userId?.toString();
+    const isClubMember = club.isMember(userId?.toString() || "");
+
+    // Check if user is admin, club leader, or club member
+    if (!isAdmin && !isClubLeader && !isClubMember) {
       return res.status(403).json({
-        message: "Only club members can create posts",
+        message: "Only club members or club leader can create posts",
       });
     }
 

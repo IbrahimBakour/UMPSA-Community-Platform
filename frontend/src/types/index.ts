@@ -4,7 +4,7 @@ export interface User {
   id?: string; // Some endpoints return 'id' instead of '_id'
   studentId: string;
   password?: string; // Only present in some contexts
-  role: "student" | "club_member" | "admin";
+  role: "student" | "club_member" | "club_leader" | "admin";
   status: "active" | "restricted";
   restriction?: {
     type: "temporary" | "permanent";
@@ -22,7 +22,7 @@ export interface AuthResponse {
     id?: string;
     _id?: string;
     studentId: string;
-    role: "student" | "club_member" | "admin";
+    role: "student" | "club_member" | "club_leader" | "admin";
     nickname?: string;
     profilePicture?: string;
   };
@@ -110,6 +110,7 @@ export interface Club {
   about?: string;
   contact?: string;
   members: string[]; // Array of user IDs
+  clubLeader: string; // User ID of the club leader
   createdBy: string; // User ID
   membershipEvents?: IMembershipEvent[];
   memberCount?: number; // Virtual field

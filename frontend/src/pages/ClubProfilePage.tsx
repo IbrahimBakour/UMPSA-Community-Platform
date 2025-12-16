@@ -1,13 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link, useParams } from "react-router-dom";
-import { useClub, useClubPosts } from "../services/clubs";
+import { useClub, useClubPosts, useRemoveMember } from "../services/clubs";
 import PostCard from "../components/PostCard";
 import { AnyPost } from "../types";
 import { useAuth } from "../hooks/useAuth";
 import EditClubModal from "../components/EditClubModal";
 import AddMemberModal from "../components/AddMemberModal";
 import CreateClubPostModal from "../components/CreateClubPostModal";
+import ConfirmationModal from "../components/ConfirmationModal";
 import { API_BASE_URL } from "../utils/constants";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 // Helper function to get full image URL
 const getImageUrl = (path?: string): string => {
@@ -41,6 +45,13 @@ const ClubProfilePage = () => {
     error: postsError,
   } = useClubPosts(id!);
   const { user } = useAuth();
+  const removeMemberMutation = useRemoveMember(id!);
+
+  // State for remove member confirmation
+  const [memberToRemove, setMemberToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Debug logging
   console.log("Club data:", club);
@@ -87,7 +98,34 @@ const ClubProfilePage = () => {
     return mid ? String(mid) === userIdStr : false;
   });
 
-  const canManage = !!user && (user.role === "admin" || isClubMember);
+  // Permission checks for club leader, members, and admin
+  const isAdmin = user?.role === "admin";
+  const isClubLeader =
+    !!club && !!userIdStr
+      ? typeof club.clubLeader === "string"
+        ? club.clubLeader === userIdStr
+        : (club.clubLeader as any)?._id === userIdStr ||
+          (club.clubLeader as any)?.id === userIdStr
+      : false;
+
+  // Define granular permissions
+  const canEditClub = isAdmin || isClubLeader;
+  const canManageMembers = isAdmin || isClubLeader;
+  const canCreatePost = isAdmin || isClubLeader || isClubMember;
+
+  // Handle remove member
+  const handleRemoveMember = () => {
+    if (memberToRemove) {
+      removeMemberMutation.mutate(memberToRemove.id, {
+        onSuccess: () => {
+          setMemberToRemove(null);
+        },
+        onError: () => {
+          setMemberToRemove(null);
+        },
+      });
+    }
+  };
 
   if (isLoadingClub || isLoadingPosts) {
     return (
@@ -176,12 +214,8 @@ const ClubProfilePage = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            {canManage && (
-              <>
-                <EditClubModal club={club} />
-                <AddMemberModal clubId={club._id} />
-              </>
-            )}
+            {canEditClub && <EditClubModal club={club} />}
+            {canManageMembers && <AddMemberModal clubId={club._id} />}
           </div>
         </div>
       </motion.div>
@@ -231,6 +265,15 @@ const ClubProfilePage = () => {
                 const profilePicture = mem?.profilePicture
                   ? getImageUrl(mem.profilePicture)
                   : undefined;
+
+                // Check if this member is the club leader
+                const clubLeaderId =
+                  typeof club.clubLeader === "string"
+                    ? club.clubLeader
+                    : (club.clubLeader as any)?._id ||
+                      (club.clubLeader as any)?.id;
+                const isThisClubLeader = memberId === clubLeaderId;
+
                 const content = (
                   <>
                     <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center mr-3 text-sm font-semibold text-primary-700">
@@ -245,11 +288,34 @@ const ClubProfilePage = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{nickname}</p>
+                      <p className="text-sm font-medium truncate">
+                        {nickname}
+                        {isThisClubLeader && (
+                          <span className="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
+                            Leader
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-surface-500 truncate">
                         {idText}
                       </p>
                     </div>
+                    {canManageMembers && !isThisClubLeader && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setMemberToRemove({
+                            id: memberId!,
+                            name: nickname,
+                          });
+                        }}
+                        className="ml-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Remove member"
+                      >
+                        <XMarkIcon className="w-4 h-4" />
+                      </button>
+                    )}
                   </>
                 );
 
@@ -348,7 +414,7 @@ const ClubProfilePage = () => {
       <div className="mt-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Club Posts</h2>
-          {canManage && <CreateClubPostModal clubId={club._id} />}
+          {canCreatePost && <CreateClubPostModal clubId={club._id} />}
         </div>
         {postsArray.length === 0 ? (
           <div className="max-w-3xl mx-auto">
@@ -373,6 +439,15 @@ const ClubProfilePage = () => {
           </div>
         )}
       </div>
+
+      {/* Remove Member Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        onConfirm={handleRemoveMember}
+        title="Remove Member"
+        message={`Are you sure you want to remove ${memberToRemove?.name} from this club?`}
+      />
     </div>
   );
 };

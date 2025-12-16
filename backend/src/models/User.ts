@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IUser extends Document {
   studentId: string;
   password: string;
-  role: "student" | "club_member" | "admin";
+  role: "student" | "club_member" | "club_leader" | "admin";
   status: "active" | "restricted";
   restriction?: {
     type: "temporary" | "permanent";
@@ -29,7 +29,7 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["student", "club_member", "admin"],
+      enum: ["student", "club_member", "club_leader", "admin"],
       default: "student",
     },
     status: {

@@ -22,11 +22,9 @@ export const createClub = async (req: AuthRequest, res: Response) => {
     }
 
     if (!leaderStudentId) {
-      return res
-        .status(400)
-        .json({
-          message: "A club leader is required. Please provide a student ID.",
-        });
+      return res.status(400).json({
+        message: "A club leader is required. Please provide a student ID.",
+      });
     }
 
     // Check if club with same name exists
@@ -40,16 +38,14 @@ export const createClub = async (req: AuthRequest, res: Response) => {
     // Find the user by studentId
     const leaderUser = await User.findOne({ studentId: leaderStudentId });
     if (!leaderUser) {
-      return res
-        .status(404)
-        .json({
-          message: `User with student ID "${leaderStudentId}" not found`,
-        });
+      return res.status(404).json({
+        message: `User with student ID "${leaderStudentId}" not found`,
+      });
     }
 
-    // Update leader's role if needed
-    if (leaderUser.role === "student") {
-      leaderUser.role = "club_member";
+    // Update leader's role to club_leader
+    if (leaderUser.role === "student" || leaderUser.role === "club_member") {
+      leaderUser.role = "club_leader";
       await leaderUser.save();
     }
 
@@ -59,6 +55,7 @@ export const createClub = async (req: AuthRequest, res: Response) => {
       about,
       contact,
       members: [leaderUser._id], // Initial club leader
+      clubLeader: leaderUser._id,
       createdBy: adminId,
     });
 
@@ -122,6 +119,7 @@ export const getClub = async (req: Request, res: Response) => {
   try {
     const club = await Club.findById(req.params.id)
       .populate("members", "studentId nickname profilePicture")
+      .populate("clubLeader", "studentId nickname profilePicture")
       .populate("createdBy", "studentId");
 
     if (!club) {
@@ -145,11 +143,15 @@ export const updateClub = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Club not found" });
     }
 
-    // Check if user is a club member
-    if (!club.isMember(req.user?._id as string)) {
+    const userId = req.user?._id as string;
+    const isAdmin = req.user?.role === "admin";
+    const isClubLeader = (club as any).clubLeader.toString() === userId;
+
+    // Check if user is club leader or admin
+    if (!isAdmin && !isClubLeader) {
       return res
         .status(403)
-        .json({ message: "Only club members can update club details" });
+        .json({ message: "Only club leader or admin can update club details" });
     }
 
     // Update allowed fields
@@ -206,11 +208,16 @@ export const addMember = async (req: AuthRequest, res: Response) => {
         .json({ message: "Student ID or User ID is required" });
     }
 
-    // Check if user is a club member
-    if (!club.isMember(req.user?._id as string)) {
+    const userId = req.user?._id as string;
+    const isAdmin = req.user?.role === "admin";
+    const isClubLeader =
+      (club as any).clubLeader.toString() === userId.toString();
+
+    // Check if user is club leader or admin
+    if (!isAdmin && !isClubLeader) {
       return res
         .status(403)
-        .json({ message: "Only club members can add new members" });
+        .json({ message: "Only club leader or admin can add new members" });
     }
 
     let userToAdd: any;
@@ -238,11 +245,17 @@ export const addMember = async (req: AuthRequest, res: Response) => {
         .json({ message: "User is already a member of this club" });
     }
 
-    // Prevent adding admins to clubs
+    // Prevent adding admins or club leaders to clubs
     if (userToAdd.role === "admin") {
       return res
         .status(400)
         .json({ message: "Admins cannot be added as club members" });
+    }
+
+    if (userToAdd.role === "club_leader") {
+      return res.status(400).json({
+        message: "Club leaders of other clubs cannot be added as members",
+      });
     }
 
     // Update user role if needed
@@ -250,7 +263,6 @@ export const addMember = async (req: AuthRequest, res: Response) => {
       userToAdd.role = "club_member";
       await userToAdd.save();
     }
-    // Do not change role if admin
 
     club.members.push(userToAdd._id);
     // Audit event
@@ -290,11 +302,23 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Club not found" });
     }
 
-    // Check if user is a club member
-    if (!club.isMember(req.user?._id as string)) {
+    const userId = req.user?._id as string;
+    const isAdmin = req.user?.role === "admin";
+    const isClubLeader =
+      (club as any).clubLeader.toString() === userId.toString();
+
+    // Check if user is club leader or admin
+    if (!isAdmin && !isClubLeader) {
       return res
         .status(403)
-        .json({ message: "Only club members can remove members" });
+        .json({ message: "Only club leader or admin can remove members" });
+    }
+
+    // Prevent removing the club leader
+    if ((club as any).clubLeader.toString() === memberId) {
+      return res.status(400).json({
+        message: "Cannot remove the club leader. Transfer leadership first.",
+      });
     }
 
     // Prevent removing the last member
