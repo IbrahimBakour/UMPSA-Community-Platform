@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 // import { Button, Badge } from "../ui";
@@ -9,6 +9,9 @@ import {
   FlagIcon,
   ChartBarIcon,
   UsersIcon,
+  ClipboardDocumentCheckIcon,
+  BuildingLibraryIcon,
+  ExclamationTriangleIcon,
   // HomeIcon,
   // CalendarIcon,
 } from "@heroicons/react/24/outline";
@@ -16,7 +19,16 @@ import {
 const Sidebar: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    // Initialize from localStorage, default to false (expanded)
+    const stored = localStorage.getItem("sidebarCollapsed");
+    return stored ? JSON.parse(stored) : false;
+  });
+
+  // Persist collapsed state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
 
   const isAdmin = user?.role === "admin";
 
@@ -53,6 +65,24 @@ const Sidebar: React.FC = () => {
       href: "/admin/users",
       icon: UsersIcon,
       current: location.pathname.startsWith("/admin/users"),
+    },
+    {
+      name: "Pending Posts",
+      href: "/admin/pending-posts",
+      icon: ClipboardDocumentCheckIcon,
+      current: location.pathname.startsWith("/admin/pending-posts"),
+    },
+    {
+      name: "Club Management",
+      href: "/admin/clubs",
+      icon: BuildingLibraryIcon,
+      current: location.pathname.startsWith("/admin/clubs"),
+    },
+    {
+      name: "Reports",
+      href: "/reports",
+      icon: ExclamationTriangleIcon,
+      current: location.pathname.startsWith("/reports"),
     },
   ];
 
@@ -106,63 +136,79 @@ const Sidebar: React.FC = () => {
               Quick Actions
             </h3>
           )}
-          <div className="space-y-2">
-            {quickActions.map((action) => {
-              // shared styles for collapsed vs expanded
-              const collapsedBtnClasses =
-                "w-full flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100";
-              const expandedBtnClasses =
-                "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200";
+          <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+            {quickActions
+              .filter((action) => {
+                // Hide Join Club and Report Issue for admin users
+                if (
+                  isAdmin &&
+                  (action.name === "Join Club" ||
+                    action.name === "Report Issue")
+                ) {
+                  return false;
+                }
+                return true;
+              })
+              .map((action) => {
+                // shared styles for collapsed vs expanded
+                const collapsedBtnClasses =
+                  "w-full flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100";
+                const expandedBtnClasses =
+                  "w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200";
 
-              const activeClasses = action.current
-                ? "bg-primary-50 text-primary-600"
-                : "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
+                const activeClasses = action.current
+                  ? "bg-secondary-50 text-secondary-600"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
 
-              if (action.name === "Create Post") {
-                return (
-                  <div key={action.name}>
-                    <CreatePostModal
-                      renderTrigger={(open) => (
-                        <button
-                          onClick={open}
-                          className={`${
-                            isCollapsed
-                              ? collapsedBtnClasses
-                              : expandedBtnClasses
-                          } ${activeClasses}`}
-                        >
-                          <action.icon
+                if (action.name === "Create Post") {
+                  return (
+                    <div key={action.name}>
+                      <CreatePostModal
+                        renderTrigger={(open) => (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              open();
+                            }}
                             className={`${
-                              isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
-                            }`}
-                          />
-                          {!isCollapsed && action.name}
-                        </button>
-                      )}
-                    />
-                  </div>
-                );
-              }
+                              isCollapsed
+                                ? collapsedBtnClasses
+                                : expandedBtnClasses
+                            } ${activeClasses}`}
+                          >
+                            <action.icon
+                              className={`${
+                                isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"
+                              }`}
+                            />
+                            {!isCollapsed && action.name}
+                          </button>
+                        )}
+                      />
+                    </div>
+                  );
+                }
 
-              return (
-                <Link
-                  key={action.name}
-                  to={action.href}
-                  className={`${
-                    isCollapsed ? collapsedBtnClasses : expandedBtnClasses
-                  } ${
-                    action.current
-                      ? "bg-primary-50 text-primary-600"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  <action.icon
-                    className={`${isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"}`}
-                  />
-                  {!isCollapsed && action.name}
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={action.name}
+                    to={action.href}
+                    onClick={(e) => e.stopPropagation()}
+                    className={`${
+                      isCollapsed ? collapsedBtnClasses : expandedBtnClasses
+                    } ${
+                      action.current
+                        ? "bg-primary-50 text-primary-600"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    <action.icon
+                      className={`${isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"}`}
+                    />
+                    {!isCollapsed && action.name}
+                  </Link>
+                );
+              })}
           </div>
         </div>
 
@@ -174,7 +220,7 @@ const Sidebar: React.FC = () => {
                 Admin Panel
               </h3>
             )}
-            <div className="space-y-2">
+            <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
               {adminActions.map((action) => {
                 const collapsedBtnClasses =
                   "w-full flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100";
@@ -188,6 +234,7 @@ const Sidebar: React.FC = () => {
                   <Link
                     key={action.name}
                     to={action.href}
+                    onClick={(e) => e.stopPropagation()}
                     className={`${
                       isCollapsed ? collapsedBtnClasses : expandedBtnClasses
                     } ${active}`}

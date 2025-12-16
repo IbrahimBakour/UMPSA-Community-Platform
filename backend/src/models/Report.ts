@@ -12,6 +12,7 @@ export interface IReport extends Document {
   status: ReportStatus;
   reviewedBy?: IUser["_id"];
   reviewNotes?: string;
+  resolvedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,6 +49,9 @@ const reportSchema = new Schema<IReport>(
     },
     reviewNotes: {
       type: String,
+    },
+    resolvedAt: {
+      type: Date,
     },
   },
   {

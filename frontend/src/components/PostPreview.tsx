@@ -97,13 +97,38 @@ const PostPreview = ({ post }: PostPreviewProps) => {
         {post.content}
       </div>
 
-      {/* Media */}
+      {/* Poll Preview (view-only) */}
+      {post.poll && post.poll.question && (
+        <div className="mt-3 border border-indigo-100 rounded-lg bg-indigo-50/60 p-4">
+          <p className="text-sm font-semibold text-indigo-900 mb-2">
+            {post.poll.question}
+          </p>
+          <div className="space-y-2">
+            {post.poll.options.map((option, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-2 text-sm text-indigo-800"
+              >
+                <span className="mt-0.5 h-2 w-2 rounded-full bg-indigo-500" />
+                <span>{option.text}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-indigo-700 mt-3">
+            Voting disabled in review.
+          </p>
+        </div>
+      )}
+
+      {/* Media (match PostCard dimensions to avoid cropping) */}
       {post.media && post.media.length > 0 && (
         <div className="mt-3 grid grid-cols-1 gap-3">
           {post.media.slice(0, 3).map((mediaUrl, index) => {
             const fullUrl = getImageUrl(mediaUrl);
             const isVideo = /\.mp4$/i.test(fullUrl);
             const isSingle = post.media?.length === 1;
+
+            // Full-width media with consistent aspect ratios; single gets a bit more height (same as PostCard)
             const aspectRatio = isSingle ? "4 / 3" : "4 / 3";
             const maxHeight = isSingle ? "420px" : "340px";
 
@@ -116,15 +141,16 @@ const PostPreview = ({ post }: PostPreviewProps) => {
                 {isVideo ? (
                   <video
                     src={fullUrl}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-contain bg-surface-100"
                     controls
                   />
                 ) : (
                   <img
                     src={fullUrl}
                     alt={`Media ${index + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-contain bg-surface-100"
                     onError={(e) => {
+                      // Fallback if image fails to load
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
@@ -142,22 +168,6 @@ const PostPreview = ({ post }: PostPreviewProps) => {
               </span>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Poll Preview */}
-      {post.poll && (
-        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="font-semibold text-blue-900 mb-2">
-            Poll: {post.poll.question}
-          </p>
-          <div className="space-y-1">
-            {post.poll.options.map((option, index) => (
-              <div key={index} className="text-sm text-blue-800">
-                • {option.text}
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

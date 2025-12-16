@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -142,7 +143,9 @@ const ReportsPage = () => {
   const createReportMutation = useCreateReport();
 
   // State management
-  const [activeTab, setActiveTab] = useState<string>(TABS.SUBMIT);
+  const [activeTab, setActiveTab] = useState<string>(
+    isAdmin ? TABS.MANAGE : TABS.SUBMIT
+  );
   const [statusFilter, setStatusFilter] = useState<string>(STATUS_FILTERS.ALL);
   const [typeFilter, setTypeFilter] = useState<string>(TYPE_FILTERS.ALL);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
@@ -248,16 +251,18 @@ const ReportsPage = () => {
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-4">
         <nav className="flex space-x-8">
-          <button
-            onClick={() => setActiveTab(TABS.SUBMIT)}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === TABS.SUBMIT
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Submit Report
-          </button>
+          {!isAdmin && (
+            <button
+              onClick={() => setActiveTab(TABS.SUBMIT)}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === TABS.SUBMIT
+                  ? "border-indigo-500 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Submit Report
+            </button>
+          )}
           {isAdmin && (
             <button
               onClick={() => setActiveTab(TABS.MANAGE)}
@@ -368,11 +373,11 @@ const ReportsPage = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Manage Reports</h2>
-            <div className="flex gap-4">
+            <div className="flex gap-3 flex-wrap">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100"
+                className="px-3 py-2 h-10 min-w-[150px] bg-white border border-gray-300 rounded-md shadow-sm text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
               >
                 <option value={STATUS_FILTERS.ALL}>All Status</option>
                 <option value={STATUS_FILTERS.PENDING}>Pending</option>
@@ -381,7 +386,7 @@ const ReportsPage = () => {
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100"
+                className="px-3 py-2 h-10 min-w-[150px] bg-white border border-gray-300 rounded-md shadow-sm text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
               >
                 <option value={TYPE_FILTERS.ALL}>All Types</option>
                 <option value={TYPE_FILTERS.USER}>User</option>
@@ -501,7 +506,8 @@ const ReportsPage = () => {
 
                   <div className="mb-3">
                     <p className="text-sm text-gray-600">
-                      <strong>Target:</strong> {report.targetId}
+                      <strong>Target:</strong>{" "}
+                      {(report as any).targetName || report.targetId}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
                       <strong>Reason:</strong> {report.reason}

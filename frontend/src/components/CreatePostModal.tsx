@@ -55,13 +55,15 @@ const CreatePostModal = ({ renderTrigger }: CreatePostModalProps) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            onClick={closeModal}
           >
             <motion.div
               initial={{ y: "-100vh" }}
               animate={{ y: "0" }}
               exit={{ y: "100vh" }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg"
+              className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
             >
               {isRestricted && (
                 <div

@@ -348,14 +348,14 @@ const PostCard = ({ post }: PostCardProps) => {
                 {isVideo ? (
                   <video
                     src={fullUrl}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-contain bg-surface-100"
                     controls
                   />
                 ) : (
                   <img
                     src={fullUrl}
                     alt={`Post media ${index + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-contain bg-surface-100"
                     onError={(e) => {
                       // Fallback if image fails to load
                       console.error("Failed to load image:", mediaUrl);

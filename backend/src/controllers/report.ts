@@ -3,7 +3,12 @@ import Report from "../models/Report";
 import User from "../models/User";
 import Club from "../models/Club";
 import { IUser } from "../models/User";
-import { triggerReportSubmittedNotification, triggerReportResolvedNotification, triggerUserRestrictedNotification, triggerUserUnrestrictedNotification } from "../services/notificationTriggers";
+import {
+  triggerReportSubmittedNotification,
+  triggerReportResolvedNotification,
+  triggerUserRestrictedNotification,
+  triggerUserUnrestrictedNotification,
+} from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -21,7 +26,7 @@ export const createReport = async (req: AuthRequest, res: Response) => {
 
     // Handle different target types
     let processedTargetId = targetId;
-    
+
     if (targetType === "user") {
       // For user reports, targetId is a studentId (e.g., "CB22000")
       // Find the user by studentId
@@ -52,11 +57,15 @@ export const createReport = async (req: AuthRequest, res: Response) => {
 
     // Get all admin users to notify them
     const admins = await User.find({ role: "admin" }).select("_id");
-    const adminIds = admins.map(admin => String(admin._id));
+    const adminIds = admins.map((admin) => String(admin._id));
 
     // Trigger notification to all admins
     if (adminIds.length > 0) {
-      await triggerReportSubmittedNotification(String(report._id), String(userId), adminIds);
+      await triggerReportSubmittedNotification(
+        String(report._id),
+        String(userId),
+        adminIds
+      );
     }
 
     res.status(201).json({ message: "Report submitted", report });
@@ -72,29 +81,69 @@ export const listReports = async (req: AuthRequest, res: Response) => {
     if (req.user?.role !== "admin") {
       return res.status(403).json({ message: "Admins only" });
     }
-    
+
     // Extract query parameters for filtering
     const status = req.query.status as string;
     const targetType = req.query.targetType as string;
-    
+
     // Build query
     const query: any = {};
-    
+
     // Filter by status
-    if (status && status !== 'all') {
+    if (status && status !== "all") {
       query.status = status;
     }
-    
+
     // Filter by targetType
-    if (targetType && targetType !== 'all') {
+    if (targetType && targetType !== "all") {
       query.targetType = targetType;
     }
-    
+
     const reports = await Report.find(query)
       .populate("reportedBy", "studentId nickname")
       .populate("reviewedBy", "studentId nickname")
       .sort({ createdAt: -1 });
-    res.json(reports);
+
+    // Enrich reports with target information
+    const User = require("../models/User").default;
+    const Post = require("../models/Post").default;
+    const Club = require("../models/Club").default;
+
+    const enrichedReports = await Promise.all(
+      reports.map(async (report: any) => {
+        const reportObj = report.toObject();
+
+        if (reportObj.targetType === "user") {
+          try {
+            const user = await User.findById(reportObj.targetId);
+            reportObj.targetName =
+              user?.nickname || user?.studentId || "Unknown User";
+          } catch (err) {
+            reportObj.targetName = "Unknown User";
+          }
+        } else if (reportObj.targetType === "post") {
+          try {
+            const post = await Post.findById(reportObj.targetId).populate(
+              "author"
+            );
+            reportObj.targetName = post?.author?.nickname || "Unknown Author";
+          } catch (err) {
+            reportObj.targetName = "Unknown Post";
+          }
+        } else if (reportObj.targetType === "club") {
+          try {
+            const club = await Club.findById(reportObj.targetId);
+            reportObj.targetName = club?.name || "Unknown Club";
+          } catch (err) {
+            reportObj.targetName = "Unknown Club";
+          }
+        }
+
+        return reportObj;
+      })
+    );
+
+    res.json(enrichedReports);
   } catch (error) {
     console.error("List reports error:", error);
     res.status(500).json({ message: "Error fetching reports" });
@@ -131,14 +180,24 @@ export const updateReport = async (req: AuthRequest, res: Response) => {
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }
-    if (status) report.status = status;
+    if (status) {
+      report.status = status;
+      // Set resolvedAt timestamp when marking as resolved
+      if (status === "resolved" && !report.resolvedAt) {
+        report.resolvedAt = new Date();
+      }
+    }
     if (reviewNotes) report.reviewNotes = reviewNotes;
     report.reviewedBy = req.user._id;
     await report.save();
 
     // Trigger notification when report is resolved
     if (status === "resolved") {
-      await triggerReportResolvedNotification(String(report._id), String(report.reportedBy), String(req.user._id));
+      await triggerReportResolvedNotification(
+        String(report._id),
+        String(report.reportedBy),
+        String(req.user._id)
+      );
     }
 
     res.json({ message: "Report updated", report });
@@ -149,7 +208,10 @@ export const updateReport = async (req: AuthRequest, res: Response) => {
 };
 
 // Restrict a user from a report (admin only)
-export const restrictUserFromReport = async (req: AuthRequest, res: Response) => {
+export const restrictUserFromReport = async (
+  req: AuthRequest,
+  res: Response
+) => {
   try {
     if (req.user?.role !== "admin") {
       return res.status(403).json({ message: "Admins only" });
@@ -189,16 +251,20 @@ export const restrictUserFromReport = async (req: AuthRequest, res: Response) =>
 
     // Trigger notification BEFORE saving report
     await triggerUserRestrictedNotification(
-      userId, 
-      String((req.user as any)!._id), 
+      userId,
+      String((req.user as any)!._id),
       restriction.type,
-      restriction.until ? `until ${new Date(restriction.until).toISOString()}` : undefined
+      restriction.until
+        ? `until ${new Date(restriction.until).toISOString()}`
+        : undefined
     );
 
     report.status = "reviewed";
     report.reviewedBy = req.user._id;
     report.reviewNotes = `Restricted user ${userId} (${restriction.type}${
-      restriction.until ? ` until ${new Date(restriction.until).toISOString()}` : ""
+      restriction.until
+        ? ` until ${new Date(restriction.until).toISOString()}`
+        : ""
     })`;
     await report.save();
 
@@ -218,7 +284,10 @@ export const restrictUserFromReport = async (req: AuthRequest, res: Response) =>
 };
 
 // Unrestrict a user from a report (admin only)
-export const unrestrictUserFromReport = async (req: AuthRequest, res: Response) => {
+export const unrestrictUserFromReport = async (
+  req: AuthRequest,
+  res: Response
+) => {
   try {
     if (req.user?.role !== "admin") {
       return res.status(403).json({ message: "Admins only" });
@@ -246,7 +315,10 @@ export const unrestrictUserFromReport = async (req: AuthRequest, res: Response) 
     await user.save();
 
     // Trigger notification BEFORE saving report
-    await triggerUserUnrestrictedNotification(userId, String((req.user as any)!._id));
+    await triggerUserUnrestrictedNotification(
+      userId,
+      String((req.user as any)!._id)
+    );
 
     report.status = "reviewed";
     report.reviewedBy = req.user._id;
