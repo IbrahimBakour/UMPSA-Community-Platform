@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Link, useParams } from "react-router-dom";
 import { useClub, useClubPosts } from "../services/clubs";
 import PostCard from "../components/PostCard";
@@ -63,7 +62,11 @@ const ClubProfilePage = () => {
     : [];
 
   // Fix member check - members may be strings (User IDs) or populated user objects
-  const userIdStr = user?._id ? String(user._id) : undefined;
+  const userIdStr = user?._id
+    ? String(user._id)
+    : user?.id
+    ? String(user.id)
+    : undefined;
   type MemberShape =
     | string
     | {
@@ -84,7 +87,7 @@ const ClubProfilePage = () => {
     return mid ? String(mid) === userIdStr : false;
   });
 
-  const canManage = !!user && (user.role === "admin" || user.id);
+  const canManage = !!user && (user.role === "admin" || isClubMember);
 
   if (isLoadingClub || isLoadingPosts) {
     return (

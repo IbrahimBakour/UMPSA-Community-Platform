@@ -40,7 +40,7 @@ const Sidebar: React.FC = () => {
       current: location.pathname === "/feed/create",
     },
     {
-      name: "Join Club",
+      name: "Discover Clubs",
       href: "/clubs",
       icon: UserGroupIcon,
       current: location.pathname === "/clubs",
@@ -198,7 +198,7 @@ const Sidebar: React.FC = () => {
                       isCollapsed ? collapsedBtnClasses : expandedBtnClasses
                     } ${
                       action.current
-                        ? "bg-primary-50 text-primary-600"
+                        ? "bg-secondary-50 text-secondary-600"
                         : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                     }`}
                   >

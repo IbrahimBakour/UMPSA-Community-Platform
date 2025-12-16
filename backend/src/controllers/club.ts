@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import Club from "../models/Club";
 import User from "../models/User";
 import { IUser } from "../models/User";
-import { triggerClubJoinedNotification, triggerClubLeftNotification } from "../services/notificationTriggers";
+import {
+  triggerClubJoinedNotification,
+  triggerClubLeftNotification,
+} from "../services/notificationTriggers";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -19,7 +22,11 @@ export const createClub = async (req: AuthRequest, res: Response) => {
     }
 
     if (!leaderStudentId) {
-      return res.status(400).json({ message: "A club leader is required. Please provide a student ID." });
+      return res
+        .status(400)
+        .json({
+          message: "A club leader is required. Please provide a student ID.",
+        });
     }
 
     // Check if club with same name exists
@@ -33,7 +40,11 @@ export const createClub = async (req: AuthRequest, res: Response) => {
     // Find the user by studentId
     const leaderUser = await User.findOne({ studentId: leaderStudentId });
     if (!leaderUser) {
-      return res.status(404).json({ message: `User with student ID "${leaderStudentId}" not found` });
+      return res
+        .status(404)
+        .json({
+          message: `User with student ID "${leaderStudentId}" not found`,
+        });
     }
 
     // Update leader's role if needed
@@ -85,7 +96,7 @@ export const getClubs = async (req: Request, res: Response) => {
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
-      .populate("members", "studentId nickname profilePicture")
+        .populate("members", "studentId nickname profilePicture")
         .populate("createdBy", "studentId"),
       Club.countDocuments(query),
     ]);
@@ -182,7 +193,7 @@ export const addMember = async (req: AuthRequest, res: Response) => {
     // Accept studentId, memberId (legacy), or userId (from frontend)
     const studentId = req.body.studentId;
     const memberId = req.body.memberId || req.body.userId;
-    
+
     const club = await Club.findById(req.params.id);
 
     if (!club) {
@@ -190,7 +201,9 @@ export const addMember = async (req: AuthRequest, res: Response) => {
     }
 
     if (!studentId && !memberId) {
-      return res.status(400).json({ message: "Student ID or User ID is required" });
+      return res
+        .status(400)
+        .json({ message: "Student ID or User ID is required" });
     }
 
     // Check if user is a club member
@@ -201,12 +214,14 @@ export const addMember = async (req: AuthRequest, res: Response) => {
     }
 
     let userToAdd: any;
-    
+
     // If studentId is provided, find user by studentId
     if (studentId) {
       userToAdd = await User.findOne({ studentId });
       if (!userToAdd) {
-        return res.status(404).json({ message: `User with student ID "${studentId}" not found` });
+        return res
+          .status(404)
+          .json({ message: `User with student ID "${studentId}" not found` });
       }
     } else {
       // Otherwise, find user by memberId/userId
@@ -221,6 +236,13 @@ export const addMember = async (req: AuthRequest, res: Response) => {
       return res
         .status(400)
         .json({ message: "User is already a member of this club" });
+    }
+
+    // Prevent adding admins to clubs
+    if (userToAdd.role === "admin") {
+      return res
+        .status(400)
+        .json({ message: "Admins cannot be added as club members" });
     }
 
     // Update user role if needed
@@ -242,7 +264,11 @@ export const addMember = async (req: AuthRequest, res: Response) => {
     await club.save();
 
     // Trigger notification BEFORE populating (to get raw ObjectIds)
-    await triggerClubJoinedNotification(String((club as any)._id), String(userToAdd._id), club.members.map(m => String(m)));
+    await triggerClubJoinedNotification(
+      String((club as any)._id),
+      String(userToAdd._id),
+      club.members.map((m) => String(m))
+    );
 
     res.json({
       message: "Member added successfully",
@@ -290,7 +316,11 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
     await club.save();
 
     // Trigger notification BEFORE populating (to get raw ObjectIds)
-    await triggerClubLeftNotification(String((club as any)._id), String(memberId), club.members.map(m => String(m)));
+    await triggerClubLeftNotification(
+      String((club as any)._id),
+      String(memberId),
+      club.members.map((m) => String(m))
+    );
 
     res.json({
       message: "Member removed successfully",
