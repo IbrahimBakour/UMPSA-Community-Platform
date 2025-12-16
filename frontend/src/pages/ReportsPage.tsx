@@ -17,6 +17,28 @@ import PostCard from "../components/PostCard";
 import { usePostById } from "../services/posts";
 import { Report } from "../types";
 
+// Helper function to format relative time
+const getRelativeTime = (date: string | Date): string => {
+  const now = new Date();
+  const postDate = new Date(date);
+  const diffMs = now.getTime() - postDate.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSecs < 60) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffWeeks < 4) return `${diffWeeks}w ago`;
+  if (diffMonths < 12) return `${diffMonths}mo ago`;
+  return `${diffYears}y ago`;
+};
+
 // Small skeleton used while loading reports
 const ReportSkeleton: React.FC = () => (
   <div className="animate-pulse bg-white rounded-lg shadow-sm p-4">
@@ -473,7 +495,7 @@ const ReportsPage = () => {
                       </span>
                     </div>
                     <span className="text-sm text-gray-500">
-                      {new Date(report.createdAt).toLocaleDateString()}
+                      {getRelativeTime(report.createdAt)}
                     </span>
                   </div>
 

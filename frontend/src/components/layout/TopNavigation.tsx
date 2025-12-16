@@ -5,7 +5,6 @@ import { Avatar } from "../ui";
 import { getMediaUrl } from "../../utils/helpers";
 import NotificationDropdown from "../NotificationDropdown";
 import {
-  CogIcon,
   UserIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
@@ -106,14 +105,6 @@ const TopNavigation: React.FC = () => {
                   >
                     <UserIcon className="w-4 h-4 mr-3" />
                     Profile
-                  </Link>
-                  <Link
-                    to="/settings"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsProfileOpen(false)}
-                  >
-                    <CogIcon className="w-4 h-4 mr-3" />
-                    Settings
                   </Link>
                   <hr className="my-1" />
                   <button

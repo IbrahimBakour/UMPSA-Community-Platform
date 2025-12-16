@@ -1,92 +1,123 @@
-import { useState, useRef, useEffect } from 'react';
-import { useNotifications, useNotificationStats, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification } from '../services/notifications';
-import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Notification } from '../types';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from "react";
+import {
+  useNotifications,
+  useNotificationStats,
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
+  useDeleteNotification,
+} from "../services/notifications";
+import { BellIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { motion, AnimatePresence } from "framer-motion";
+import { Notification } from "../types";
+import { Link } from "react-router-dom";
+
+// Helper function to format relative time
+const getRelativeTime = (date: string | Date): string => {
+  const now = new Date();
+  const postDate = new Date(date);
+  const diffMs = now.getTime() - postDate.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSecs < 60) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffWeeks < 4) return `${diffWeeks}w ago`;
+  if (diffMonths < 12) return `${diffMonths}mo ago`;
+  return `${diffYears}y ago`;
+};
 
 const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   const { data: stats } = useNotificationStats();
-  const { data: notificationsData, isLoading } = useNotifications({ 
+  const { data: notificationsData, isLoading } = useNotifications({
     limit: 10,
-    page: 1 
+    page: 1,
   });
-  
+
   const markAsReadMutation = useMarkNotificationAsRead();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
   const deleteMutation = useDeleteNotification();
-  
+
   const notifications = notificationsData?.notifications || [];
   const unreadCount = stats?.unreadNotifications || 0;
-  
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  
+
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.isRead) {
       markAsReadMutation.mutate(notification._id);
     }
   };
-  
+
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate();
   };
-  
+
   const handleDelete = (e: React.MouseEvent, notificationId: string) => {
     // Prevent navigation when delete is clicked inside a Link
     e.preventDefault();
     e.stopPropagation();
     deleteMutation.mutate(notificationId);
   };
-  
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'post_approved':
-        return '✅';
-      case 'post_rejected':
-        return '❌';
-      case 'post_liked':
-        return '❤️';
-      case 'post_commented':
-        return '💬';
-      case 'club_joined':
-        return '👥';
-      case 'report_resolved':
-        return '✅';
-      case 'user_restricted':
-        return '⚠️';
+      case "post_approved":
+        return "✅";
+      case "post_rejected":
+        return "❌";
+      case "post_liked":
+        return "❤️";
+      case "post_commented":
+        return "💬";
+      case "club_joined":
+        return "👥";
+      case "report_resolved":
+        return "✅";
+      case "user_restricted":
+        return "⚠️";
       default:
-        return '📬';
+        return "📬";
     }
   };
-  
+
   const getNotificationLink = (notification: Notification): string | null => {
     if (notification.relatedPost) {
-      return '/feed';
+      return "/feed";
     }
     if (notification.relatedClub) {
       return `/clubs/${notification.relatedClub}`;
     }
     if (notification.relatedReport) {
-      return '/reports';
+      return "/reports";
     }
     return null;
   };
-  
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
@@ -97,11 +128,11 @@ const NotificationDropdown = () => {
         <BellIcon className="w-6 h-6" />
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
-      
+
       {/* Dropdown */}
       <AnimatePresence>
         {isOpen && (
@@ -113,7 +144,9 @@ const NotificationDropdown = () => {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Notifications
+              </h3>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
@@ -124,7 +157,7 @@ const NotificationDropdown = () => {
                 </button>
               )}
             </div>
-            
+
             {/* Notifications List */}
             <div className="overflow-y-auto flex-1">
               {isLoading ? (
@@ -142,7 +175,7 @@ const NotificationDropdown = () => {
                     const content = (
                       <div
                         className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                          !notification.isRead ? 'bg-indigo-50' : ''
+                          !notification.isRead ? "bg-indigo-50" : ""
                         }`}
                         onClick={() => handleNotificationClick(notification)}
                       >
@@ -158,7 +191,7 @@ const NotificationDropdown = () => {
                               {notification.message}
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
-                              {new Date(notification.createdAt).toLocaleString()}
+                              {getRelativeTime(notification.createdAt)}
                             </p>
                           </div>
                           <button
@@ -170,7 +203,7 @@ const NotificationDropdown = () => {
                         </div>
                       </div>
                     );
-                    
+
                     return link ? (
                       <Link key={notification._id} to={link}>
                         {content}
@@ -182,7 +215,6 @@ const NotificationDropdown = () => {
                 </div>
               )}
             </div>
-            
           </motion.div>
         )}
       </AnimatePresence>
@@ -191,4 +223,3 @@ const NotificationDropdown = () => {
 };
 
 export default NotificationDropdown;
-

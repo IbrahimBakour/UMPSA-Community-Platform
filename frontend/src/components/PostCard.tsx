@@ -37,6 +37,28 @@ const getImageUrl = (path: string): string => {
   return `${API_BASE_URL}${cleanPath}`;
 };
 
+// Helper function to format relative time
+const getRelativeTime = (date: string | Date): string => {
+  const now = new Date();
+  const postDate = new Date(date);
+  const diffMs = now.getTime() - postDate.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSecs < 60) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffWeeks < 4) return `${diffWeeks}w ago`;
+  if (diffMonths < 12) return `${diffMonths}mo ago`;
+  return `${diffYears}y ago`;
+};
+
 interface PostCardProps {
   post: AnyPost;
 }
@@ -54,6 +76,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const queryClient = useQueryClient();
   const [isConfirmationOpen, setConfirmationOpen] = useState(false);
   const [isReportModalOpen, setReportModalOpen] = useState(false);
+  const [isCommentsModalOpen, setCommentsModalOpen] = useState(false);
 
   const votePollMutation = useMutation({
     mutationFn: ({
@@ -185,7 +208,7 @@ const PostCard = ({ post }: PostCardProps) => {
               </p>
             )}
             <p className="text-xs text-surface-500">
-              {new Date(post.createdAt).toLocaleString()}
+              {getRelativeTime(post.createdAt)}
             </p>
           </div>
         </div>
@@ -211,7 +234,7 @@ const PostCard = ({ post }: PostCardProps) => {
         {post.content}
       </div>
 
-      {post.poll && (
+      {post.poll && post.poll.question && (
         <div className="mt-4 border border-indigo-200 rounded-lg p-4 bg-indigo-50">
           <h4 className="font-semibold text-indigo-900 mb-3">
             {post.poll.question}
@@ -363,7 +386,23 @@ const PostCard = ({ post }: PostCardProps) => {
       </div>
 
       <div className="mt-4 border border-surface-200 rounded-lg p-4 bg-surface-50">
-        <CommentList comments={post.comments} />
+        <CommentList
+          comments={[...post.comments]
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            )
+            .slice(0, 3)}
+        />
+        {post.comments.length > 3 && (
+          <button
+            onClick={() => setCommentsModalOpen(true)}
+            className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+          >
+            Show all {post.comments.length} comments
+          </button>
+        )}
         <CommentInput postId={post._id} postType={post.postType} />
       </div>
       <ConfirmationModal
@@ -422,6 +461,37 @@ const PostCard = ({ post }: PostCardProps) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* All Comments Modal */}
+      {isCommentsModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">
+                All Comments ({post.comments.length})
+              </h2>
+              <button
+                onClick={() => setCommentsModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mb-4 border-t pt-4">
+              <CommentList
+                comments={[...post.comments].sort(
+                  (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                )}
+              />
+            </div>
+            <div className="border-t pt-4">
+              <CommentInput postId={post._id} postType={post.postType} />
+            </div>
           </div>
         </div>
       )}
