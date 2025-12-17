@@ -16,11 +16,13 @@ const getClubs = async (params?: {
 };
 
 const getClub = async (clubId: string): Promise<Club> => {
-  const response = await api.get(API_ENDPOINTS.CLUB.replace(':id', clubId));
+  const response = await api.get(API_ENDPOINTS.CLUB.replace(":id", clubId));
   return response.data;
 };
 
-const createClub = async (clubData: CreateClubForm): Promise<{ message: string; club: Club }> => {
+const createClub = async (
+  clubData: CreateClubForm
+): Promise<{ message: string; club: Club }> => {
   const response = await api.post(API_ENDPOINTS.CLUBS, clubData);
   return response.data;
 };
@@ -32,12 +34,17 @@ const updateClub = async ({
   clubId: string;
   clubData: Partial<CreateClubForm>;
 }): Promise<{ message: string; club: Club }> => {
-  const response = await api.put(API_ENDPOINTS.CLUB_UPDATE.replace(':id', clubId), clubData);
+  const response = await api.put(
+    API_ENDPOINTS.CLUB_UPDATE.replace(":id", clubId),
+    clubData
+  );
   return response.data;
 };
 
 const deleteClub = async (clubId: string): Promise<{ message: string }> => {
-  const response = await api.delete(API_ENDPOINTS.CLUB_DELETE.replace(':id', clubId));
+  const response = await api.delete(
+    API_ENDPOINTS.CLUB_DELETE.replace(":id", clubId)
+  );
   return response.data;
 };
 
@@ -48,7 +55,10 @@ const addMember = async ({
   clubId: string;
   studentId: string;
 }): Promise<{ message: string; member: User }> => {
-  const response = await api.post(API_ENDPOINTS.CLUB_MEMBER_ADD.replace(':id', clubId), { studentId });
+  const response = await api.post(
+    API_ENDPOINTS.CLUB_MEMBER_ADD.replace(":id", clubId),
+    { studentId }
+  );
   return response.data;
 };
 
@@ -59,12 +69,21 @@ const removeMember = async ({
   clubId: string;
   memberId: string;
 }): Promise<{ message: string }> => {
-  const response = await api.delete(API_ENDPOINTS.CLUB_MEMBER_REMOVE.replace(':id', clubId).replace(':memberId', memberId));
+  const response = await api.delete(
+    API_ENDPOINTS.CLUB_MEMBER_REMOVE.replace(":id", clubId).replace(
+      ":memberId",
+      memberId
+    )
+  );
   return response.data;
 };
 
 // React Query hooks
-export const useClubs = (params?: { page?: number; limit?: number; search?: string }) => {
+export const useClubs = (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) => {
   return useQuery<PaginatedResponse<Club>, Error>({
     queryKey: ["clubs", params],
     queryFn: () => getClubs(params),
@@ -84,7 +103,6 @@ export const useCreateClub = () => {
   return useMutation<{ message: string; club: Club }, Error, CreateClubForm>({
     mutationFn: createClub,
     onSuccess: () => {
-      toast.success("Club created successfully!");
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
     },
     onError: () => {
@@ -95,10 +113,13 @@ export const useCreateClub = () => {
 
 export const useUpdateClub = (clubId: string) => {
   const queryClient = useQueryClient();
-  return useMutation<{ message: string; club: Club }, Error, Partial<CreateClubForm>>({
+  return useMutation<
+    { message: string; club: Club },
+    Error,
+    Partial<CreateClubForm>
+  >({
     mutationFn: (clubData) => updateClub({ clubId, clubData }),
     onSuccess: () => {
-      toast.success("Club updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["club", clubId] });
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
     },
@@ -113,7 +134,6 @@ export const useDeleteClub = () => {
   return useMutation<{ message: string }, Error, string>({
     mutationFn: deleteClub,
     onSuccess: () => {
-      toast.success("Club deleted successfully!");
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
     },
     onError: () => {
@@ -127,7 +147,6 @@ export const useAddMember = (clubId: string) => {
   return useMutation<{ message: string; member: User }, Error, string>({
     mutationFn: (studentId) => addMember({ clubId, studentId }),
     onSuccess: () => {
-      toast.success("Member added successfully!");
       queryClient.invalidateQueries({ queryKey: ["club", clubId] });
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
     },
@@ -142,7 +161,6 @@ export const useRemoveMember = (clubId: string) => {
   return useMutation<{ message: string }, Error, string>({
     mutationFn: (memberId) => removeMember({ clubId, memberId }),
     onSuccess: () => {
-      toast.success("Member removed successfully!");
       queryClient.invalidateQueries({ queryKey: ["club", clubId] });
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
     },

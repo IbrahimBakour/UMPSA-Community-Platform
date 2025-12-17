@@ -109,7 +109,6 @@ export const useUpdateUserRole = () => {
   >({
     mutationFn: updateUserRole,
     onSuccess: (_, variables) => {
-      toast.success(`User role updated to ${variables.role}!`);
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["user", variables.userId] });
     },
@@ -128,7 +127,6 @@ export const useUpdateUserStatus = () => {
   >({
     mutationFn: updateUserStatus,
     onSuccess: (_, variables) => {
-      toast.success(`User status updated to ${variables.status}!`);
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["user", variables.userId] });
     },
@@ -165,7 +163,6 @@ export const useDeleteUser = () => {
   return useMutation<{ message: string }, Error, string>({
     mutationFn: deleteUser,
     onSuccess: () => {
-      toast.success("User deleted successfully!");
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: () => {

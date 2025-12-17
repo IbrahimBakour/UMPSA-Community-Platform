@@ -1,5 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import api from "./api";
-import { AdminStats, AdminAnalytics, SystemHealth, UserActivity, PaginatedResponse } from "../types";
+import {
+  AdminStats,
+  AdminAnalytics,
+  SystemHealth,
+  UserActivity,
+  PaginatedResponse,
+} from "../types";
 import { API_ENDPOINTS } from "../utils/constants";
 import { useQuery } from "@tanstack/react-query";
 

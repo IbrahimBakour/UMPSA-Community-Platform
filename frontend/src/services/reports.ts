@@ -1,10 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api from './api';
-import { Report, CreateReportForm, PaginatedResponse } from '../types';
-import { API_ENDPOINTS } from '../utils/constants';
-import toast from 'react-hot-toast';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import api from "./api";
+import { Report, CreateReportForm, PaginatedResponse } from "../types";
+import { API_ENDPOINTS } from "../utils/constants";
+import toast from "react-hot-toast";
 
-const createReport = async (reportData: CreateReportForm): Promise<{ message: string; report: Report }> => {
+const createReport = async (
+  reportData: CreateReportForm
+): Promise<{ message: string; report: Report }> => {
   const response = await api.post(API_ENDPOINTS.REPORTS, reportData);
   return response.data;
 };
@@ -20,7 +23,7 @@ const getReports = async (params?: {
 };
 
 const getReportById = async (reportId: string): Promise<Report> => {
-  const response = await api.get(API_ENDPOINTS.REPORT.replace(':id', reportId));
+  const response = await api.get(API_ENDPOINTS.REPORT.replace(":id", reportId));
   return response.data;
 };
 
@@ -31,27 +34,42 @@ const updateReport = async ({
   reportId: string;
   reportData: Partial<Report>;
 }): Promise<{ message: string; report: Report }> => {
-  const response = await api.put(API_ENDPOINTS.REPORT_UPDATE.replace(':id', reportId), reportData);
+  const response = await api.put(
+    API_ENDPOINTS.REPORT_UPDATE.replace(":id", reportId),
+    reportData
+  );
   return response.data;
 };
 
-const restrictUserFromReport = async (reportId: string): Promise<{ message: string }> => {
-  const response = await api.post(API_ENDPOINTS.REPORT_RESTRICT_USER.replace(':id', reportId));
+const restrictUserFromReport = async (
+  reportId: string
+): Promise<{ message: string }> => {
+  const response = await api.post(
+    API_ENDPOINTS.REPORT_RESTRICT_USER.replace(":id", reportId)
+  );
   return response.data;
 };
 
-const unrestrictUserFromReport = async (reportId: string): Promise<{ message: string }> => {
-  const response = await api.post(API_ENDPOINTS.REPORT_UNRESTRICT_USER.replace(':id', reportId));
+const unrestrictUserFromReport = async (
+  reportId: string
+): Promise<{ message: string }> => {
+  const response = await api.post(
+    API_ENDPOINTS.REPORT_UNRESTRICT_USER.replace(":id", reportId)
+  );
   return response.data;
 };
 
 export const useCreateReport = () => {
   const queryClient = useQueryClient();
-  return useMutation<{ message: string; report: Report }, Error, CreateReportForm>({
+  return useMutation<
+    { message: string; report: Report },
+    Error,
+    CreateReportForm
+  >({
     mutationFn: createReport,
     onSuccess: () => {
       toast.success("Report submitted successfully!");
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
     onError: () => {
       toast.error("Failed to submit report. Please try again.");
@@ -66,14 +84,14 @@ export const useReports = (params?: {
   targetType?: string;
 }) => {
   return useQuery<PaginatedResponse<Report>, Error>({
-    queryKey: ['reports', params],
+    queryKey: ["reports", params],
     queryFn: () => getReports(params),
   });
 };
 
 export const useReportById = (reportId: string) => {
   return useQuery<Report, Error>({
-    queryKey: ['report', reportId],
+    queryKey: ["report", reportId],
     queryFn: () => getReportById(reportId),
     enabled: !!reportId,
   });
@@ -81,12 +99,17 @@ export const useReportById = (reportId: string) => {
 
 export const useUpdateReport = () => {
   const queryClient = useQueryClient();
-  return useMutation<{ message: string; report: Report }, Error, { reportId: string; reportData: Partial<Report> }>({
+  return useMutation<
+    { message: string; report: Report },
+    Error,
+    { reportId: string; reportData: Partial<Report> }
+  >({
     mutationFn: updateReport,
     onSuccess: (_, variables) => {
-      toast.success("Report updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
-      queryClient.invalidateQueries({ queryKey: ['report', variables.reportId] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      queryClient.invalidateQueries({
+        queryKey: ["report", variables.reportId],
+      });
     },
     onError: () => {
       toast.error("Failed to update report. Please try again.");
@@ -100,8 +123,8 @@ export const useRestrictUserFromReport = () => {
     mutationFn: restrictUserFromReport,
     onSuccess: () => {
       toast.success("User restricted successfully!");
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: () => {
       toast.error("Failed to restrict user. Please try again.");
@@ -115,8 +138,8 @@ export const useUnrestrictUserFromReport = () => {
     mutationFn: unrestrictUserFromReport,
     onSuccess: () => {
       toast.success("User unrestricted successfully!");
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: () => {
       toast.error("Failed to unrestrict user. Please try again.");
@@ -132,7 +155,7 @@ export const useResolveReport = () => {
       await api.post(`${API_ENDPOINTS.REPORTS}/${reportId}/resolve`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
   });
 };
@@ -143,7 +166,7 @@ export const useRestrictUser = () => {
       await api.post(`${API_ENDPOINTS.USERS}/${userId}/restrict`, restriction);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
   });
 };

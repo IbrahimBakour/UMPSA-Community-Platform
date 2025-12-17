@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import api from "./api";
 import { API_ENDPOINTS } from "../utils/constants";
 
-export const uploadProfilePicture = async (file: File): Promise<{ message: string; url: string }> => {
+export const uploadProfilePicture = async (
+  file: File
+): Promise<{ message: string; url: string }> => {
   const formData = new FormData();
   formData.append("profilePicture", file);
 
@@ -15,21 +18,40 @@ export const uploadProfilePicture = async (file: File): Promise<{ message: strin
   return response.data;
 };
 
-export const uploadClubMedia = async (clubId: string, files: { profilePicture?: File; banner?: File }): Promise<{ message: string; club?: { _id: string; name: string; profilePicture?: string; banner?: string }; uploadedFiles?: any[] }> => {
+export const uploadClubMedia = async (
+  clubId: string,
+  files: { profilePicture?: File; banner?: File }
+): Promise<{
+  message: string;
+  club?: {
+    _id: string;
+    name: string;
+    profilePicture?: string;
+    banner?: string;
+  };
+  uploadedFiles?: any[];
+}> => {
   const formData = new FormData();
-  if (files.profilePicture) formData.append("profilePicture", files.profilePicture);
+  if (files.profilePicture)
+    formData.append("profilePicture", files.profilePicture);
   if (files.banner) formData.append("banner", files.banner);
 
-  const response = await api.post(API_ENDPOINTS.UPLOAD_CLUB.replace(':clubId', clubId), formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await api.post(
+    API_ENDPOINTS.UPLOAD_CLUB.replace(":clubId", clubId),
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 
   return response.data;
 };
 
-export const uploadPostMedia = async (files: File[]): Promise<{ message: string; urls: string[] }> => {
+export const uploadPostMedia = async (
+  files: File[]
+): Promise<{ message: string; urls: string[] }> => {
   const formData = new FormData();
   files.forEach((file) => {
     formData.append("postMedia", file);
@@ -44,15 +66,21 @@ export const uploadPostMedia = async (files: File[]): Promise<{ message: string;
   return response.data;
 };
 
-export const deleteFile = async (fileUrl: string): Promise<{ message: string }> => {
+export const deleteFile = async (
+  fileUrl: string
+): Promise<{ message: string }> => {
   const response = await api.delete(API_ENDPOINTS.UPLOAD_DELETE, {
-    data: { fileUrl }
+    data: { fileUrl },
   });
   return response.data;
 };
 
-export const getFileInfo = async (filePath: string): Promise<{ message: string; fileInfo: any }> => {
-  const response = await api.get(API_ENDPOINTS.UPLOAD_INFO.replace(':filePath', filePath));
+export const getFileInfo = async (
+  filePath: string
+): Promise<{ message: string; fileInfo: any }> => {
+  const response = await api.get(
+    API_ENDPOINTS.UPLOAD_INFO.replace(":filePath", filePath)
+  );
   return response.data;
 };
 
@@ -68,5 +96,7 @@ export const uploadFile = async (file: File): Promise<string> => {
   });
 
   // Return the path from the uploaded file
-  return response.data.mediaUrls?.[0] || response.data.uploadedFiles?.[0]?.path || '';
+  return (
+    response.data.mediaUrls?.[0] || response.data.uploadedFiles?.[0]?.path || ""
+  );
 };

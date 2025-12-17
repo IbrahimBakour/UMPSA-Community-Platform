@@ -25,6 +25,7 @@ const UsersManagementPage = () => {
   const [isPromoteConfirmationOpen, setPromoteConfirmationOpen] =
     useState(false);
   const [isRestrictModalOpen, setRestrictModalOpen] = useState(false);
+  const [isUnrestrictModalOpen, setUnrestrictModalOpen] = useState(false);
   const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
 
   const handlePromote = () => {
@@ -57,6 +58,24 @@ const UsersManagementPage = () => {
           },
           onError: () => {
             toast.error("Failed to restrict user. Please try again.");
+          },
+        }
+      );
+    }
+  };
+
+  const handleUnrestrict = () => {
+    if (selectedUser) {
+      updateStatusMutation.mutate(
+        { userId: selectedUser._id, status: "active" },
+        {
+          onSuccess: () => {
+            toast.success("User unrestricted successfully!");
+            setSelectedUser(null);
+            setUnrestrictModalOpen(false);
+          },
+          onError: () => {
+            toast.error("Failed to unrestrict user. Please try again.");
           },
         }
       );
@@ -272,15 +291,27 @@ const UsersManagementPage = () => {
                   </button>
                 )}
                 <div className="flex gap-2">
-                  {user.status === "active" && (
+                  {user.status === "active" ? (
                     <button
                       onClick={() => {
                         setSelectedUser(user);
                         setRestrictModalOpen(true);
+                        setUnrestrictModalOpen(false);
                       }}
                       className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-medium transition-colors"
                     >
                       Restrict
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setUnrestrictModalOpen(true);
+                        setRestrictModalOpen(false);
+                      }}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
+                    >
+                      Unrestrict
                     </button>
                   )}
                   <button
@@ -314,6 +345,17 @@ const UsersManagementPage = () => {
           onConfirm={handleRestrict}
           title="Restrict User"
           message={`Are you sure you want to restrict user ${
+            selectedUser.nickname || selectedUser.studentId
+          }?`}
+        />
+      )}
+      {selectedUser && (
+        <ConfirmationModal
+          isOpen={isUnrestrictModalOpen}
+          onClose={() => setUnrestrictModalOpen(false)}
+          onConfirm={handleUnrestrict}
+          title="Unrestrict User"
+          message={`Are you sure you want to unrestrict user ${
             selectedUser.nickname || selectedUser.studentId
           }?`}
         />
