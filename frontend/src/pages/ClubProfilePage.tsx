@@ -183,24 +183,28 @@ const ClubProfilePage = () => {
       >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
-            {club.profilePicture ? (
+            <div
+              className={`w-28 h-28 rounded-full mr-0 sm:mr-4 mb-4 sm:mb-0 overflow-hidden ${
+                !club.profilePicture
+                  ? "bg-gradient-to-br from-indigo-500 to-purple-600"
+                  : ""
+              }`}
+            >
               <img
                 key={club.profilePicture}
-                src={getImageUrl(club.profilePicture)}
+                src={
+                  club.profilePicture
+                    ? getImageUrl(club.profilePicture)
+                    : "/default-club-avatar.svg"
+                }
                 alt={club.name}
-                className="w-28 h-28 rounded-full mr-0 sm:mr-4 mb-4 sm:mb-0 object-cover"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    "/default-club-avatar.png";
+                    "/default-club-avatar.svg";
                 }}
               />
-            ) : (
-              <div className="w-28 h-28 rounded-full mr-4 bg-primary-100 flex items-center justify-center">
-                <span className="text-3xl font-bold text-primary-600">
-                  {club.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
+            </div>
             <div className="ml-2">
               <h1 className="text-3xl font-bold">{club.name}</h1>
               {club.description && (

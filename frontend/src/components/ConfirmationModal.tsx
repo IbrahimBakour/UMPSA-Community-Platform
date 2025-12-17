@@ -1,5 +1,5 @@
-
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -9,15 +9,25 @@ interface ConfirmationModalProps {
   message: string;
 }
 
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }: ConfirmationModalProps) => {
-  return (
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+}: ConfirmationModalProps) => {
+  // Portal ensures overlay spans the full viewport, avoiding clipping inside nested containers
+  const portalTarget = typeof document !== "undefined" ? document.body : null;
+  if (!portalTarget) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900 bg-opacity-60"
         >
           <motion.div
             initial={{ y: "-100vh" }}
@@ -47,7 +57,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }: Confi
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    portalTarget
   );
 };
 

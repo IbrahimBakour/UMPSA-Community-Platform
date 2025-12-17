@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useForm } from "react-hook-form";
@@ -8,6 +9,20 @@ import { useUpdateClub } from "../services/clubs";
 import { Club } from "../types";
 import { useState, useEffect } from "react";
 import { uploadClubMedia } from "../services/uploads";
+import { API_BASE_URL } from "../utils/constants";
+
+// Helper function to get full image URL
+const getImageUrl = (path?: string): string => {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  let cleanPath = path.replace(/\/+/g, "/");
+  if (!cleanPath.startsWith("/")) {
+    cleanPath = `/${cleanPath}`;
+  }
+  return `${API_BASE_URL}${cleanPath}`;
+};
 
 const editClubSchema = z.object({
   name: z.string().min(1, "Club name cannot be empty"),
@@ -28,9 +43,11 @@ const EditClubForm = ({ club, closeModal }: EditClubFormProps) => {
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(
     null
   );
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<
     string | null
   >(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const {
@@ -48,7 +65,7 @@ const EditClubForm = ({ club, closeModal }: EditClubFormProps) => {
     },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setProfilePictureFile(file);
@@ -57,41 +74,66 @@ const EditClubForm = ({ club, closeModal }: EditClubFormProps) => {
     }
   };
 
-  // Cleanup blob URL on unmount
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      const preview = URL.createObjectURL(file);
+      setBannerPreview(preview);
+    }
+  };
+
+  // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
-      if (profilePicturePreview) {
-        URL.revokeObjectURL(profilePicturePreview);
-      }
+      if (profilePicturePreview) URL.revokeObjectURL(profilePicturePreview);
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
     };
-  }, [profilePicturePreview]);
+  }, [profilePicturePreview, bannerPreview]);
 
   const onSubmit = async (data: EditClubFormInputs) => {
     try {
       setIsUploading(true);
       let profilePictureUrl = club.profilePicture;
+      let bannerUrl = club.banner;
 
-      // Upload profile picture if a new file is selected
-      if (profilePictureFile) {
-        const uploadResponse = await uploadClubMedia(club._id, {
-          profilePicture: profilePictureFile,
-        });
-        console.log("Upload response:", uploadResponse);
-        // Backend returns club object with profilePicture field
-        profilePictureUrl =
-          uploadResponse.club?.profilePicture || profilePictureUrl;
-        console.log("Profile picture URL:", profilePictureUrl);
+      // Upload media if a new file is selected
+      if (profilePictureFile || bannerFile) {
+        try {
+          const uploadResponse = await uploadClubMedia(club._id, {
+            profilePicture: profilePictureFile || undefined,
+            banner: bannerFile || undefined,
+          });
+          console.log("Upload response:", uploadResponse);
+          profilePictureUrl =
+            uploadResponse.club?.profilePicture || profilePictureUrl;
+          bannerUrl = uploadResponse.club?.banner || bannerUrl;
+        } catch (uploadError) {
+          console.error("Upload error:", uploadError);
+          toast.error("Failed to upload media. Please try again.");
+          setIsUploading(false);
+          return;
+        }
       }
 
-      updateClubMutation.mutate(data, {
+      const payload = {
+        ...data,
+        profilePicture: profilePictureUrl,
+        banner: bannerUrl,
+      } as any;
+
+      updateClubMutation.mutate(payload, {
         onSuccess: () => {
           toast.success("Club updated successfully!");
           reset();
           setProfilePictureFile(null);
+          setBannerFile(null);
           setProfilePicturePreview(null);
+          setBannerPreview(null);
           closeModal();
         },
-        onError: () => {
+        onError: (error) => {
+          console.error("Update error:", error);
           toast.error("Failed to update club. Please try again.");
         },
       });
@@ -188,20 +230,55 @@ const EditClubForm = ({ club, closeModal }: EditClubFormProps) => {
           id="profilePicture"
           type="file"
           accept="image/*"
-          onChange={handleImageChange}
+          onChange={handleProfileImageChange}
           className="w-full p-2 border border-gray-300 rounded-md"
         />
         <p className="text-sm text-gray-500 mt-1">
           Upload a new profile picture for the club
         </p>
-        {profilePicturePreview && (
+        {(profilePicturePreview || club.profilePicture) && (
           <div className="mt-3">
-            <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              {profilePicturePreview ? "New Preview:" : "Current:"}
+            </p>
             <img
-              src={profilePicturePreview}
+              src={profilePicturePreview || getImageUrl(club.profilePicture)}
               alt="Profile preview"
               className="w-32 h-32 rounded-full object-cover border-2 border-indigo-300"
             />
+          </div>
+        )}
+      </div>
+
+      <div className="mb-4">
+        <label
+          htmlFor="banner"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Banner Image
+        </label>
+        <input
+          id="banner"
+          type="file"
+          accept="image/*"
+          onChange={handleBannerChange}
+          className="w-full p-2 border border-gray-300 rounded-md"
+        />
+        <p className="text-sm text-gray-500 mt-1">
+          Recommended aspect ratio 3:1 for best fit
+        </p>
+        {(bannerPreview || club.banner) && (
+          <div className="mt-3">
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              {bannerPreview ? "New Preview:" : "Current:"}
+            </p>
+            <div className="w-full max-w-md h-32 rounded-lg overflow-hidden border border-indigo-100">
+              <img
+                src={bannerPreview || getImageUrl(club.banner)}
+                alt="Banner preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         )}
       </div>

@@ -9,7 +9,9 @@ import { validateFileSize, getFileType } from "../middlewares/upload";
 interface AuthRequest extends Request {
   user?: IUser;
   file?: Express.Multer.File;
-  files?: { [fieldname: string]: Express.Multer.File[] } | Express.Multer.File[];
+  files?:
+    | { [fieldname: string]: Express.Multer.File[] }
+    | Express.Multer.File[];
 }
 
 // Upload profile picture
@@ -26,8 +28,9 @@ export const uploadProfilePicture = async (req: AuthRequest, res: Response) => {
     if (!validateFileSize(file, "profilePicture")) {
       // Delete the uploaded file if size is invalid
       fs.unlinkSync(file.path);
-      return res.status(400).json({ 
-        message: "File size too large. Maximum size for profile pictures is 2MB" 
+      return res.status(400).json({
+        message:
+          "File size too large. Maximum size for profile pictures is 2MB",
       });
     }
 
@@ -35,8 +38,8 @@ export const uploadProfilePicture = async (req: AuthRequest, res: Response) => {
     const fileType = getFileType(file.mimetype);
     if (fileType !== "image") {
       fs.unlinkSync(file.path);
-      return res.status(400).json({ 
-        message: "Only image files are allowed for profile pictures" 
+      return res.status(400).json({
+        message: "Only image files are allowed for profile pictures",
       });
     }
 
@@ -95,19 +98,23 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
     const club = await Club.findById(clubId);
     if (!club) {
       // Clean up uploaded files
-      Object.values(files).flat().forEach(file => fs.unlinkSync(file.path));
+      Object.values(files)
+        .flat()
+        .forEach((file) => fs.unlinkSync(file.path));
       return res.status(404).json({ message: "Club not found" });
     }
 
     // Check if user is a club member or admin
     const isClubMember = club.isMember(userId?.toString() || "");
     const isAdmin = req.user?.role === "admin";
-    
+
     if (!isClubMember && !isAdmin) {
       // Clean up uploaded files
-      Object.values(files).flat().forEach(file => fs.unlinkSync(file.path));
-      return res.status(403).json({ 
-        message: "Only club members and admins can upload club media" 
+      Object.values(files)
+        .flat()
+        .forEach((file) => fs.unlinkSync(file.path));
+      return res.status(403).json({
+        message: "Only club members and admins can upload club media",
       });
     }
 
@@ -132,24 +139,22 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
           continue;
         }
 
-        // Delete old file if exists
-        if (fieldName === "profilePicture" && club.profilePicture) {
-          const oldImagePath = path.join(process.cwd(), club.profilePicture);
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-          }
-        } else if (fieldName === "banner" && club.banner) {
-          const oldImagePath = path.join(process.cwd(), club.banner);
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-          }
-        }
+        // Note: Not deleting old files to allow image reuse across multiple clubs
+        // If cleanup is needed, implement a separate garbage collection process
 
-        // Update club with new file path (normalized to start with /)
+        // Update club with new file path (normalized to start with / and use forward slashes)
+        const normalizedPath = file.path.replace(/\\/g, "/");
+        const finalPath = normalizedPath.startsWith("/")
+          ? normalizedPath
+          : `/${normalizedPath}`;
+
         if (fieldName === "profilePicture") {
-          club.profilePicture = file.path.startsWith('/') ? file.path : `/${file.path}`;
+          console.log(
+            `[Upload] Updating profilePicture: ${club.profilePicture} -> ${finalPath}`
+          );
+          club.profilePicture = finalPath;
         } else if (fieldName === "banner") {
-          club.banner = file.path.startsWith('/') ? file.path : `/${file.path}`;
+          club.banner = finalPath;
         }
 
         uploadedFiles.push({
@@ -182,7 +187,9 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
     // Clean up all uploaded files
     if (req.files) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      Object.values(files).flat().forEach(file => fs.unlinkSync(file.path));
+      Object.values(files)
+        .flat()
+        .forEach((file) => fs.unlinkSync(file.path));
     }
     res.status(500).json({ message: "Error uploading club media" });
   }
@@ -232,10 +239,12 @@ export const uploadPostMedia = async (req: AuthRequest, res: Response) => {
       message: "Post media uploaded successfully",
       uploadedFiles,
       errors: errors.length > 0 ? errors : undefined,
-      mediaUrls: uploadedFiles.map(file => {
+      mediaUrls: uploadedFiles.map((file) => {
         // Multer gives us relative path like "uploads/posts/filename.jpg"
         // Ensure it starts with / for the static file serving
-        const cleanPath = file.path.startsWith('/') ? file.path : `/${file.path}`;
+        const cleanPath = file.path.startsWith("/")
+          ? file.path
+          : `/${file.path}`;
         return cleanPath;
       }),
     });
@@ -244,7 +253,7 @@ export const uploadPostMedia = async (req: AuthRequest, res: Response) => {
     // Clean up all uploaded files
     if (req.files) {
       const files = req.files as Express.Multer.File[];
-      files.forEach(file => fs.unlinkSync(file.path));
+      files.forEach((file) => fs.unlinkSync(file.path));
     }
     res.status(500).json({ message: "Error uploading post media" });
   }
@@ -275,36 +284,35 @@ export const deleteFile = async (req: AuthRequest, res: Response) => {
     if (isProfilePicture) {
       // Check if user owns this profile picture
       const user = await User.findOne({ profilePicture: filePath });
-      if (
-        !user ||
-        !user._id ||
-        user._id.toString() !== userId?.toString()
-      ) {
-        return res.status(403).json({ message: "You don't have permission to delete this file" });
+      if (!user || !user._id || user._id.toString() !== userId?.toString()) {
+        return res
+          .status(403)
+          .json({ message: "You don't have permission to delete this file" });
       }
     } else if (isClubMedia) {
       // Check if user is a club member or admin
       const club = await Club.findOne({
-        $or: [
-          { profilePicture: filePath },
-          { banner: filePath }
-        ]
+        $or: [{ profilePicture: filePath }, { banner: filePath }],
       });
       if (!club) {
         return res.status(404).json({ message: "Club not found" });
       }
-      
+
       const isClubMember = club.isMember(userId?.toString() || "");
       const isAdmin = req.user?.role === "admin";
-      
+
       if (!isClubMember && !isAdmin) {
-        return res.status(403).json({ message: "You don't have permission to delete this file" });
+        return res
+          .status(403)
+          .json({ message: "You don't have permission to delete this file" });
       }
     } else if (isPostMedia) {
       // For post media, we'll allow deletion if user is admin
       // You might want to enhance this to check if user is the post author
       if (req.user?.role !== "admin") {
-        return res.status(403).json({ message: "Only admins can delete post media" });
+        return res
+          .status(403)
+          .json({ message: "Only admins can delete post media" });
       }
     }
 
@@ -322,16 +330,16 @@ export const deleteFile = async (req: AuthRequest, res: Response) => {
 export const getFileInfo = async (req: Request, res: Response) => {
   try {
     const { filePath } = req.params;
-    
+
     const fullPath = path.join(process.cwd(), typeof filePath);
-    
+
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ message: "File not found" });
     }
 
     const stats = fs.statSync(fullPath);
     const fileExtension = path.extname(fullPath).toLowerCase();
-    
+
     res.json({
       path: filePath,
       size: stats.size,
