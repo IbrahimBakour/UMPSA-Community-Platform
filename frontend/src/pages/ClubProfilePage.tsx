@@ -99,7 +99,7 @@ const ClubProfilePage = () => {
   });
 
   // Permission checks for club leader, members, and admin
-  const isAdmin = user?.role === "admin";
+  const isAdmin = !!user && user.role === "admin";
   const isClubLeader =
     !!club && !!userIdStr
       ? typeof club.clubLeader === "string"
@@ -109,6 +109,7 @@ const ClubProfilePage = () => {
       : false;
 
   // Define granular permissions
+  // Admins have all permissions regardless of club membership
   const canEditClub = isAdmin || isClubLeader;
   const canManageMembers = isAdmin || isClubLeader;
   const canCreatePost = isAdmin || isClubLeader || isClubMember;
@@ -288,14 +289,16 @@ const ClubProfilePage = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {nickname}
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className="text-sm font-medium truncate block">
+                          {nickname}
+                        </span>
                         {isThisClubLeader && (
-                          <span className="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
+                          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded whitespace-nowrap">
                             Leader
                           </span>
                         )}
-                      </p>
+                      </div>
                       <p className="text-xs text-surface-500 truncate">
                         {idText}
                       </p>

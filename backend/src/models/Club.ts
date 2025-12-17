@@ -9,7 +9,7 @@ export interface IClub extends Document {
   about?: string;
   contact?: string;
   members: IUser["_id"][];
-  clubLeader: IUser["_id"];
+  clubLeader?: IUser["_id"];
   createdBy: IUser["_id"];
   createdAt: Date;
   updatedAt: Date;
@@ -62,7 +62,6 @@ const clubSchema = new Schema<IClub>(
     clubLeader: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     createdBy: {
       type: Schema.Types.ObjectId,

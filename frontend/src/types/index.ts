@@ -110,7 +110,7 @@ export interface Club {
   about?: string;
   contact?: string;
   members: string[]; // Array of user IDs
-  clubLeader: string; // User ID of the club leader
+  clubLeader?: string; // User ID of the club leader
   createdBy: string; // User ID
   membershipEvents?: IMembershipEvent[];
   memberCount?: number; // Virtual field

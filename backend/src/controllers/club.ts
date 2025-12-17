@@ -145,7 +145,9 @@ export const updateClub = async (req: AuthRequest, res: Response) => {
 
     const userId = req.user?._id as string;
     const isAdmin = req.user?.role === "admin";
-    const isClubLeader = (club as any).clubLeader.toString() === userId;
+    const isClubLeader =
+      !!(club as any).clubLeader &&
+      (club as any).clubLeader.toString() === userId.toString();
 
     // Check if user is club leader or admin
     if (!isAdmin && !isClubLeader) {
@@ -211,6 +213,7 @@ export const addMember = async (req: AuthRequest, res: Response) => {
     const userId = req.user?._id as string;
     const isAdmin = req.user?.role === "admin";
     const isClubLeader =
+      !!(club as any).clubLeader &&
       (club as any).clubLeader.toString() === userId.toString();
 
     // Check if user is club leader or admin
@@ -305,6 +308,7 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
     const userId = req.user?._id as string;
     const isAdmin = req.user?.role === "admin";
     const isClubLeader =
+      !!(club as any).clubLeader &&
       (club as any).clubLeader.toString() === userId.toString();
 
     // Check if user is club leader or admin
