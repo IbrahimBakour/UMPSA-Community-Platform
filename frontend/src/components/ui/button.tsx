@@ -3,17 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../utils/cn";
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0',
+  "inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0",
   {
     variants: {
       variant: {
-        primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm hover:shadow-md',
-        secondary: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500 shadow-sm hover:shadow-md',
-        outline: 'border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 focus:ring-primary-500 shadow-sm hover:shadow-md',
-        ghost: 'bg-transparent text-surface-700 hover:bg-surface-100 focus:ring-primary-500',
-        danger: 'bg-state-error text-white hover:bg-state-error/90 focus:ring-state-error shadow-sm hover:shadow-md',
-        success: 'bg-state-success text-white hover:bg-state-success/90 focus:ring-state-success shadow-sm hover:shadow-md',
-        warning: 'bg-state-warning text-white hover:bg-state-warning/90 focus:ring-state-warning shadow-sm hover:shadow-md',
+        primary:
+          "bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm hover:shadow-md",
+        secondary:
+          "bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500 shadow-sm hover:shadow-md",
+        outline:
+          "border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 focus:ring-primary-500 shadow-sm hover:shadow-md",
+        ghost:
+          "bg-transparent text-surface-700 hover:bg-surface-100 focus:ring-primary-500",
+        danger:
+          "bg-state-error text-white hover:bg-state-error/90 focus:ring-state-error shadow-sm hover:shadow-md",
+        success:
+          "bg-state-success text-white hover:bg-state-success/90 focus:ring-state-success shadow-sm hover:shadow-md",
+        warning:
+          "bg-state-warning text-white hover:bg-state-warning/90 focus:ring-state-warning shadow-sm hover:shadow-md",
       },
       size: {
         sm: "px-3 py-1.5 text-xs",
