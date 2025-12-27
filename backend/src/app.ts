@@ -60,4 +60,16 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Serve Frontend in Production
+if (process.env.NODE_ENV === "production") {
+  // Serve static files from the frontend build directory
+  const frontendPath = path.join(__dirname, "../../frontend/dist");
+  app.use(express.static(frontendPath));
+
+  // Handle React routing - return index.html for all non-API routes
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
+}
+
 export default app;
