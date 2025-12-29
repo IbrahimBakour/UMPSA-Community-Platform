@@ -10,9 +10,9 @@
 **/.env.*.local
 
 # Build output
-**/dist/
-**/build/
-**/*.tsbuildinfo
+# **/dist/
+# **/build/
+# **/*.tsbuildinfo
 
 # IDE and editor files
 .idea/
