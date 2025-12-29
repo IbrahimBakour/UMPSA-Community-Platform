@@ -25,15 +25,29 @@ import path from "path";
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Middleware
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:5000",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
-app.use(morgan("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -50,26 +64,79 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/polls", pollRoutes);
 app.use("/api/notifications", notificationRoutes);
 
-// Basic test route
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to UMPSA Community Platform API" });
-});
-
 // Health check endpoint for Render
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // Serve Frontend in Production
-if (process.env.NODE_ENV === "production") {
+console.log("NODE_ENV raw:", JSON.stringify(process.env.NODE_ENV));
+console.log("NODE_ENV trimmed:", process.env.NODE_ENV?.trim());
+console.log(
+  "Comparison result:",
+  process.env.NODE_ENV?.trim() === "production"
+);
+
+const frontendPath = path.join(__dirname, "../../frontend/dist");
+console.log("Frontend path:", frontendPath);
+console.log("Path exists:", require("fs").existsSync(frontendPath));
+
+const isProduction = process.env.NODE_ENV?.trim() === "production";
+
+if (isProduction) {
+  console.log("Production mode: Serving frontend from", frontendPath);
+  const fs = require("fs");
+  console.log(
+    "index.html exists:",
+    fs.existsSync(path.join(frontendPath, "index.html"))
+  );
+
   // Serve static files from the frontend build directory
-  const frontendPath = path.join(__dirname, "../../frontend/dist");
-  app.use(express.static(frontendPath));
+  app.use(
+    express.static(frontendPath, {
+      index: false, // Don't auto-serve index.html, we'll handle it explicitly
+      fallthrough: true,
+    })
+  );
 
   // Handle React routing - return index.html for all non-API routes
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
+  app.use((req, res, next) => {
+    // Skip if it's an API route
+    if (req.path.startsWith("/api/")) {
+      return next();
+    }
+
+    console.log("Serving index.html for:", req.url);
+    const indexPath = path.join(frontendPath, "index.html");
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error("Error sending index.html:", err);
+        res.status(500).send("Error loading application");
+      }
+    });
+  });
+} else {
+  console.log("Development mode: Not serving frontend");
+  // Development mode - just return API info
+  app.get("/", (req, res) => {
+    res.json({ message: "Welcome to UMPSA Community Platform API" });
   });
 }
+
+// Error handling middleware (must be last)
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    console.error("Error:", err);
+    res.status(err.status || 500).json({
+      message: err.message || "Internal Server Error",
+      ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    });
+  }
+);
 
 export default app;
