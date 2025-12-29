@@ -15,7 +15,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": [],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -45,6 +45,5 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "../frontend/**/*", "../frontend"]
+  "include": ["src/**/*"]
 }
