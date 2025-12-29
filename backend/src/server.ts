@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const port = process.env.PORT || "8080";
+const port = process.env.PORT;
 
 // Connect to MongoDB
 connectDB()
