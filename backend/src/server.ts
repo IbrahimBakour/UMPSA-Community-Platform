@@ -5,8 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const port = process.env.PORT || 5000;
-const host = process.env.HOST || "0.0.0.0";
+const port = process.env.PORT || "0.0.0.0";
 
 // Connect to MongoDB
 connectDB()
@@ -15,8 +14,8 @@ connectDB()
     scheduleReportCleanup();
 
     // Start server after successful DB connection
-    app.listen(Number(port), host, () => {
-      console.log(`Server is running on ${host}:${port}`);
+    app.listen(Number(port), () => {
+      console.log(`Server is running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
   })
