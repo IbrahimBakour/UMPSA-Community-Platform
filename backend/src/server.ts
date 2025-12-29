@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const port = process.env.PORT;
+const port = Number(process.env.PORT) || 8080;
 
 // Connect to MongoDB
 connectDB()
@@ -14,7 +14,7 @@ connectDB()
     scheduleReportCleanup();
 
     // Start server after successful DB connection
-    app.listen(Number(port), () => {
+    app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
