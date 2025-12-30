@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 import Excel from "exceljs";
+import { Readable } from "stream";
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -72,7 +73,9 @@ export const importUsers = async (req: Request, res: Response) => {
     console.log("Processing Excel file:", req.file.originalname);
 
     const workbook = new Excel.Workbook();
-    await workbook.xlsx.load(req.file.buffer);
+    // Use a Node.js Readable stream to satisfy ExcelJS typings in Node
+    const stream = Readable.from(req.file.buffer);
+    await workbook.xlsx.read(stream);
     const worksheet = workbook.getWorksheet(1);
 
     if (!worksheet) {
@@ -135,4 +138,6 @@ export const importUsers = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Import users error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
