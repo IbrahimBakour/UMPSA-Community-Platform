@@ -70,27 +70,10 @@ app.get("/api/health", (req, res) => {
 });
 
 // Serve Frontend in Production
-console.log("NODE_ENV raw:", JSON.stringify(process.env.NODE_ENV));
-console.log("NODE_ENV trimmed:", process.env.NODE_ENV?.trim());
-console.log(
-  "Comparison result:",
-  process.env.NODE_ENV?.trim() === "production"
-);
-
 const frontendPath = path.join(__dirname, "../../frontend/dist");
-console.log("Frontend path:", frontendPath);
-console.log("Path exists:", require("fs").existsSync(frontendPath));
-
 const isProduction = process.env.NODE_ENV?.trim() === "production";
 
 if (isProduction) {
-  console.log("Production mode: Serving frontend from", frontendPath);
-  const fs = require("fs");
-  console.log(
-    "index.html exists:",
-    fs.existsSync(path.join(frontendPath, "index.html"))
-  );
-
   // Serve static files from the frontend build directory
   app.use(
     express.static(frontendPath, {
@@ -106,7 +89,6 @@ if (isProduction) {
       return next();
     }
 
-    console.log("Serving index.html for:", req.url);
     const indexPath = path.join(frontendPath, "index.html");
     res.sendFile(indexPath, (err) => {
       if (err) {
