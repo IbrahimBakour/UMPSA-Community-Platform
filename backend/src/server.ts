@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT;
 const host = "0.0.0.0"; // Bind to all network interfaces for Render
 
 // Connect to MongoDB
