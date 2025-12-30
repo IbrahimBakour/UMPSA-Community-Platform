@@ -3,8 +3,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 import Excel from "exceljs";
-import fs from "fs";
-import path from "path";
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -71,10 +69,10 @@ export const importUsers = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Please upload an Excel file" });
     }
 
-    console.log("Processing file:", req.file.path);
+    console.log("Processing Excel file:", req.file.originalname);
 
     const workbook = new Excel.Workbook();
-    await workbook.xlsx.readFile(req.file.path);
+    await workbook.xlsx.load(req.file.buffer);
     const worksheet = workbook.getWorksheet(1);
 
     if (!worksheet) {
@@ -127,16 +125,6 @@ export const importUsers = async (req: Request, res: Response) => {
       await User.insertMany(users);
     }
 
-    // Clean up the uploaded file after processing
-    if (req.file?.path) {
-      try {
-        fs.unlinkSync(req.file.path);
-        console.log("Temporary Excel file deleted:", req.file.path);
-      } catch (cleanupError) {
-        console.error("Error deleting temporary file:", cleanupError);
-      }
-    }
-
     res.json({
       message: `${users.length} users imported successfully`,
       errors: errors.length > 0 ? errors : undefined,
@@ -148,19 +136,3 @@ export const importUsers = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Import users error:", error);
-
-    // Clean up the uploaded file on error
-    if (req.file?.path) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
-        console.error("Error deleting temporary file:", cleanupError);
-      }
-    }
-
-    res.status(500).json({
-      message: "Server error during import",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-};

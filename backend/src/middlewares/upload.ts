@@ -40,13 +40,10 @@ const getCloudinaryStorage = (folder: string) => {
   return new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
-      // Determine the correct folder based on file type and route
+      // Default folder from createUpload parameter
       let cloudinaryFolder = `umpsa/${folder}`;
 
-      // Map folders correctly:
-      // - User profile pictures go to umpsa/profiles
-      // - Club profile pictures and banners go to umpsa/club-media
-      // - Post media goes to umpsa/posts
+      // Override based on fieldname and route for specific cases
       if (file.fieldname === "profilePicture") {
         const isClubRoute = req.originalUrl?.includes("/clubs/");
         cloudinaryFolder = isClubRoute ? "umpsa/club-media" : "umpsa/profiles";
@@ -55,6 +52,7 @@ const getCloudinaryStorage = (folder: string) => {
       } else if (file.fieldname === "postMedia") {
         cloudinaryFolder = "umpsa/posts";
       }
+      // If none of the above match, use the default folder parameter
 
       return {
         folder: cloudinaryFolder,

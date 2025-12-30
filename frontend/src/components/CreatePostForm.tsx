@@ -9,6 +9,7 @@ import { FaPoll, FaCalendarAlt } from "react-icons/fa";
 import { uploadFile } from "../services/uploads";
 import toast from "react-hot-toast";
 import ConfirmationModal from "./ConfirmationModal";
+import { useAuth } from "../hooks/useAuth";
 
 const createPostSchema = z.object({
   content: z.string().min(1, "Post content cannot be empty"),
@@ -47,6 +48,7 @@ const CreatePostForm = ({
   } = useForm<CreatePostFormInputs>({
     resolver: zodResolver(createPostSchema),
   });
+  const { user } = useAuth();
   const createFeedPostMutation = useCreateFeedPost();
   const createClubPostMutation = useCreateClubPost(clubId || "");
 
@@ -140,7 +142,16 @@ const CreatePostForm = ({
 
     createPostMutation.mutate(postData, {
       onSuccess: () => {
-        setShowConfirmation(true);
+        // Show confirmation modal only for non-admin users creating feed posts
+        const isAdmin = user?.role === "admin";
+        const isFeedPost = !clubId;
+
+        if (!isAdmin && isFeedPost) {
+          setShowConfirmation(true);
+        } else {
+          // For admins or club posts, directly finalize
+          finalizeSuccess();
+        }
       },
       onError: () => {
         toast.error("Failed to create post. Please try again.");

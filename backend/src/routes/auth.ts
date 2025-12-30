@@ -5,18 +5,9 @@ import { authMiddleware, adminMiddleware } from "../middlewares/auth";
 
 const router = express.Router();
 
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
+// Configure multer for Excel file upload (use memory storage)
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     if (
       file.mimetype ===
@@ -28,6 +19,9 @@ const upload = multer({
       cb(null, false);
       cb(new Error("Only Excel files are allowed"));
     }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit for Excel files
   },
 });
 
