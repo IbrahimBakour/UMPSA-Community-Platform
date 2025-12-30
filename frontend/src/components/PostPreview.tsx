@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AnyPost } from "../types";
 import { API_BASE_URL } from "../utils/constants";
+import { formatDateTime } from "../lib/utils";
 
 interface PostPreviewProps {
   post: AnyPost;
@@ -178,11 +179,8 @@ const PostPreview = ({ post }: PostPreviewProps) => {
             Event: {post.calendarEvent.title}
           </p>
           <p className="text-sm text-green-700">
-            {new Date(post.calendarEvent.date).toLocaleDateString("en-US", {
+            {formatDateTime(post.calendarEvent.date, {
               weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
             })}
           </p>
         </div>

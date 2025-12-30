@@ -9,6 +9,7 @@ import { FaPoll, FaCalendarAlt } from "react-icons/fa";
 import { uploadFile } from "../services/uploads";
 import toast from "react-hot-toast";
 import ConfirmationModal from "./ConfirmationModal";
+import { formatDateTime } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 
 const createPostSchema = z.object({
@@ -19,13 +20,14 @@ const createPostSchema = z.object({
       question: z.string().optional(),
       options: z.array(z.string()).optional(),
       allowMultipleVotes: z.boolean().optional(),
-      endDate: z.date().optional(),
+      endDate: z.string().optional(),
     })
     .optional(),
   event: z
     .object({
       title: z.string().optional(),
       date: z.string().optional(),
+      time: z.string().optional(),
     })
     .optional(),
 });
@@ -45,6 +47,7 @@ const CreatePostForm = ({
     reset,
     formState: { errors },
     setValue,
+    watch,
   } = useForm<CreatePostFormInputs>({
     resolver: zodResolver(createPostSchema),
   });
@@ -66,6 +69,20 @@ const CreatePostForm = ({
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [allowMultipleVotes, setAllowMultipleVotes] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  // Watch event fields for inline preview
+  const eventTitleWatch = watch("event.title");
+  const eventDateWatch = watch("event.date");
+  const eventTimeWatch = watch("event.time");
+
+  // Local date/time strings for HTML min attributes
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(now.getDate()).padStart(2, "0")}`;
+  const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes()
+  ).padStart(2, "0")}`;
 
   const finalizeSuccess = () => {
     closeModal();
@@ -106,10 +123,25 @@ const CreatePostForm = ({
 
       // Validate poll data only if trying to create a poll
       if (pollQuestion && validOptions.length >= 2) {
+        const pollEndDateStr = data.poll?.endDate as string | undefined;
+        let pollEndDate: Date | undefined = undefined;
+        if (pollEndDateStr) {
+          const parsed = new Date(pollEndDateStr);
+          if (isNaN(parsed.getTime())) {
+            toast.error("Invalid poll end date");
+            return;
+          }
+          if (parsed.getTime() <= Date.now()) {
+            toast.error("Poll end date must be in the future");
+            return;
+          }
+          pollEndDate = parsed;
+        }
         postData.poll = {
           question: pollQuestion,
           options: validOptions,
           allowMultipleVotes: allowMultipleVotes,
+          ...(pollEndDate ? { endDate: pollEndDate } : {}),
         };
       } else if (pollQuestion || validOptions.length > 0) {
         // User started filling poll but didn't complete it
@@ -124,17 +156,25 @@ const CreatePostForm = ({
     // Add event only if event type is selected AND has complete data
     if (postType === "event") {
       const eventTitle = data.event?.title?.trim();
-      const eventDate = data.event?.date;
+      const eventDate = data.event?.date; // expects yyyy-MM-dd
+      const eventTime = data.event?.time as string | undefined; // HH:mm
 
       // Validate event data only if trying to create an event
-      if (eventTitle && eventDate) {
+      if (eventTitle && eventDate && eventTime) {
+        // Combine date and time into a single Date
+        const combined = new Date(`${eventDate}T${eventTime}:00`);
+        const nowCheck = new Date();
+        if (combined.getTime() <= nowCheck.getTime()) {
+          toast.error("Event date/time must be in the future");
+          return;
+        }
         postData.calendarEvent = {
           title: eventTitle,
-          date: eventDate,
+          date: combined,
         };
-      } else if (eventTitle || eventDate) {
+      } else if (eventTitle || eventDate || eventTime) {
         // User started filling event but didn't complete it
-        toast.error("Please complete the event: provide both title and date");
+        toast.error("Please complete the event: provide title, date and time");
         return;
       }
       // If no event data is provided, just create a regular post
@@ -334,6 +374,17 @@ const CreatePostForm = ({
                 Allow multiple votes
               </label>
             </div>
+            <div className="mt-3">
+              <label className="block text-sm text-gray-700 mb-1">
+                Poll End Date (Optional)
+              </label>
+              <input
+                type="date"
+                {...register("poll.endDate")}
+                className="w-full p-2 border border-gray-300 rounded-md"
+                min={todayStr}
+              />
+            </div>
           </div>
         )}
 
@@ -356,12 +407,33 @@ const CreatePostForm = ({
               type="date"
               {...register("event.date")}
               className="mt-2 w-full p-2 border border-gray-300 rounded-md"
+              min={todayStr}
             />
             {errors.event?.date && (
               <p className="text-red-500 text-sm">
                 {errors.event.date.message}
               </p>
             )}
+            <input
+              type="time"
+              {...register("event.time")}
+              className="mt-2 w-full p-2 border border-gray-300 rounded-md"
+              onChange={(e) => setValue("event.time", e.target.value)}
+              min={eventDateWatch === todayStr ? currentTimeStr : undefined}
+            />
+            {/* Event Preview */}
+            <div className="mt-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+              <p className="font-semibold text-indigo-900">
+                Event: {eventTitleWatch || ""}
+              </p>
+              <p className="text-sm text-indigo-800">
+                {eventDateWatch && eventTimeWatch
+                  ? formatDateTime(
+                      new Date(`${eventDateWatch}T${eventTimeWatch}:00`)
+                    )
+                  : "Select date and time"}
+              </p>
+            </div>
           </div>
         )}
 

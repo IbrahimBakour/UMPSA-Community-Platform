@@ -16,6 +16,7 @@ import { API_BASE_URL } from "../utils/constants";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { votePoll } from "../services/polls";
+import { formatDateTime, toGoogleCalendarLink } from "../lib/utils";
 // import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 // Helper function to get full image URL
@@ -370,14 +371,30 @@ const PostCard = ({ post }: PostCardProps) => {
       )}
 
       {post.calendarEvent && (
-        <div className="mt-4">
-          <h4 className="font-semibold">{post.calendarEvent.title}</h4>
-          <p className="text-gray-600">
-            {new Date(post.calendarEvent.date).toLocaleDateString()}
-          </p>
-          <button className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-            Going
-          </button>
+        <div className="mt-4 p-3 rounded-lg border border-indigo-200 bg-indigo-50">
+          <div className="flex items-start justify-between">
+            <div>
+              <h4 className="font-semibold text-indigo-900">
+                {post.calendarEvent.title}
+              </h4>
+              <p className="text-sm text-indigo-800">
+                {formatDateTime(post.calendarEvent.date)}
+              </p>
+            </div>
+            <a
+              href={toGoogleCalendarLink(
+                post.calendarEvent.title,
+                new Date(post.calendarEvent.date),
+                60,
+                `Post by ${authorName || "UMPSA user"}`
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm px-3 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Add to Calendar
+            </a>
+          </div>
         </div>
       )}
 
