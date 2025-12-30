@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import { useUpdateUser } from "../services/users";
-import { uploadFile } from "../services/uploads";
+import { uploadProfilePicture } from "../services/uploads";
 import { changePassword } from "../services/auth";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -200,9 +200,8 @@ const ProfilePage = () => {
 
     setIsUploading(true);
     try {
-      const uploadedFile = await uploadFile(file);
-      // uploadFile returns either a url or an object with url depending on implementation
-      const url = (uploadedFile as any).url ?? (uploadedFile as any);
+      // Upload user profile picture to the correct endpoint
+      const { url } = await uploadProfilePicture(file);
       setPreview(getMediaUrl(url));
       setValue("profilePicture", url);
       toast.success("Profile picture uploaded successfully!");
