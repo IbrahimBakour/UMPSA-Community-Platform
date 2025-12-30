@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 import Excel from "exceljs";
+import fs from "fs";
+import path from "path";
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -41,7 +43,11 @@ export const login = async (req: Request, res: Response) => {
 
     // Log token expiration for debugging
     const expirationDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    console.log(`Token generated for user ${user.studentId}. Expires at: ${expirationDate.toISOString()}`);
+    console.log(
+      `Token generated for user ${
+        user.studentId
+      }. Expires at: ${expirationDate.toISOString()}`
+    );
 
     res.json({
       token,
@@ -116,10 +122,19 @@ export const importUsers = async (req: Request, res: Response) => {
     }
 
     // Insert users
-
     if (users.length > 0) {
       console.log(`Inserting ${users.length} users`);
       await User.insertMany(users);
+    }
+
+    // Clean up the uploaded file after processing
+    if (req.file?.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+        console.log("Temporary Excel file deleted:", req.file.path);
+      } catch (cleanupError) {
+        console.error("Error deleting temporary file:", cleanupError);
+      }
     }
 
     res.json({
@@ -133,6 +148,16 @@ export const importUsers = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Import users error:", error);
+
+    // Clean up the uploaded file on error
+    if (req.file?.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        console.error("Error deleting temporary file:", cleanupError);
+      }
+    }
+
     res.status(500).json({
       message: "Server error during import",
       error: error instanceof Error ? error.message : "Unknown error",

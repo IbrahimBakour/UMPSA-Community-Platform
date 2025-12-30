@@ -1,6 +1,23 @@
 import multer from "multer";
 import path from "path";
 import { Request } from "express";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+if (
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 // File type validation
 const allowedImageTypes = [
@@ -18,21 +35,58 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_PROFILE_SIZE = 2 * 1024 * 1024; // 2MB for profile pictures
 
-// Storage configuration
-const storage = multer.diskStorage({
+// Cloudinary storage configuration
+const getCloudinaryStorage = (folder: string) => {
+  return new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+      // Determine the correct folder based on file type and route
+      let cloudinaryFolder = `umpsa/${folder}`;
+
+      // Map folders correctly:
+      // - User profile pictures go to umpsa/profiles
+      // - Club profile pictures and banners go to umpsa/club-media
+      // - Post media goes to umpsa/posts
+      if (file.fieldname === "profilePicture") {
+        const isClubRoute = req.originalUrl?.includes("/clubs/");
+        cloudinaryFolder = isClubRoute ? "umpsa/club-media" : "umpsa/profiles";
+      } else if (file.fieldname === "banner") {
+        cloudinaryFolder = "umpsa/club-media";
+      } else if (file.fieldname === "postMedia") {
+        cloudinaryFolder = "umpsa/posts";
+      }
+
+      return {
+        folder: cloudinaryFolder,
+        resource_type: "auto",
+        public_id: `${file.fieldname}-${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}`,
+      };
+    },
+  });
+};
+
+// Use Cloudinary if credentials are available
+const useCloudinary =
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET;
+
+// Fallback local storage
+const localStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     let uploadPath = "uploads/";
 
     // Determine upload path based on file type
     if (file.fieldname === "profilePicture") {
-      // Check if it's a user profile or club profile based on route
       const isClubRoute = req.originalUrl?.includes("/clubs/");
       uploadPath += isClubRoute ? "general/" : "profiles/";
     } else if (
       file.fieldname === "banner" ||
       file.fieldname === "clubProfilePicture"
     ) {
-      uploadPath += "general/"; // Banner goes to general folder
+      uploadPath += "general/";
     } else if (file.fieldname === "postMedia") {
       uploadPath += "posts/";
     } else {
@@ -42,7 +96,6 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    // Generate unique filename with timestamp and random string
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const fileExtension = path.extname(file.originalname);
     const fileName = `${file.fieldname}-${uniqueSuffix}${fileExtension}`;
@@ -56,7 +109,6 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
-  // Check file type
   if (allowedFileTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -76,42 +128,53 @@ const fileSizeValidator = (
 ) => {
   let maxSize = MAX_IMAGE_SIZE;
 
-  // Set appropriate size limit based on file type and field
   if (file.fieldname === "profilePicture") {
     maxSize = MAX_PROFILE_SIZE;
   } else if (allowedVideoTypes.includes(file.mimetype)) {
     maxSize = MAX_VIDEO_SIZE;
   }
 
-  // Note: Actual size validation happens after upload in the controller
-  // This is just for multer configuration
   cb(null, true);
 };
 
-// Create multer instance
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: MAX_VIDEO_SIZE, // Set to largest allowed size
-    files: 10, // Maximum number of files per request
-  },
-});
+// Create multer instances with appropriate storage
+const createUpload = (folder?: string) => {
+  const storage = useCloudinary
+    ? getCloudinaryStorage(folder || "general")
+    : localStorage;
+
+  return multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+      fileSize: MAX_VIDEO_SIZE,
+      files: 10,
+    },
+  });
+};
+
+const uploadInstances = {
+  profilePicture: createUpload("profiles"), // Will be dynamically routed in getCloudinaryStorage
+  clubMedia: createUpload("club-media"),
+  postMedia: createUpload("posts"),
+  general: createUpload("general"),
+};
 
 // Middleware for profile picture upload
-export const uploadProfilePicture = upload.single("profilePicture");
+export const uploadProfilePicture =
+  uploadInstances.profilePicture.single("profilePicture");
 
 // Middleware for club media upload (multiple files)
-export const uploadClubMedia = upload.fields([
+export const uploadClubMedia = uploadInstances.clubMedia.fields([
   { name: "profilePicture", maxCount: 1 },
   { name: "banner", maxCount: 1 },
 ]);
 
 // Middleware for post media upload (multiple files)
-export const uploadPostMedia = upload.array("postMedia", 5); // Max 5 files per post
+export const uploadPostMedia = uploadInstances.postMedia.array("postMedia", 5);
 
 // Middleware for single file upload (general purpose)
-export const uploadSingleFile = upload.single("file");
+export const uploadSingleFile = uploadInstances.general.single("file");
 
 // File validation helper
 export const validateFileSize = (
@@ -143,4 +206,4 @@ export const sanitizeFilename = (filename: string): string => {
   return filename.replace(/[^a-zA-Z0-9.-]/g, "_");
 };
 
-export default upload;
+export default uploadInstances.general;

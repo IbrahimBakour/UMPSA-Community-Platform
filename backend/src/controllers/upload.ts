@@ -26,8 +26,6 @@ export const uploadProfilePicture = async (req: AuthRequest, res: Response) => {
 
     // Validate file size
     if (!validateFileSize(file, "profilePicture")) {
-      // Delete the uploaded file if size is invalid
-      fs.unlinkSync(file.path);
       return res.status(400).json({
         message:
           "File size too large. Maximum size for profile pictures is 2MB",
@@ -37,7 +35,6 @@ export const uploadProfilePicture = async (req: AuthRequest, res: Response) => {
     // Validate file type
     const fileType = getFileType(file.mimetype);
     if (fileType !== "image") {
-      fs.unlinkSync(file.path);
       return res.status(400).json({
         message: "Only image files are allowed for profile pictures",
       });
@@ -46,25 +43,19 @@ export const uploadProfilePicture = async (req: AuthRequest, res: Response) => {
     // Update user profile picture
     const user = await User.findById(userId);
     if (!user) {
-      fs.unlinkSync(file.path);
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Delete old profile picture if exists
-    if (user.profilePicture) {
-      const oldImagePath = path.join(process.cwd(), user.profilePicture);
-      if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
-      }
-    }
+    // Get the image URL (Cloudinary returns secure_url, local storage returns path)
+    const imageUrl = (file as any).secure_url || file.path;
 
-    // Update user with new profile picture path
-    user.profilePicture = file.path;
+    // Update user with new profile picture URL
+    user.profilePicture = imageUrl;
     await user.save();
 
     res.json({
       message: "Profile picture uploaded successfully",
-      profilePicture: file.path,
+      url: imageUrl,
       file: {
         filename: file.filename,
         originalName: file.originalname,
@@ -75,11 +66,10 @@ export const uploadProfilePicture = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("Upload profile picture error:", error);
-    // Clean up file if there's an error
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
-    }
-    res.status(500).json({ message: "Error uploading profile picture" });
+    res.status(500).json({
+      message: "Error uploading profile picture",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };
 
@@ -97,10 +87,6 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
     // Check if user has permission to update club
     const club = await Club.findById(clubId);
     if (!club) {
-      // Clean up uploaded files
-      Object.values(files)
-        .flat()
-        .forEach((file) => fs.unlinkSync(file.path));
       return res.status(404).json({ message: "Club not found" });
     }
 
@@ -109,10 +95,6 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
     const isAdmin = req.user?.role === "admin";
 
     if (!isClubMember && !isAdmin) {
-      // Clean up uploaded files
-      Object.values(files)
-        .flat()
-        .forEach((file) => fs.unlinkSync(file.path));
       return res.status(403).json({
         message: "Only club members and admins can upload club media",
       });
@@ -127,7 +109,6 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
         // Validate file size
         if (!validateFileSize(file, fieldName)) {
           errors.push(`File ${file.originalname} is too large`);
-          fs.unlinkSync(file.path);
           continue;
         }
 
@@ -135,23 +116,20 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
         const fileType = getFileType(file.mimetype);
         if (fileType !== "image") {
           errors.push(`File ${file.originalname} is not a valid image`);
-          fs.unlinkSync(file.path);
           continue;
         }
 
-        // Note: Not deleting old files to allow image reuse across multiple clubs
-        // If cleanup is needed, implement a separate garbage collection process
+        // Get the image URL (Cloudinary returns secure_url, local storage returns path)
+        const imageUrl = (file as any).secure_url || file.path;
 
-        // Update club with new file path (normalized to start with / and use forward slashes)
-        const normalizedPath = file.path.replace(/\\/g, "/");
-        const finalPath = normalizedPath.startsWith("/")
-          ? normalizedPath
-          : `/${normalizedPath}`;
+        // Normalize path for local storage
+        const finalPath = imageUrl.startsWith("http")
+          ? imageUrl // Cloudinary URL, use as-is
+          : imageUrl.replace(/\\/g, "/").startsWith("/")
+          ? imageUrl.replace(/\\/g, "/")
+          : "/" + imageUrl.replace(/\\/g, "/");
 
         if (fieldName === "profilePicture") {
-          console.log(
-            `[Upload] Updating profilePicture: ${club.profilePicture} -> ${finalPath}`
-          );
           club.profilePicture = finalPath;
         } else if (fieldName === "banner") {
           club.banner = finalPath;
@@ -164,7 +142,7 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
           size: file.size,
           mimetype: file.mimetype,
           type: fileType,
-          path: file.path,
+          url: finalPath,
         });
       }
     }
@@ -184,13 +162,6 @@ export const uploadClubMedia = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("Upload club media error:", error);
-    // Clean up all uploaded files
-    if (req.files) {
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      Object.values(files)
-        .flat()
-        .forEach((file) => fs.unlinkSync(file.path));
-    }
     res.status(500).json({ message: "Error uploading club media" });
   }
 };
@@ -213,7 +184,6 @@ export const uploadPostMedia = async (req: AuthRequest, res: Response) => {
       // Validate file size
       if (!validateFileSize(file, "postMedia")) {
         errors.push(`File ${file.originalname} is too large`);
-        fs.unlinkSync(file.path);
         continue;
       }
 
@@ -221,9 +191,11 @@ export const uploadPostMedia = async (req: AuthRequest, res: Response) => {
       const fileType = getFileType(file.mimetype);
       if (fileType === "unknown") {
         errors.push(`File ${file.originalname} is not a valid image or video`);
-        fs.unlinkSync(file.path);
         continue;
       }
+
+      // Get the media URL (Cloudinary returns secure_url, local storage returns path)
+      const mediaUrl = (file as any).secure_url || file.path;
 
       uploadedFiles.push({
         filename: file.filename,
@@ -231,7 +203,7 @@ export const uploadPostMedia = async (req: AuthRequest, res: Response) => {
         size: file.size,
         mimetype: file.mimetype,
         type: fileType,
-        path: file.path,
+        path: mediaUrl,
       });
     }
 
@@ -239,22 +211,10 @@ export const uploadPostMedia = async (req: AuthRequest, res: Response) => {
       message: "Post media uploaded successfully",
       uploadedFiles,
       errors: errors.length > 0 ? errors : undefined,
-      mediaUrls: uploadedFiles.map((file) => {
-        // Multer gives us relative path like "uploads/posts/filename.jpg"
-        // Ensure it starts with / for the static file serving
-        const cleanPath = file.path.startsWith("/")
-          ? file.path
-          : `/${file.path}`;
-        return cleanPath;
-      }),
+      mediaUrls: uploadedFiles.map((file) => file.path),
     });
   } catch (error) {
     console.error("Upload post media error:", error);
-    // Clean up all uploaded files
-    if (req.files) {
-      const files = req.files as Express.Multer.File[];
-      files.forEach((file) => fs.unlinkSync(file.path));
-    }
     res.status(500).json({ message: "Error uploading post media" });
   }
 };
@@ -269,16 +229,21 @@ export const deleteFile = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "File path is required" });
     }
 
-    // Check if file exists
-    const fullPath = path.join(process.cwd(), filePath);
-    if (!fs.existsSync(fullPath)) {
-      return res.status(404).json({ message: "File not found" });
+    // Check if this is a Cloudinary URL (starts with http)
+    const isCloudinaryUrl = filePath.startsWith("http");
+
+    if (!isCloudinaryUrl) {
+      // Only check local file existence if it's not a Cloudinary URL
+      const fullPath = path.join(process.cwd(), filePath);
+      if (!fs.existsSync(fullPath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
     }
 
     // Check if user has permission to delete this file
-    // This is a basic check - you might want to enhance this based on your needs
     const isProfilePicture = filePath.includes("/profiles/");
-    const isClubMedia = filePath.includes("/clubs/");
+    const isClubMedia =
+      filePath.includes("/clubs/") || filePath.includes("club-media");
     const isPostMedia = filePath.includes("/posts/");
 
     if (isProfilePicture) {
@@ -308,7 +273,6 @@ export const deleteFile = async (req: AuthRequest, res: Response) => {
       }
     } else if (isPostMedia) {
       // For post media, we'll allow deletion if user is admin
-      // You might want to enhance this to check if user is the post author
       if (req.user?.role !== "admin") {
         return res
           .status(403)
@@ -316,8 +280,11 @@ export const deleteFile = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Delete the file
-    fs.unlinkSync(fullPath);
+    // Only delete local files (Cloudinary handles cleanup automatically)
+    if (!isCloudinaryUrl) {
+      const fullPath = path.join(process.cwd(), filePath);
+      fs.unlinkSync(fullPath);
+    }
 
     res.json({ message: "File deleted successfully" });
   } catch (error) {
