@@ -17,28 +17,17 @@ import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { votePoll } from "../services/polls";
 import { formatDateTime, toGoogleCalendarLink } from "../lib/utils";
-// import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
-// Helper function to get full image URL
+// Helper to normalize media URLs
 const getImageUrl = (path: string): string => {
   if (!path) return "";
-
-  // If it's already a full URL, return it
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
-  }
-
-  // Normalize the path to always start with a single /
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
   let cleanPath = path.replace(/\/+/g, "/");
-  if (!cleanPath.startsWith("/")) {
-    cleanPath = `/${cleanPath}`;
-  }
-
-  // Combine with API_BASE_URL
+  if (!cleanPath.startsWith("/")) cleanPath = `/${cleanPath}`;
   return `${API_BASE_URL}${cleanPath}`;
 };
 
-// Helper function to format relative time
+// Helper to format relative time
 const getRelativeTime = (date: string | Date): string => {
   const now = new Date();
   const postDate = new Date(date);
@@ -75,9 +64,11 @@ const PostCard = ({ post }: PostCardProps) => {
   const deletePostMutation = useDeletePost();
   const createReportMutation = useCreateReport();
   const queryClient = useQueryClient();
+
   const [isConfirmationOpen, setConfirmationOpen] = useState(false);
   const [isReportModalOpen, setReportModalOpen] = useState(false);
   const [isCommentsModalOpen, setCommentsModalOpen] = useState(false);
+  const [isMediaModalOpen, setMediaModalOpen] = useState(false);
 
   const votePollMutation = useMutation({
     mutationFn: ({
@@ -93,9 +84,7 @@ const PostCard = ({ post }: PostCardProps) => {
       queryClient.invalidateQueries({ queryKey: ["clubPosts"] });
       toast.success("Vote recorded successfully!");
     },
-    onError: () => {
-      toast.error("Failed to vote. Please try again.");
-    },
+    onError: () => toast.error("Failed to vote. Please try again."),
   });
 
   const {
@@ -113,33 +102,25 @@ const PostCard = ({ post }: PostCardProps) => {
         toast.success("Post deleted successfully!");
         setConfirmationOpen(false);
       },
-      onError: () => {
-        toast.error("Failed to delete post. Please try again.");
-      },
+      onError: () => toast.error("Failed to delete post. Please try again."),
     });
   };
 
   const handleReportSubmit = (data: ReportPostFormInputs) => {
     createReportMutation.mutate(
-      {
-        targetType: "post",
-        targetId: post._id,
-        reason: data.reason,
-      },
+      { targetType: "post", targetId: post._id, reason: data.reason },
       {
         onSuccess: () => {
           toast.success("Post reported successfully!");
           setReportModalOpen(false);
           reset();
         },
-        onError: () => {
-          toast.error("Failed to report post. Please try again.");
-        },
+        onError: () => toast.error("Failed to report post. Please try again."),
       }
     );
   };
 
-  // Author can be either a populated object or an ID string
+  // Author resolution
   const authorObj =
     (post as any).author && typeof (post as any).author === "object"
       ? (post as any).author
@@ -247,15 +228,12 @@ const PostCard = ({ post }: PostCardProps) => {
                 totalVotes > 0
                   ? Math.round((option.votes / totalVotes) * 100)
                   : 0;
-              const currentUserId = authUser?._id || authUser?.id || "";
-              const hasVotedThisOption = option.voters.includes(currentUserId);
+              const viewerId = authUser?._id || authUser?.id || "";
+              const hasVotedThisOption = option.voters.includes(viewerId);
               const isPollEnded =
                 post.poll!.endDate && new Date(post.poll!.endDate) < new Date();
               const isActive = post.poll!.isActive && !isPollEnded;
 
-              // Button text logic:
-              // - For multiple votes: show "Unvote" if already voted on this option, else "Vote"
-              // - For single vote: always show "Vote" (backend handles switching)
               const buttonText = votePollMutation.isPending
                 ? "Voting..."
                 : post.poll?.allowMultipleVotes && hasVotedThisOption
@@ -304,7 +282,6 @@ const PostCard = ({ post }: PostCardProps) => {
                       )}
                     </div>
                   </div>
-                  {/* Progress bar */}
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
@@ -330,21 +307,31 @@ const PostCard = ({ post }: PostCardProps) => {
       )}
 
       {post.media && post.media.length > 0 && (
-        <div className="mt-3 grid grid-cols-1 gap-3">
-          {post.media.map((mediaUrl, index) => {
+        <div
+          className={`mt-3 grid gap-3 ${
+            post.media.length === 1 ? "grid-cols-1" : "grid-cols-2"
+          }`}
+        >
+          {post.media.slice(0, 4).map((mediaUrl, index) => {
             const fullUrl = getImageUrl(mediaUrl);
             const isVideo = /\.mp4$/i.test(fullUrl);
             const isSingle = post.media?.length === 1;
+            const remaining = (post.media?.length || 0) - 4;
+            const isOverlay = remaining > 0 && index === 3;
 
-            // Full-width media with consistent aspect ratios; single gets a bit more height
             const aspectRatio = isSingle ? "4 / 3" : "4 / 3";
             const maxHeight = isSingle ? "420px" : "340px";
 
             return (
               <div
                 key={index}
-                className="relative w-full overflow-hidden rounded-md bg-surface-100"
+                className={`relative w-full overflow-hidden rounded-md bg-surface-100 ${
+                  isOverlay ? "cursor-pointer" : ""
+                }`}
                 style={{ aspectRatio, maxHeight }}
+                onClick={() => {
+                  if (isOverlay) setMediaModalOpen(true);
+                }}
               >
                 {isVideo ? (
                   <video
@@ -358,11 +345,18 @@ const PostCard = ({ post }: PostCardProps) => {
                     alt={`Post media ${index + 1}`}
                     className="absolute inset-0 w-full h-full object-contain bg-surface-100"
                     onError={(e) => {
-                      // Fallback if image fails to load
                       console.error("Failed to load image:", mediaUrl);
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
+                )}
+
+                {isOverlay && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/55 backdrop-blur-sm">
+                    <span className="text-3xl font-semibold text-white">
+                      +{remaining}
+                    </span>
+                  </div>
                 )}
               </div>
             );
@@ -422,6 +416,7 @@ const PostCard = ({ post }: PostCardProps) => {
         )}
         <CommentInput postId={post._id} postType={post.postType} />
       </div>
+
       <ConfirmationModal
         isOpen={isConfirmationOpen}
         onClose={() => setConfirmationOpen(false)}
@@ -429,6 +424,69 @@ const PostCard = ({ post }: PostCardProps) => {
         title="Delete Post"
         message="Are you sure you want to delete this post? This action cannot be undone."
       />
+
+      {/* Media Gallery Modal */}
+      {isMediaModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[85vh] overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-surface-200">
+              <h3 className="text-lg font-semibold text-surface-900">
+                Media ({post.media?.length})
+              </h3>
+              <button
+                onClick={() => setMediaModalOpen(false)}
+                className="text-2xl leading-none text-surface-500 hover:text-surface-700"
+                aria-label="Close media gallery"
+              >
+                x
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[75vh]">
+              <div
+                className={`grid gap-3 ${
+                  post.media?.length === 1
+                    ? "grid-cols-1"
+                    : post.media?.length === 2
+                    ? "grid-cols-2"
+                    : "grid-cols-2 md:grid-cols-3"
+                }`}
+              >
+                {post.media?.map((mediaUrl, index) => {
+                  const fullUrl = getImageUrl(mediaUrl);
+                  const isVideo = /\.mp4$/i.test(fullUrl);
+
+                  return (
+                    <div
+                      key={index}
+                      className="relative w-full overflow-hidden rounded-md bg-surface-100"
+                      style={{ aspectRatio: "4 / 3", maxHeight: "420px" }}
+                    >
+                      {isVideo ? (
+                        <video
+                          src={fullUrl}
+                          className="absolute inset-0 w-full h-full object-contain bg-surface-100"
+                          controls
+                        />
+                      ) : (
+                        <img
+                          src={fullUrl}
+                          alt={`Post media ${index + 1}`}
+                          className="absolute inset-0 w-full h-full object-contain bg-surface-100"
+                          onError={(e) => {
+                            console.error("Failed to load image:", mediaUrl);
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Report Post Modal */}
       {isReportModalOpen && (
