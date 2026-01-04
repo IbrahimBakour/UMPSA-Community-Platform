@@ -101,7 +101,7 @@ const PostReviewModal = ({
           animate={{ y: "0" }}
           exit={{ y: "100vh" }}
           transition={{ duration: 0.3 }}
-          className="bg-white rounded-lg shadow-lg p-6 w-full max-w-3xl my-8"
+          className="bg-white rounded-lg shadow-lg p-6 w-full max-w-3xl my-8 max-h-[85vh] overflow-y-auto"
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Review Reported Post</h2>
