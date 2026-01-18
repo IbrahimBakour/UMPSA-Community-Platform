@@ -13,6 +13,29 @@ type PopulatedAuthor = {
   profilePicture?: string;
 };
 
+// Helper to make links clickable and preserve formatting
+const renderContentWithLinks = (content: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = content.split(urlRegex);
+
+  return parts.map((part, index) => {
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent-600 hover:text-accent-700 underline break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+};
+
 // Helper function to get full image URL
 const getImageUrl = (path: string): string => {
   if (!path) return "";
@@ -94,8 +117,8 @@ const PostPreview = ({ post }: PostPreviewProps) => {
       </div>
 
       {/* Post Content */}
-      <div className="text-base leading-relaxed text-surface-800 mb-3">
-        {post.content}
+      <div className="text-base leading-relaxed text-surface-800 mb-3 whitespace-pre-wrap break-words">
+        {renderContentWithLinks(post.content)}
       </div>
 
       {/* Poll Preview (view-only) */}
