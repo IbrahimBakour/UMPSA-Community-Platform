@@ -17,10 +17,14 @@ const ClubsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  // Debounce search term to reduce API calls
   useEffect(() => {
-    const id = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 350);
-    return () => clearTimeout(id);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [searchTerm]);
+
   const {
     data: clubsData,
     isLoading,
@@ -30,14 +34,10 @@ const ClubsPage = () => {
     search: debouncedSearch || undefined,
   });
 
-  // Refetch clubs data when component mounts or when returning from other pages
+  // Refetch clubs data when returning from other pages
   useEffect(() => {
-    // Refetch on component mount
-    refetch();
-
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Force refetch from server when tab becomes visible
         refetch();
       }
     };

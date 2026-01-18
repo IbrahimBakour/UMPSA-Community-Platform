@@ -87,8 +87,9 @@ export const useClubs = (params?: {
   return useQuery<PaginatedResponse<Club>, Error>({
     queryKey: ["clubs", params],
     queryFn: () => getClubs(params),
-    staleTime: 0, // Always consider data stale to ensure fresh fetches
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false, // Prevent refetch when window regains focus during typing
   });
 };
 
