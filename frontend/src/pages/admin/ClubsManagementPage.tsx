@@ -255,23 +255,43 @@ const ClubsManagementPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto p-4"
+            style={{ marginTop: 0 }}
+            className="fixed inset-0 z-50 mt-0 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => {
+              setEditModalOpen(false);
+              setSelectedClub(null);
+            }}
           >
             <motion.div
               initial={{ y: "-100vh" }}
               animate={{ y: "0" }}
               exit={{ y: "100vh" }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg my-8"
+              className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-xl font-bold mb-4">Edit Club</h2>
-              <EditClubForm
-                club={selectedClub}
-                closeModal={() => {
-                  setEditModalOpen(false);
-                  setSelectedClub(null);
-                }}
-              />
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+                <h2 className="text-xl font-bold text-gray-900">Edit Club</h2>
+                <button
+                  onClick={() => {
+                    setEditModalOpen(false);
+                    setSelectedClub(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  aria-label="Close modal"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="overflow-y-auto flex-1 px-6 py-4 bg-white">
+                <EditClubForm
+                  club={selectedClub}
+                  closeModal={() => {
+                    setEditModalOpen(false);
+                    setSelectedClub(null);
+                  }}
+                />
+              </div>
             </motion.div>
           </motion.div>
         </AnimatePresence>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useClubs } from "../services/clubs";
 import ClubCard from "../components/ClubCard";
@@ -24,9 +25,28 @@ const ClubsPage = () => {
     data: clubsData,
     isLoading,
     error,
+    refetch,
   } = useClubs({
     search: debouncedSearch || undefined,
   });
+
+  // Refetch clubs data when component mounts or when returning from other pages
+  useEffect(() => {
+    // Refetch on component mount
+    refetch();
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Force refetch from server when tab becomes visible
+        refetch();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [refetch]);
 
   // Handle the response structure - it could be clubs or data
   const clubs = clubsData?.clubs || clubsData?.data || [];
@@ -39,11 +59,17 @@ const ClubsPage = () => {
   const myClubs = useMemo(
     () =>
       currentUserId
-        ? clubsArray.filter(
-            (club) =>
-              club.members?.includes(currentUserId) ||
-              club.clubLeader === currentUserId
-          )
+        ? clubsArray.filter((club) => {
+            const members = Array.isArray(club.members) ? club.members : [];
+            const isMember = members.some((member: any) => {
+              const memberId =
+                typeof member === "string" ? member : member?._id || member?.id;
+              return memberId?.toString() === currentUserId.toString();
+            });
+            const isLeader =
+              club.clubLeader?.toString() === currentUserId.toString();
+            return isMember || isLeader;
+          })
         : [],
     [clubsArray, currentUserId]
   );

@@ -87,6 +87,8 @@ export const useClubs = (params?: {
   return useQuery<PaginatedResponse<Club>, Error>({
     queryKey: ["clubs", params],
     queryFn: () => getClubs(params),
+    staleTime: 0, // Always consider data stale to ensure fresh fetches
+    gcTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 };
 
@@ -147,8 +149,10 @@ export const useAddMember = (clubId: string) => {
   return useMutation<{ message: string; member: User }, Error, string>({
     mutationFn: (studentId) => addMember({ clubId, studentId }),
     onSuccess: () => {
+      // Invalidate all clubs queries to ensure "My Clubs" section updates
       queryClient.invalidateQueries({ queryKey: ["club", clubId] });
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
+      toast.success("Member added successfully!");
     },
     onError: () => {
       toast.error("Failed to add member. Please try again.");

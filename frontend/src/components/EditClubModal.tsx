@@ -1,8 +1,7 @@
-
-import { useState } from 'react';
-import EditClubForm from './EditClubForm';
-import { Club } from '../types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import EditClubForm from "./EditClubForm";
+import { Club } from "../types";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface EditClubModalProps {
   club: Club;
