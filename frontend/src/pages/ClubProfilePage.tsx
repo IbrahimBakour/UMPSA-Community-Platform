@@ -181,44 +181,47 @@ const ClubProfilePage = () => {
         transition={{ duration: 0.5 }}
         className="bg-white rounded-lg shadow-md p-6 mb-4 border border-surface-100"
       >
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
-            <div
-              className={`w-28 h-28 rounded-full mr-0 sm:mr-4 mb-4 sm:mb-0 overflow-hidden ${
-                !club.profilePicture
-                  ? "bg-gradient-to-br from-indigo-500 to-purple-600"
-                  : ""
-              }`}
-            >
-              <img
-                key={club.profilePicture}
-                src={
-                  club.profilePicture
-                    ? getImageUrl(club.profilePicture)
-                    : "/default-club-avatar.svg"
-                }
-                alt={club.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "/default-club-avatar.svg";
-                }}
-              />
-            </div>
-            <div className="ml-2">
-              <h1 className="text-3xl font-bold">{club.name}</h1>
-              {club.description && (
-                <p className="text-surface-600 mt-1">{club.description}</p>
-              )}
-              {club.memberCount !== undefined && (
-                <p className="text-sm text-surface-500 mt-2">
-                  {club.memberCount}{" "}
-                  {club.memberCount === 1 ? "member" : "members"}
-                </p>
-              )}
-            </div>
+        {/* Club Header - Horizontal layout with justify-between */}
+        <div className="flex items-start justify-between gap-6">
+          {/* Left: Club Image */}
+          <div
+            className={`w-32 h-32 rounded-full flex-shrink-0 overflow-hidden ${
+              !club.profilePicture
+                ? "bg-gradient-to-br from-indigo-500 to-purple-600"
+                : ""
+            }`}
+          >
+            <img
+              key={club.profilePicture}
+              src={
+                club.profilePicture
+                  ? getImageUrl(club.profilePicture)
+                  : "/default-club-avatar.svg"
+              }
+              alt={club.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/default-club-avatar.svg";
+              }}
+            />
           </div>
-          <div className="flex gap-2">
+
+          {/* Middle: Club Name and Description */}
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-surface-900">{club.name}</h1>
+            {club.description && (
+              <p className="text-surface-600 mt-2">{club.description}</p>
+            )}
+            {club.memberCount !== undefined && (
+              <p className="text-sm text-surface-500 mt-3">
+                {club.memberCount}{" "}
+                {club.memberCount === 1 ? "member" : "members"}
+              </p>
+            )}
+          </div>
+
+          {/* Right: Action Buttons */}
+          <div className="flex flex-col gap-2 flex-shrink-0">
             {canEditClub && <EditClubModal club={club} />}
             {canManageMembers && <AddMemberModal clubId={club._id} />}
           </div>
@@ -368,16 +371,24 @@ const ClubProfilePage = () => {
               <p className="text-sm font-medium text-gray-700">Club Name</p>
               <p className="text-sm text-gray-600">{club.name}</p>
             </div>
-            {club.description && (
+            {club.email && (
               <div>
-                <p className="text-sm font-medium text-gray-700">About</p>
-                <p className="text-sm text-gray-600">{club.description}</p>
+                <p className="text-sm font-medium text-gray-700">Email</p>
+                <p className="text-sm text-gray-600">{club.email}</p>
               </div>
             )}
-            {club.contact && (
+            {club.phone && (
               <div>
-                <p className="text-sm font-medium text-gray-700">Contact</p>
-                <p className="text-sm text-gray-600">{club.contact}</p>
+                <p className="text-sm font-medium text-gray-700">Phone</p>
+                <p className="text-sm text-gray-600">{club.phone}</p>
+              </div>
+            )}
+            {club.socialMedia && (
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  Social Media
+                </p>
+                <p className="text-sm text-gray-600">{club.socialMedia}</p>
               </div>
             )}
             {club.about && (

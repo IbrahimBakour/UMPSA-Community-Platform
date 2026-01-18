@@ -27,7 +27,9 @@ const getImageUrl = (path?: string): string => {
 const editClubSchema = z.object({
   name: z.string().min(1, "Club name cannot be empty"),
   description: z.string().optional(),
-  contact: z.string().optional(),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  socialMedia: z.string().optional(),
   about: z.string().optional(),
 });
 
@@ -60,7 +62,9 @@ const EditClubForm = ({ club, closeModal }: EditClubFormProps) => {
     defaultValues: {
       name: club.name,
       description: club.description || "",
-      contact: club.contact || "",
+      email: club.email || "",
+      phone: club.phone || "",
+      socialMedia: club.socialMedia || "",
       about: club.about || "",
     },
   });
@@ -183,20 +187,58 @@ const EditClubForm = ({ club, closeModal }: EditClubFormProps) => {
 
       <div className="mb-4">
         <label
-          htmlFor="contact"
+          htmlFor="email"
           className="block text-sm font-medium text-gray-700"
         >
-          Contact Information
+          Email
         </label>
         <input
-          {...register("contact")}
-          id="contact"
+          {...register("email")}
+          id="email"
+          type="email"
+          className="w-full p-2 border border-gray-300 rounded-md"
+          placeholder="club@example.com"
+        />
+        {errors.email && (
+          <p className="text-red-500 text-sm">{errors.email.message}</p>
+        )}
+      </div>
+
+      <div className="mb-4">
+        <label
+          htmlFor="phone"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Phone
+        </label>
+        <input
+          {...register("phone")}
+          id="phone"
+          type="tel"
+          className="w-full p-2 border border-gray-300 rounded-md"
+          placeholder="+60 12-345 6789"
+        />
+        {errors.phone && (
+          <p className="text-red-500 text-sm">{errors.phone.message}</p>
+        )}
+      </div>
+
+      <div className="mb-4">
+        <label
+          htmlFor="socialMedia"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Social Media
+        </label>
+        <input
+          {...register("socialMedia")}
+          id="socialMedia"
           type="text"
           className="w-full p-2 border border-gray-300 rounded-md"
-          placeholder="Email, phone, or social media"
+          placeholder="Instagram, Facebook, Twitter, etc."
         />
-        {errors.contact && (
-          <p className="text-red-500 text-sm">{errors.contact.message}</p>
+        {errors.socialMedia && (
+          <p className="text-red-500 text-sm">{errors.socialMedia.message}</p>
         )}
       </div>
 

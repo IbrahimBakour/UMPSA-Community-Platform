@@ -14,7 +14,15 @@ interface AuthRequest extends Request {
 // Create a new club (Admin only)
 export const createClub = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description, about, contact, leaderStudentId } = req.body;
+    const {
+      name,
+      description,
+      about,
+      email,
+      phone,
+      socialMedia,
+      leaderStudentId,
+    } = req.body;
     const adminId = req.user?._id;
 
     if (!name) {
@@ -53,7 +61,9 @@ export const createClub = async (req: AuthRequest, res: Response) => {
       name,
       description,
       about,
-      contact,
+      email,
+      phone,
+      socialMedia,
       members: [leaderUser._id], // Initial club leader
       clubLeader: leaderUser._id,
       createdBy: adminId,
@@ -136,7 +146,16 @@ export const getClub = async (req: Request, res: Response) => {
 // Update club details (Club members only)
 export const updateClub = async (req: AuthRequest, res: Response) => {
   try {
-    const { description, about, contact, profilePicture, banner } = req.body;
+    const {
+      name,
+      description,
+      about,
+      email,
+      phone,
+      socialMedia,
+      profilePicture,
+      banner,
+    } = req.body;
     const club = await Club.findById(req.params.id);
 
     if (!club) {
@@ -157,9 +176,12 @@ export const updateClub = async (req: AuthRequest, res: Response) => {
     }
 
     // Update allowed fields
+    if (name) club.name = name;
     if (description) club.description = description;
     if (about) club.about = about;
-    if (contact) club.contact = contact;
+    if (email !== undefined) club.email = email;
+    if (phone !== undefined) club.phone = phone;
+    if (socialMedia !== undefined) club.socialMedia = socialMedia;
     if (profilePicture) club.profilePicture = profilePicture;
     if (banner) club.banner = banner;
 

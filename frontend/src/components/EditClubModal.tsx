@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EditClubForm from "./EditClubForm";
 import { Club } from "../types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,19 @@ const EditClubModal = ({ club }: EditClubModalProps) => {
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
+
+  // Lock/unlock body scroll when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   return (
     <div>
@@ -28,14 +41,19 @@ const EditClubModal = ({ club }: EditClubModalProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-hidden p-4"
           >
             <motion.div
-              initial={{ y: "-100vh" }}
-              animate={{ y: "0" }}
-              exit={{ y: "100vh" }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg my-8"
+              initial={{ y: "-100vh", opacity: 0 }}
+              animate={{ y: "0", opacity: 1 }}
+              exit={{ y: "100vh", opacity: 0 }}
+              transition={{
+                duration: 0.3,
+                type: "spring",
+                damping: 25,
+                stiffness: 300,
+              }}
+              className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
             >
               <h2 className="text-xl font-bold mb-4">Edit Club</h2>
               <EditClubForm club={club} closeModal={closeModal} />

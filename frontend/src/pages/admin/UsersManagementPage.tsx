@@ -1,10 +1,12 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useAllUsers,
   useUpdateUserRole,
   useUpdateUserStatus,
   useDeleteUser,
 } from "../../services/users";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import toast from "react-hot-toast";
 import { User } from "../../types";
@@ -12,7 +14,22 @@ import ImportUsersButton from "../../components/ImportUsersButton";
 import { motion } from "framer-motion";
 
 const UsersManagementPage = () => {
-  const { data: usersData, isLoading, error } = useAllUsers();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [displayUsers, setDisplayUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const {
+    data: usersData,
+    isLoading,
+    error,
+    isFetching,
+  } = useAllUsers({
+    page,
+    limit,
+    search: debouncedSearch || undefined,
+  });
   const updateRoleMutation = useUpdateUserRole();
   const updateStatusMutation = useUpdateUserStatus();
   const deleteUserMutation = useDeleteUser();
@@ -20,8 +37,41 @@ const UsersManagementPage = () => {
   // Handle the response structure
   const users = usersData?.users || usersData?.data || [];
   const usersArray = Array.isArray(users) ? users : [];
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+
+  // Accumulate users across pages and de-duplicate by id
+  useEffect(() => {
+    if (page === 1) {
+      setDisplayUsers(usersArray);
+    } else if (usersArray.length > 0) {
+      setDisplayUsers((prev) => {
+        const merged = [...prev, ...usersArray];
+        const seen = new Set<string>();
+        return merged.filter((u) => {
+          const id = (u as any)._id || (u as any).id;
+          const key = String(id);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      });
+    }
+  }, [usersArray, page]);
+
+  // Debounce search term and reset pagination when it changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+      setPage(1);
+      setDisplayUsers([]);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Refetch when debounced search changes
+  useEffect(() => {
+    // When search changes, call the hook with new params by updating page
+    setPage(1);
+  }, [debouncedSearch]);
   const [isPromoteConfirmationOpen, setPromoteConfirmationOpen] =
     useState(false);
   const [isRestrictModalOpen, setRestrictModalOpen] = useState(false);
@@ -87,6 +137,10 @@ const UsersManagementPage = () => {
       deleteUserMutation.mutate(selectedUser._id, {
         onSuccess: () => {
           toast.success("User deleted successfully!");
+          // Remove the deleted user from the display list immediately
+          setDisplayUsers((prev) =>
+            prev.filter((u) => u._id !== selectedUser._id)
+          );
           setSelectedUser(null);
           setDeleteConfirmationOpen(false);
         },
@@ -140,14 +194,17 @@ const UsersManagementPage = () => {
     }
   };
 
-  // Filter users based on search term
-  const filteredUsers = usersArray.filter((user) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      user.nickname?.toLowerCase().includes(searchLower) ||
-      user.studentId.toLowerCase().includes(searchLower)
-    );
-  });
+  // Pagination metadata
+  const pagination = (usersData as any)?.pagination;
+  const hasNext = !!(
+    pagination?.hasNext || pagination?.currentPage < pagination?.totalPages
+  );
+
+  const handleShowMore = () => {
+    if (hasNext && !isFetching) {
+      setPage((p) => p + 1);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -211,7 +268,7 @@ const UsersManagementPage = () => {
       </div>
 
       {/* Users Grid */}
-      {filteredUsers.length === 0 ? (
+      {displayUsers.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
           <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -232,14 +289,14 @@ const UsersManagementPage = () => {
             No users found
           </h3>
           <p className="text-gray-600">
-            {searchTerm
+            {debouncedSearch
               ? "No users match your search"
               : "Get started by importing users"}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUsers.map((user) => (
+          {displayUsers.map((user) => (
             <motion.div
               key={user._id}
               initial={{ opacity: 0, y: 20 }}
@@ -327,6 +384,23 @@ const UsersManagementPage = () => {
               </div>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* Show More pagination */}
+      {displayUsers.length > 0 && (
+        <div className="flex items-center justify-center mt-6">
+          <button
+            onClick={handleShowMore}
+            disabled={!hasNext || isFetching}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isFetching
+              ? "Loading..."
+              : hasNext
+              ? "Show More"
+              : "No More Users"}
+          </button>
         </div>
       )}
       {selectedUser && (

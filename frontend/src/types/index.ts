@@ -108,7 +108,9 @@ export interface Club {
   profilePicture?: string;
   banner?: string;
   about?: string;
-  contact?: string;
+  email?: string;
+  phone?: string;
+  socialMedia?: string;
   members: string[]; // Array of user IDs
   clubLeader?: string; // User ID of the club leader
   createdBy: string; // User ID
@@ -245,7 +247,9 @@ export interface CreateClubForm {
   name: string;
   description?: string;
   about?: string;
-  contact?: string;
+  email?: string;
+  phone?: string;
+  socialMedia?: string;
   profilePicture?: File;
   banner?: File;
   leaderStudentId: string;

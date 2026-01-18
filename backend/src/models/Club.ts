@@ -7,7 +7,9 @@ export interface IClub extends Document {
   profilePicture?: string;
   banner?: string;
   about?: string;
-  contact?: string;
+  email?: string;
+  phone?: string;
+  socialMedia?: string;
   members: IUser["_id"][];
   clubLeader?: IUser["_id"];
   createdBy: IUser["_id"];
@@ -48,7 +50,15 @@ const clubSchema = new Schema<IClub>(
       type: String,
       trim: true,
     },
-    contact: {
+    email: {
+      type: String,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      trim: true,
+    },
+    socialMedia: {
       type: String,
       trim: true,
     },
