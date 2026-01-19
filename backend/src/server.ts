@@ -1,6 +1,7 @@
 import app from "./app";
 import connectDB from "./config/db";
 import { scheduleReportCleanup } from "./services/reportCleanup";
+import { warmupTranslation } from "./services/translation";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -12,6 +13,9 @@ connectDB()
   .then(() => {
     // Schedule automatic cleanup of resolved reports
     scheduleReportCleanup();
+
+    // Initialize translation service
+    warmupTranslation();
 
     // Start server after successful DB connection
     app.listen(Number(port), () => {

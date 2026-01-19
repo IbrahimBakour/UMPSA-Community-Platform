@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { votePoll } from "../services/polls";
 import { formatDateTime, toGoogleCalendarLink } from "../lib/utils";
+import { translatePost, TargetLang } from "../services/translation";
 
 // Helper to make links clickable and preserve formatting
 const renderContentWithLinks = (content: string) => {
@@ -92,6 +93,11 @@ const PostCard = ({ post }: PostCardProps) => {
   const [isReportModalOpen, setReportModalOpen] = useState(false);
   const [isCommentsModalOpen, setCommentsModalOpen] = useState(false);
   const [isMediaModalOpen, setMediaModalOpen] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [translationTarget, setTranslationTarget] = useState<TargetLang | null>(
+    null,
+  );
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const votePollMutation = useMutation({
     mutationFn: ({
@@ -139,7 +145,7 @@ const PostCard = ({ post }: PostCardProps) => {
           reset();
         },
         onError: () => toast.error("Failed to report post. Please try again."),
-      }
+      },
     );
   };
 
@@ -235,8 +241,65 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
       </div>
 
-      <div className="text-base leading-relaxed text-surface-800 mb-3 whitespace-pre-wrap break-words">
-        {renderContentWithLinks(post.content)}
+      <div className="text-base leading-relaxed text-surface-800 mb-2 whitespace-pre-wrap break-words">
+        {renderContentWithLinks(translatedText ?? post.content)}
+      </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {translatedText ? (
+          <>
+            <span className="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">
+              Translated to {translationTarget === "ms" ? "Malay" : "English"}
+            </span>
+            <button
+              onClick={() => {
+                setTranslatedText(null);
+                setTranslationTarget(null);
+              }}
+              className="text-sm text-surface-500 hover:text-surface-700 underline"
+            >
+              Show Original
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={async () => {
+                try {
+                  setIsTranslating(true);
+                  const text = await translatePost(post._id, "ms");
+                  setTranslatedText(text);
+                  setTranslationTarget("ms");
+                } catch (e) {
+                  toast.error("Failed to translate to Malay");
+                } finally {
+                  setIsTranslating(false);
+                }
+              }}
+              disabled={isTranslating}
+              className="text-sm px-3 py-1 rounded-md border border-surface-300 hover:bg-surface-50 disabled:opacity-50"
+            >
+              {isTranslating ? "Translating..." : "Translate to Malay"}
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  setIsTranslating(true);
+                  const text = await translatePost(post._id, "en");
+                  setTranslatedText(text);
+                  setTranslationTarget("en");
+                } catch (e) {
+                  toast.error("Failed to translate to English");
+                } finally {
+                  setIsTranslating(false);
+                }
+              }}
+              disabled={isTranslating}
+              className="text-sm px-3 py-1 rounded-md border border-surface-300 hover:bg-surface-50 disabled:opacity-50"
+            >
+              {isTranslating ? "Translating..." : "Translate to English"}
+            </button>
+          </>
+        )}
       </div>
 
       {post.poll && post.poll.question && (
@@ -260,8 +323,8 @@ const PostCard = ({ post }: PostCardProps) => {
               const buttonText = votePollMutation.isPending
                 ? "Voting..."
                 : post.poll?.allowMultipleVotes && hasVotedThisOption
-                ? "Unvote"
-                : "Vote";
+                  ? "Unvote"
+                  : "Vote";
 
               return (
                 <div key={index} className="relative">
@@ -403,7 +466,7 @@ const PostCard = ({ post }: PostCardProps) => {
                 post.calendarEvent.title,
                 new Date(post.calendarEvent.date),
                 60,
-                `Post by ${authorName || "UMPSA user"}`
+                `Post by ${authorName || "UMPSA user"}`,
               )}
               target="_blank"
               rel="noopener noreferrer"
@@ -425,7 +488,7 @@ const PostCard = ({ post }: PostCardProps) => {
             .sort(
               (a, b) =>
                 new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
+                new Date(a.createdAt).getTime(),
             )
             .slice(0, 3)}
         />
@@ -470,8 +533,8 @@ const PostCard = ({ post }: PostCardProps) => {
                   post.media?.length === 1
                     ? "grid-cols-1"
                     : post.media?.length === 2
-                    ? "grid-cols-2"
-                    : "grid-cols-2 md:grid-cols-3"
+                      ? "grid-cols-2"
+                      : "grid-cols-2 md:grid-cols-3"
                 }`}
               >
                 {post.media?.map((mediaUrl, index) => {
@@ -583,7 +646,7 @@ const PostCard = ({ post }: PostCardProps) => {
                 comments={[...post.comments].sort(
                   (a, b) =>
                     new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime()
+                    new Date(a.createdAt).getTime(),
                 )}
               />
             </div>

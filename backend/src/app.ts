@@ -15,6 +15,7 @@ import uploadRoutes from "./routes/upload";
 import adminRoutes from "./routes/admin";
 import pollRoutes from "./routes/poll";
 import notificationRoutes from "./routes/notification";
+import translationRoutes from "./routes/translation";
 
 dotenv.config();
 
@@ -47,7 +48,7 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json({ limit: "10mb" }));
@@ -67,6 +68,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/polls", pollRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/translate", translationRoutes);
 
 // Health check endpoint for Render
 app.get("/api/health", (req, res) => {
@@ -83,7 +85,7 @@ if (isProduction) {
     express.static(frontendPath, {
       index: false, // Don't auto-serve index.html, we'll handle it explicitly
       fallthrough: true,
-    })
+    }),
   );
 
   // Handle React routing - return index.html for all non-API routes
@@ -115,14 +117,14 @@ app.use(
     err: any,
     req: express.Request,
     res: express.Response,
-    next: express.NextFunction
+    next: express.NextFunction,
   ) => {
     console.error("Error:", err);
     res.status(err.status || 500).json({
       message: err.message || "Internal Server Error",
       ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
     });
-  }
+  },
 );
 
 export default app;
